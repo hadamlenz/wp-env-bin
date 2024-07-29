@@ -23,6 +23,18 @@ You will need to customized the command to work for you. so that it works with n
 }
 ```
 
-create a file .wp-env-bin.json.  in the root, this is the config file and where settings are saved.
+create a file .wp-env-bin.json.  in the root, this is the config file and where settings are saved.  at minimum you should have
+
+```json
+{
+	"themeName": "[THEME_NAME]",
+	"commandName": "[COMMAND_NAME]",
+	"pluginPath": "[PATH TO LOCAL PLUGINS RELATIVE TO HIS FOLDER]",
+}
+```
+
+
+## Commands
+
 
 
