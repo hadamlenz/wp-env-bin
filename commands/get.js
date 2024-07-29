@@ -89,20 +89,10 @@ function getConfig() {
 	if (checkConfig()) {
 		let file = readFileSync("./assets/wp-env/config.json");
 		const config = JSON.parse(file);
-		return config.config;
+		return config;
 	} else {
 		return false;
 	}
-}
-
-/**
- * the settings for wp-env-bin 
- * @returns parsed json
- */
-function getProgramConfig() {
-	let file = readFileSync("./vendor/wp-env-bin/config.json");
-	const configx = JSON.parse(file);
-	return configx;
 }
 
 /**
@@ -117,7 +107,6 @@ module.exports = {
 	command,
 	help,
 	getConfig,
-	getProgramConfig,
 	getRemoteDb,
 	getRemoteTables,
 	getWpEnvJson

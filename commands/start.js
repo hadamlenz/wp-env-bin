@@ -1,30 +1,28 @@
 const { run } = require("./run.js");
 const { checkConfig, checkDatabase, checkHtaccess } = require("./check.js");
 const { makeHtaccess, makeBlankConfig, makeBasicConfig, makeRemoteConfig } = require("./make.js");
-const { getProgramConfig, getConfig, getRemoteDb } = require("./get.js");
-const { importDBPrefixChanger, importRemoteDb, prefixRename, dropTables } = require("./import.js");
+const { getConfig, getRemoteDb } = require("./get.js");
+const { importRemoteDb, prefixRename, dropTables } = require("./import.js");
 const { logger } = require("./log.js");
 const { confirm, select } = require("@inquirer/prompts");
-let conf = getProgramConfig();
-let config = getConfig();
 
-function command(subcommand, conf) {
+function command(subcommand, config) {
 	//start up a new instance
 	switch (subcommand) {
 		case "help":
 		case "--help":
 		case "-h":
-			help(conf.commandName, true);
+			help(config.commandName, true);
 			break;
 		case "basic":
-			startLocalBasic();
+			startLocalBasic(config);
 			break;
 		case "remote":
-			startlocalRemote();
+			startlocalRemote(config);
 			break;
 		default:
 			//do the same as basic
-			startLocalBasic();
+			startLocalBasic(config);
 			break;
 	}
 }

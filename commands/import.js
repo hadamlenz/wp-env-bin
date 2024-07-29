@@ -1,5 +1,5 @@
 const { checkDatabase } = require("./check.js");
-const { getConfig, getProgramConfig } = require("./get.js");
+const { getConfig } = require("./get.js");
 const { logger } = require("./log.js");
 const { wpcli } = require("./run.js");
 const { confirm, select } = require("@inquirer/prompts");
@@ -18,7 +18,7 @@ function command(subcommand, configProg) {
 			break;
 		}
 		case "remote-db": {
-			importRemoteDb();
+			importRemoteDb(config);
 			break;
 		}
 		case "search-replace":{
@@ -44,17 +44,15 @@ function help(commandName, log = false) {
  *  imports the remote database, drops the old tables, changes the table prefix, search replaces it
  * @returns bool
  */
-function importRemoteDb() {
-
-	var conf = getProgramConfig();
+function importRemoteDb(config) {
 
 	if (!checkDatabase()) {
 		log("> the database file doesnt exist please place it at ./assets/wp-env/database.sql");
 		return false;
 	}
 
-	if (conf) {
-		wpcli("wp db import ./wp-content/themes/" + conf.themeName + "/assets/wp-env/database.sql");
+	if (config) {
+		wpcli("wp db import ./wp-content/themes/" + config.themeName + "/assets/wp-env/database.sql");
 		return true;
 	}
 

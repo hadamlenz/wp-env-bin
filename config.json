@@ -1,6 +1,0 @@
-{
-	"themeName": "twentytwentyfour-env",
-	"commandName": "2024-env",
-	"pluginPath": "../../plugins/",
-	"htaccessPath": "./assets/wp-env/.htaccess"
-}
