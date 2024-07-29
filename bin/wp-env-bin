@@ -1,0 +1,67 @@
+//import all the things
+const { command: activate } = require("../commands/activate.js");
+const { command: clean } = require("../commands/clean");
+const { command: get, getProgramConfig } = require("../commands/get.js");
+const { command: config } = require("../commands/config.js");
+const { command: help } = require("../commands/help.js");
+const { command: importer } = require("../commands/import.js");
+const { command: make } = require("../commands/make.js");
+const { command: start } = require("../commands/start.js");
+const { command: update } = require("../commands/update.js");
+const { logger } = require("../commands/log.js");
+const { run } = require("../commands/run.js");
+
+//get the program config
+const conf = getProgramConfig();
+/**
+ *
+ * @param argv the command line arguments
+ */
+module.exports.init = function (argv) {
+	//get command
+	let command = argv[2];
+	// and subcommand
+	let subcommand = argv[3];
+
+	//subcommands live inside the the the various files there.
+	//example: activate commands are in ../commands/activate.js
+	switch (command) {
+		case "activate":
+			activate(subcommand, conf);
+			break;
+		case "clean":
+			clean(subcommand, conf);
+			break;
+		case "config":
+			config(subcommand, conf);
+			break;
+		case "get":
+			get(subcommand, conf);
+			break;
+		case "help":
+		case "--help":
+		case "-h":
+			help(conf);
+			break;
+		case "import":
+			importer(subcommand, conf);
+			break;
+		case "make":
+			make(subcommand, conf);
+			break;
+		case "start":
+			start(subcommand, conf);
+			break;
+		case "update":
+			update(argv, conf);
+			break;
+		case undefined:
+			//we need something to do
+			logger("> what should I do? you can use " + conf.commandName + " help for help");
+			break;
+		default:
+			// not something we know how to do
+			logger("> " + command + " doesnt exist, you can use " + conf.commandName + " help for help");
+			break;
+	}
+};

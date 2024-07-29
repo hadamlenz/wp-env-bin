@@ -1,0 +1,21 @@
+{
+	"name": "wp-env-bin",
+	"version": "1.0.0",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"bin": {
+		"wp-env-bin": "wp-env-bin"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"description": "",
+	"devDependencies": {
+		"@wordpress/env": "^10.1.0",
+		"yargs": "^17.7.2",
+		"cli-spinners": "^3.1.0",
+		"@inquirer/prompts": "^5.3.2"
+	}
+}
