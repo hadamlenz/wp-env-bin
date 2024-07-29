@@ -34,9 +34,9 @@ async function maybeCleanupFiles(commandName) {
 	});
 	if( cleanFiles === true ){
 		logger("> cleaning up " + commandName + " assets\n");
-		run("rm -f ./assets/wp-env/database.sql ./assets/wp-env/.htaccess ./assets/wp-env/config.json");
+		run("rm -f ./assets/wp-env/database.sql ./assets/wp-env/.htaccess");
 	} else {
-		logger("> few, we saved the files\n");
+		logger("> we saved the files (that ws close!)\n");
 	}
 }
 

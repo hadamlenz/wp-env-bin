@@ -1,7 +1,7 @@
 //import all the things
 const { command: activate } = require("../commands/activate.js");
 const { command: clean } = require("../commands/clean");
-const { command: get, getProgramConfig } = require("../commands/get.js");
+const { command: get, getConfig } = require("../commands/get.js");
 const { command: config } = require("../commands/config.js");
 const { command: help } = require("../commands/help.js");
 const { command: importer } = require("../commands/import.js");
@@ -12,7 +12,7 @@ const { logger } = require("../commands/log.js");
 const { run } = require("../commands/run.js");
 
 //get the program config
-const conf = getProgramConfig();
+const config = getConfig();
 /**
  *
  * @param argv the command line arguments

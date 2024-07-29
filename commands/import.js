@@ -2,7 +2,6 @@ const { checkDatabase } = require("./check.js");
 const { getConfig } = require("./get.js");
 const { logger } = require("./log.js");
 const { wpcli } = require("./run.js");
-const { confirm, select } = require("@inquirer/prompts");
 
 function command(subcommand, configProg) {
 	//import data into wordpress

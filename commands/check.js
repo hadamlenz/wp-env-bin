@@ -29,7 +29,7 @@ function isRunning(){
 function checkConfig(){
     var file = false;
     try {
-		file = readFileSync("./assets/wp-env/config.json");
+		file = readFileSync(".wp-env-bin.json");
 	} catch (err) {
 		//logger('> no config to get, make one with wilson-env make blank-config');
 		return false;

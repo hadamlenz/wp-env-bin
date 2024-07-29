@@ -113,7 +113,7 @@ async function makeRemoteConfig(usingOldConfig = false) {
  * @param {array} plugins
  */
 function makeConfig(options, type = false) {
-	const path = "./assets/wp-env/config.json";
+	const path = ".wp-env-bin.json";
 	const configTemplate = require("../templates/config.tpl");
 	const config = configTemplate(options);
 	let typeA = !type ? "" : type + " ";
