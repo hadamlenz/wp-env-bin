@@ -183,11 +183,21 @@ This runs the full pipeline: exports from Pantheon, renames table prefixes, impo
 
 ## Non-Pantheon / Local SQL File Workflow
 
-If your site is not hosted on Pantheon, export your database using WP-CLI on the server:
+If your site is not hosted on Pantheon, export your database using WP-CLI on the server. Use the two-step approach below — it matches what `get db` does internally and ensures only the correct prefixed tables are exported:
 
+**Step 1 — Get the table list:**
 ```bash
-wp db export database.sql
+wp db tables --format=csv --url=example.com --all-tables-with-prefix
 ```
+
+**Step 2 — Export only those tables:**
+```bash
+wp db export - --url=example.com --tables=$(wp db tables --format=csv --url=example.com --all-tables-with-prefix) > database.sql
+```
+
+Replace `example.com` with your live site's URL. The `--url` flag is required for multisite to target the correct subsite. The `--all-tables-with-prefix` flag limits the export to tables matching the site's prefix, which is important on shared or multisite installs.
+
+For a simple single-site install with no shared tables, `wp db export database.sql` also works.
 
 Then use `wp-env-bin use db` to validate and load it locally:
 
