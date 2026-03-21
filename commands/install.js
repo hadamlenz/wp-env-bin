@@ -8,21 +8,23 @@ async function install() {
 
 	mkdirSync(path.join(dest, "assets"), { recursive: true });
 
+	// Scaffold dotfiles are stored without a leading dot so npm includes them
+	// in the published package. They are copied here with their correct names.
 	const files = [
-		".wp-env.json",
-		".gitignore",
-		"assets/.gitkeep",
-		"wp-env.config.json.example",
-		"composer.json.example",
+		{ src: "wp-env.json",        dest: ".wp-env.json" },
+		{ src: "gitignore",          dest: ".gitignore" },
+		{ src: "assets/gitkeep",     dest: "assets/.gitkeep" },
+		{ src: "wp-env.config.json.example", dest: "wp-env.config.json.example" },
+		{ src: "composer.json.example",      dest: "composer.json.example" },
 	];
 
 	for (const file of files) {
-		const destPath = path.join(dest, file);
+		const destPath = path.join(dest, file.dest);
 		if (!existsSync(destPath)) {
-			copyFileSync(path.join(scaffold, file), destPath);
-			logger("> created wp-env-bin/" + file);
+			copyFileSync(path.join(scaffold, file.src), destPath);
+			logger("> created wp-env-bin/" + file.dest);
 		} else {
-			logger("> skipped wp-env-bin/" + file + " (already exists)");
+			logger("> skipped wp-env-bin/" + file.dest + " (already exists)");
 		}
 	}
 
