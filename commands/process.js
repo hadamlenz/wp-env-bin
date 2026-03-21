@@ -56,7 +56,7 @@ function searchReplace(url) {
 
 async function createAdminUser() {
 	try {
-		wpcli("wp user create admin admin@localhost.com --role=administrator --user_pass=password --skip-email");
+		wpcli("wp user create admin admin@localhost.com --role=administrator --user_pass=password");
 		logger("> created admin user (username: admin, password: password)");
 	} catch {
 		wpcli("wp user update admin --user_pass=password --role=administrator");
