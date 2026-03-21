@@ -1,10 +1,9 @@
-node_modules/
-package-lock.json
-config.local.json
 wp-env.config.json
 assets/database.sql
 assets/database.modified.sql
-themes/
+assets/.htaccess
 plugins/
+themes/
 vendor/
 composer.lock
+.wp-env.override.json

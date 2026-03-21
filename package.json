@@ -1,21 +1,26 @@
 {
 	"name": "wp-env-bin",
 	"version": "1.0.0",
-	"main": "index.js",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
-	},
+	"description": "WordPress local environment manager for wp-env",
 	"bin": {
-		"wp-env-bin": "wp-env-bin"
+		"wp-env-bin": "bin/wp-env-bin"
 	},
-	"keywords": [],
-	"author": "",
-	"license": "ISC",
-	"description": "",
-	"devDependencies": {
-		"@wordpress/env": "^10.1.0",
-		"yargs": "^17.7.2",
-		"cli-spinners": "^3.1.0",
-		"@inquirer/prompts": "^5.3.2"
-	}
+	"files": [
+		"bin/",
+		"commands/",
+		"templates/",
+		"scaffold/"
+	],
+	"scripts": {
+		"test": "node --test tests/htaccess.test.js tests/validate.test.js tests/prefix.test.js"
+	},
+	"engines": {
+		"node": ">=18"
+	},
+	"dependencies": {
+		"@inquirer/prompts": "^8.0.0"
+	},
+	"keywords": ["wordpress", "wp-env", "multisite", "terminus", "pantheon"],
+	"author": "H. Adam Lenz",
+	"license": "ISC"
 }
