@@ -39,7 +39,7 @@ Add these to your project's `package.json` before running setup:
 ```json
 {
   "scripts": {
-    "wp-env-bin": "cd wp-env-bin && wp-env",
+    "wp-env-bin": "cd wp-env && wp-env",
     "env:install": "wp-env-bin install",
     "env:setup": "wp-env-bin setup",
     "env:get": "wp-env-bin get db",
