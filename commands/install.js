@@ -6,6 +6,14 @@ async function install() {
 	const dest = path.join(process.cwd(), "wp-env-bin");
 	const scaffold = path.join(__dirname, "../scaffold");
 
+	let projectName = "";
+	try {
+		const pkg = JSON.parse(readFileSync(path.join(process.cwd(), "package.json"), "utf8"));
+		projectName = pkg.name || "";
+	} catch {
+		// no package.json in consuming project, leave blank
+	}
+
 	mkdirSync(path.join(dest, "assets"), { recursive: true });
 
 	// Scaffold dotfiles are stored without a leading dot so npm includes them
@@ -50,6 +58,10 @@ async function install() {
 		if (action === "useIt") {
 			logger("> using existing wp-env-bin/wp-env.config.json");
 			logger("\nNext steps:");
+			if (!existsSync(path.join(dest, "composer.json"))) {
+				logger("  cp wp-env-bin/composer.json.example wp-env-bin/composer.json");
+				logger("  # Edit composer.json to add your plugin and theme dependencies");
+			}
 			logger("  npm run env:setup");
 			return;
 		}
@@ -68,6 +80,10 @@ async function install() {
 		logger("\nNext steps:");
 		logger("  cp wp-env-bin/wp-env.config.json.example wp-env-bin/wp-env.config.json");
 		logger("  # Edit wp-env.config.json with your env, url, oldPrefix, siteId");
+		if (!existsSync(path.join(dest, "composer.json"))) {
+			logger("  cp wp-env-bin/composer.json.example wp-env-bin/composer.json");
+			logger("  # Edit composer.json to add your plugin and theme dependencies");
+		}
 		logger("  npm run env:setup");
 		return;
 	}
@@ -95,20 +111,17 @@ async function install() {
 
 	const pluginName = await input({
 		message: "Plugin or theme name (for reference)",
-		default: defaults.pluginName || "",
+		default: defaults.pluginName || projectName,
 	});
 
-	const commandName = await input({
-		message: "Command name",
-		default: defaults.commandName || "wp-env-bin",
-	});
-
-	const containerAssetsPath = await input({
-		message: "Container assets path",
-		default: defaults.containerAssetsPath || "/var/www/html/wp-content/wp-env-bin",
-	});
-
-	const config = { commandName, pluginName, containerAssetsPath, siteType, env, url };
+	const config = {
+		commandName: "wp-env-bin",
+		pluginName,
+		containerAssetsPath: "/var/www/html/wp-content/wp-env-bin",
+		siteType,
+		env,
+		url,
+	};
 
 	if (siteType === "multisite") {
 		config.oldPrefix = await input({
@@ -124,6 +137,10 @@ async function install() {
 	writeFileSync(configPath, JSON.stringify(config, null, "\t"), "utf8");
 	logger("> created wp-env-bin/wp-env.config.json");
 	logger("\nNext steps:");
+	if (!existsSync(path.join(dest, "composer.json"))) {
+		logger("  cp wp-env-bin/composer.json.example wp-env-bin/composer.json");
+		logger("  # Edit composer.json to add your plugin and theme dependencies");
+	}
 	logger("  npm run env:setup");
 }
 

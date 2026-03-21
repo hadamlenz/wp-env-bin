@@ -20,7 +20,13 @@
 	"dependencies": {
 		"@inquirer/prompts": "^8.0.0"
 	},
-	"keywords": ["wordpress", "wp-env", "multisite", "terminus", "pantheon"],
+	"keywords": [
+		"wordpress",
+		"wp-env",
+		"multisite",
+		"terminus",
+		"pantheon"
+	],
 	"author": "H. Adam Lenz",
 	"license": "ISC"
 }
