@@ -1,113 +1,104 @@
-/**
- * get data from somewhere
- * much of this is very specific to pantheon
- */
-
-const { terminus_wp } = require("./run.js");
-const { checkConfig } = require("./check.js");
 const { readFileSync } = require("fs");
-const { logger } = require("./log.js");
+const path = require("path");
+const { terminus_wp } = require("./run");
+const { logger } = require("./log");
+const { checkDatabase } = require("./check");
 
-/** the help command */
-function help(commandName, log = false) {
-	let msg = commandName + " get : get data from elsewhere\n";
-	msg = "- " + commandName + " get remote-db : gets the db based on config.json\n";
-	msg = "- " + commandName + " get remote-network-plugins : get the list of plugins that are activated on the remote\n";
-	return logger(msg, log);
+function readLocalConfig() {
+	let config;
+	try {
+		config = JSON.parse(
+			readFileSync(path.join(process.cwd(), "wp-env-bin/wp-env.config.json"), "utf8")
+		);
+	} catch {
+		throw new Error(
+			"wp-env-bin/wp-env.config.json not found. Copy wp-env.config.json.example to wp-env-bin/wp-env.config.json and fill in your values."
+		);
+	}
+	const siteType = config.siteType || "singlesite";
+	const required = siteType === "multisite"
+		? ["url", "oldPrefix", "siteId"]
+		: ["url"];
+	const missing = required.filter((k) => !config[k]);
+	if (missing.length) {
+		throw new Error(
+			"wp-env-bin/wp-env.config.json is missing required fields: " +
+				missing.join(", ") +
+				". See wp-env.config.json.example."
+		);
+	}
+	return config;
 }
 
-/** the get command */
-function command(subcommand, configProg) {
-	//get data from elsewhere
-	switch (subcommand) {
-		case "help":
-		case "--help":
-		case "-h":
-			help();
-			break;
-		case "remote-db": {
-			//get the remote db based on settings in ./assets/config
-			getRemoteDb(configProg.commandName);
-			break;
+function readWpEnvJson() {
+	const candidates = [
+		"wp-env-bin/.wp-env.json",
+		"wp-env-bin/.wp-env.override.json",
+		".wp-env.json",
+	];
+	for (const candidate of candidates) {
+		try {
+			return JSON.parse(readFileSync(path.join(process.cwd(), candidate), "utf8"));
+		} catch {
+			// try next
 		}
-		case "remote-network-plugins": {
-			logger(getNetowrkPlugins());
-			break;
+	}
+	throw new Error("No wp-env config file found.");
+}
+
+async function getRemoteTables(env, url) {
+	logger("> fetching remote table list from " + env + " (" + url + ")...");
+	const result = terminus_wp(
+		env,
+		"db tables --format=csv --url=" + url + " --all-tables-with-prefix",
+		{ encoding: "utf8" }
+	);
+	return result.trim();
+}
+
+async function getRemoteDb() {
+	const config = readLocalConfig();
+	const { env, url } = config;
+
+	if (!env) {
+		throw new Error(
+			"wp-env.config.json must have 'env' set to use 'get db'.\n" +
+			"To use a local SQL file instead, run: wp-env-bin use db <path/to/file.sql>"
+		);
+	}
+
+	if (checkDatabase()) {
+		const { select } = await import("@inquirer/prompts");
+		const action = await select({
+			message: "wp-env-bin/assets/database.sql already exists. What would you like to do?",
+			choices: [
+				{ name: "Use the existing database", value: "useIt" },
+				{ name: "Re-download from Pantheon", value: "destroyIt" },
+			],
+		});
+		if (action === "useIt") {
+			logger("> using existing wp-env-bin/assets/database.sql");
+			return;
 		}
-		default: {
-			logger("> please clarify what you'd like to get, run " + program_name + " get help for more\n");
-			break;
-		}
 	}
-}
 
-/**
- * gets remote tables
- * @returns the tables from the remote
- */
-function getRemoteTables() {
-	const config = getConfig();
-	if (config.env && config.url) {
-		let tables = terminus_wp(config.env, "db tables --format=csv --url=" + config.url + " --format=csv --all-tables-with-prefix", { stdio: "pipe", encoding: "utf8" });
-		//console.log( 'tables: ' + tables );
-		return tables.trim();
+	const tables = await getRemoteTables(env, url);
+	logger("> found tables: " + tables);
+
+	const outPath = "./wp-env-bin/assets/database.sql";
+	logger("> exporting database to " + outPath + "...");
+
+	terminus_wp(
+		env,
+		"db export - --url=" + url + " --tables=" + tables + " > " + outPath,
+		{ shell: true }
+	);
+
+	if (checkDatabase()) {
+		logger("> database exported successfully.");
 	} else {
-		logger("you need to have a pantheon env and url in the config file\n");
+		throw new Error("Database export failed — wp-env-bin/assets/database.sql not found.");
 	}
 }
 
-/**
- * gets the remote database using the remotes table function above
- */
-function getRemoteDb() {
-	//get the tables
-	const tables = getRemoteTables();
-
-	//if tables could not be got
-	if (!tables) {
-		logger("> could not get the table list\n");
-		return false;
-	}
-
-	const config = getConfig();
-	if (config && config.url && config.url !== "" && config.siteId && config.siteId !== "") {
-		//console.log( tables + 'fuu' );
-		let cmd = "db export - --url=" + config.url + " --tables=" + tables + " > ./assets/wp-env/database.sql";
-		//console.log(cmd);
-		return terminus_wp(config.env, cmd, { stdio: "ignore" });
-	} else {
-		logger("> you need to have a pantheon env and url in the config file\n");
-		return false;
-	}
-}
-
-/**
- * get the config props that define the container
- * @returns an array if config is there, else false
- */
-function getConfig() {
-	if (checkConfig()) {
-		let file = readFileSync("./assets/wp-env/config.json");
-		const config = JSON.parse(file);
-		return config;
-	} else {
-		return false;
-	}
-}
-
-/**
- * get the wp-env.json 
- * @returns object
- */
-function getWpEnvJson(){
-	return readFileSync("./.wp-env.json");
-}
-
-module.exports = {
-	command,
-	help,
-	getConfig,
-	getRemoteDb,
-	getRemoteTables,
-	getWpEnvJson
-};
+module.exports = { readLocalConfig, readWpEnvJson, getRemoteTables, getRemoteDb };

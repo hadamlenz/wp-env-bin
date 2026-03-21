@@ -1,0 +1,128 @@
+const { mkdirSync, existsSync, copyFileSync, writeFileSync, readFileSync } = require("fs");
+const path = require("path");
+const { logger } = require("./log");
+
+async function install() {
+	const dest = path.join(process.cwd(), "wp-env-bin");
+	const scaffold = path.join(__dirname, "../scaffold");
+
+	mkdirSync(path.join(dest, "assets"), { recursive: true });
+
+	const files = [
+		".wp-env.json",
+		".gitignore",
+		"assets/.gitkeep",
+		"wp-env.config.json.example",
+		"composer.json.example",
+	];
+
+	for (const file of files) {
+		const destPath = path.join(dest, file);
+		if (!existsSync(destPath)) {
+			copyFileSync(path.join(scaffold, file), destPath);
+			logger("> created wp-env-bin/" + file);
+		} else {
+			logger("> skipped wp-env-bin/" + file + " (already exists)");
+		}
+	}
+
+	const { confirm, select, input } = await import("@inquirer/prompts");
+	const configPath = path.join(dest, "wp-env.config.json");
+	let existingConfig = null;
+	let shouldConfigure = false;
+
+	if (existsSync(configPath)) {
+		try {
+			existingConfig = JSON.parse(readFileSync(configPath, "utf8"));
+		} catch {
+			// malformed config, treat as missing
+		}
+		const action = await select({
+			message: "wp-env.config.json already exists. What would you like to do?",
+			choices: [
+				{ name: "Use the existing config", value: "useIt" },
+				{ name: "Reconfigure using existing values as defaults", value: "editIt" },
+				{ name: "Start over with a fresh config", value: "destroyIt" },
+			],
+		});
+		if (action === "useIt") {
+			logger("> using existing wp-env-bin/wp-env.config.json");
+			logger("\nNext steps:");
+			logger("  npm run env:setup");
+			return;
+		}
+		shouldConfigure = true;
+		if (action === "destroyIt") {
+			existingConfig = null;
+		}
+	} else {
+		shouldConfigure = await confirm({
+			message: "Configure wp-env.config.json now?",
+			default: true,
+		});
+	}
+
+	if (!shouldConfigure) {
+		logger("\nNext steps:");
+		logger("  cp wp-env-bin/wp-env.config.json.example wp-env-bin/wp-env.config.json");
+		logger("  # Edit wp-env.config.json with your env, url, oldPrefix, siteId");
+		logger("  npm run env:setup");
+		return;
+	}
+
+	const defaults = existingConfig || {};
+
+	const siteType = await select({
+		message: "Site type?",
+		choices: [
+			{ name: "Single-site", value: "singlesite" },
+			{ name: "Multisite (Pantheon subsite)", value: "multisite" },
+		],
+		default: defaults.siteType || "singlesite",
+	});
+
+	const env = await input({
+		message: "Pantheon site.environment (e.g. my-site.live)",
+		default: defaults.env || "",
+	});
+
+	const url = await input({
+		message: "Live site URL (e.g. mysite.unc.edu)",
+		default: defaults.url || "",
+	});
+
+	const pluginName = await input({
+		message: "Plugin or theme name (for reference)",
+		default: defaults.pluginName || "",
+	});
+
+	const commandName = await input({
+		message: "Command name",
+		default: defaults.commandName || "wp-env-bin",
+	});
+
+	const containerAssetsPath = await input({
+		message: "Container assets path",
+		default: defaults.containerAssetsPath || "/var/www/html/wp-content/wp-env-bin",
+	});
+
+	const config = { commandName, pluginName, containerAssetsPath, siteType, env, url };
+
+	if (siteType === "multisite") {
+		config.oldPrefix = await input({
+			message: "Live DB table prefix (e.g. wp_123_)",
+			default: defaults.oldPrefix || "",
+		});
+		config.siteId = await input({
+			message: "Multisite site ID",
+			default: defaults.siteId || "",
+		});
+	}
+
+	writeFileSync(configPath, JSON.stringify(config, null, "\t"), "utf8");
+	logger("> created wp-env-bin/wp-env.config.json");
+	logger("\nNext steps:");
+	logger("  npm run env:setup");
+}
+
+module.exports = { install };

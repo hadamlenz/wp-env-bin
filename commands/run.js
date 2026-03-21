@@ -1,34 +1,17 @@
 const { execSync } = require("child_process");
-// const util = require('util');
-// const execSync = util.promisify(require('child_process').execSync);
 
 function run(cmd, opts) {
-	return execSync(cmd, { ...opts });
+	return execSync(cmd, { cwd: process.cwd(), ...opts });
 }
 
-function npmRun(cmd, opts) {
-	let npm_cmd = "npm run " + cmd;
-	return execSync(npm_cmd, { ...opts });
-}
-
-/**
- * for running pantheon specific terminus commands
- */
 function terminus_wp(sitenv, cmd, opts) {
-	let terminus_cmd = "terminus wp " + sitenv + " -- " + cmd;
-	//logger(terminus_cmd);
-	return execSync(terminus_cmd, { ...opts });
+	const terminus_cmd = "terminus wp " + sitenv + " -- " + cmd;
+	return execSync(terminus_cmd, { cwd: process.cwd(), ...opts });
 }
 
 function wpcli(cmd, opts) {
-	let wpcmd = "npm run wp-env run cli " + cmd;
-	//logger(wpcmd);
-	return execSync(wpcmd, { ...opts });
+	const wpcmd = "npm run wp-env run cli -- " + cmd;
+	return execSync(wpcmd, { cwd: process.cwd(), stdio: "inherit", ...opts });
 }
 
-module.exports = {
-	run,
-	npmRun,
-	terminus_wp,
-	wpcli,
-};
+module.exports = { run, terminus_wp, wpcli };
