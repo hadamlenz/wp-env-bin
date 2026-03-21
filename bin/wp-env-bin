@@ -55,9 +55,11 @@ async function init() {
 			const { getRemoteDb } = require("../commands/get");
 			const { processDb } = require("../commands/process");
 			const { makeHtaccess } = require("../commands/make");
+			const { activateComposerPlugins } = require("../commands/plugins");
 			await getRemoteDb();
 			await processDb();
 			await makeHtaccess();
+			await activateComposerPlugins();
 			break;
 		}
 		case "help":
