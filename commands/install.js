@@ -90,6 +90,15 @@ async function install() {
 
 	const defaults = existingConfig || {};
 
+	const projectType = await select({
+		message: "Is this a plugin or a theme?",
+		choices: [
+			{ name: "Plugin", value: "plugin" },
+			{ name: "Theme", value: "theme" },
+		],
+		default: defaults.projectType || "plugin",
+	});
+
 	const siteType = await select({
 		message: "Site type?",
 		choices: [
@@ -118,6 +127,7 @@ async function install() {
 		commandName: "wp-env-bin",
 		pluginName,
 		containerAssetsPath: "/var/www/html/wp-content/wp-env-bin",
+		projectType,
 		siteType,
 		env,
 		url,
@@ -136,6 +146,23 @@ async function install() {
 
 	writeFileSync(configPath, JSON.stringify(config, null, "\t"), "utf8");
 	logger("> created wp-env-bin/wp-env.config.json");
+
+	const wpEnvPath = path.join(dest, ".wp-env.json");
+	try {
+		const wpEnv = JSON.parse(readFileSync(wpEnvPath, "utf8"));
+		if (projectType === "theme") {
+			delete wpEnv.plugins;
+			wpEnv.themes = [".."];
+		} else {
+			delete wpEnv.themes;
+			wpEnv.plugins = [".."];
+		}
+		writeFileSync(wpEnvPath, JSON.stringify(wpEnv, null, 4), "utf8");
+		logger("> updated wp-env-bin/.wp-env.json (" + projectType + ")");
+	} catch {
+		// .wp-env.json missing or malformed — leave it as-is
+	}
+
 	logger("\nNext steps:");
 	if (!existsSync(path.join(dest, "composer.json"))) {
 		logger("  cp wp-env-bin/composer.json.example wp-env-bin/composer.json");
