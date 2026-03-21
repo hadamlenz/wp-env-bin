@@ -8,7 +8,7 @@ Supports both **single-site** and **multisite** source databases. Works with Pan
 
 ## Requirements
 
-- [Node.js](https://nodejs.org/)
+- [Node.js](https://nodejs.org/) >= 18
 - [Docker](https://www.docker.com/) (required by `@wordpress/env`)
 - [`@wordpress/env`](https://www.npmjs.com/package/@wordpress/env) installed in the consuming project
 - [Terminus CLI](https://docs.pantheon.io/terminus) authenticated with Pantheon *(only required for Pantheon-hosted sites)*
@@ -18,91 +18,71 @@ Supports both **single-site** and **multisite** source databases. Works with Pan
 
 ## Installation
 
-Add to your plugin or theme as a dev dependency:
-
-```bash
-npm install --save-dev wp-env-bin
-```
-
-Or install directly from GitHub:
+Install directly from GitHub as a dev dependency:
 
 ```bash
 npm install --save-dev hadamlenz/wp-env-bin
+```
+
+To install from a specific branch:
+
+```bash
+npm install --save-dev hadamlenz/wp-env-bin#dev
+```
+
+---
+
+## Recommended `package.json` Scripts
+
+Add these to your project's `package.json` before running setup:
+
+```json
+{
+  "scripts": {
+    "wp-env": "cd wp-env-bin && wp-env",
+    "env:install": "wp-env-bin install",
+    "env:setup": "wp-env-bin setup",
+    "env:get": "wp-env-bin get db",
+    "env:process": "wp-env-bin process db",
+    "env:htaccess": "wp-env-bin make htaccess",
+    "env:sync": "wp-env-bin sync",
+    "env:help": "wp-env-bin help"
+  }
+}
 ```
 
 ---
 
 ## First-Time Setup
 
-### 1. Scaffold the config folder
-
-Run the install command from your project root to create the `wp-env-bin/` config folder:
+### 1. Run the installer
 
 ```bash
-wp-env-bin install
+npm run env:install
 ```
 
-This creates:
+This scaffolds the `wp-env-bin/` config folder and walks you through creating `wp-env.config.json` interactively:
 
 ```
 wp-env-bin/
 ├── .wp-env.json              # WordPress environment Docker config
 ├── .gitignore                # Ignores generated files
 ├── assets/                   # Database and .htaccess files (gitignored)
+├── wp-env.config.json        # Your local config (gitignored)
 ├── wp-env.config.json.example
 └── composer.json.example
 ```
 
-### 2. Configure your local environment
+The installer will ask for:
+- **Site type** — `singlesite` (default) or `multisite`
+- **Pantheon site.environment** — e.g. `mysite.live` *(skip if not using Pantheon)*
+- **Live site URL** — e.g. `example.com`
+- **Plugin or theme name** — pre-filled from your `package.json`
+- **Live DB table prefix** and **multisite site ID** — multisite only
 
-Copy the example config and fill in your project values:
+### 2. Configure `.wp-env.json`
 
-```bash
-cp wp-env-bin/wp-env.config.json.example wp-env-bin/wp-env.config.json
-```
-
-Edit `wp-env-bin/wp-env.config.json`. The required fields depend on your source site type:
-
-**Single-site** (default):
-```json
-{
-  "commandName": "wp-env-bin",
-  "pluginName": "your-plugin-name",
-  "containerAssetsPath": "/var/www/html/wp-content/wp-env-bin",
-  "siteType": "singlesite",
-  "env": "your-pantheon-site.live",
-  "url": "example.com"
-}
-```
-
-**Multisite** (pulling one subsite from a Pantheon multisite network):
-```json
-{
-  "commandName": "wp-env-bin",
-  "pluginName": "your-plugin-name",
-  "containerAssetsPath": "/var/www/html/wp-content/wp-env-bin",
-  "siteType": "multisite",
-  "env": "your-pantheon-site.live",
-  "url": "yoursubsite.example.com",
-  "oldPrefix": "wpsites_123_",
-  "siteId": "123"
-}
-```
-
-| Field | Description |
-|---|---|
-| `siteType` | `"singlesite"` (default) or `"multisite"` |
-| `env` | Terminus site.environment identifier — **required for `get db` only** (e.g. `mysite.live`) |
-| `url` | Live site domain (e.g. `example.com`) |
-| `oldPrefix` | Live DB table prefix — **multisite only** (e.g. `wpsites_123_`) |
-| `siteId` | WordPress multisite site ID — **multisite only** (e.g. `123`) |
-| `containerAssetsPath` | Path inside the Docker container where assets are mapped — leave as default unless you change the `.wp-env.json` mapping |
-
-> `wp-env.config.json` is gitignored. Never commit it — it contains environment-specific credentials.
-
-### 3. Configure your `.wp-env.json`
-
-Edit `wp-env-bin/.wp-env.json` to match your project. At minimum, update the `plugins` array to point to your plugin and set your preferred ports:
+Edit `wp-env-bin/.wp-env.json` to point to your plugin or theme and set your preferred ports:
 
 ```json
 {
@@ -116,19 +96,19 @@ Edit `wp-env-bin/.wp-env.json` to match your project. At minimum, update the `pl
 }
 ```
 
-### 4. Copy and configure `composer.json`
+### 3. Configure `composer.json`
 
 ```bash
 cp wp-env-bin/composer.json.example wp-env-bin/composer.json
 ```
 
-Add your plugin and theme dependencies to `composer.json`, then install them:
+Add your plugin and theme dependencies, then install them:
 
 ```bash
 npm run env:setup
 ```
 
-### 5. Start the environment and sync the database
+### 4. Start the environment and sync the database
 
 ```bash
 npm run wp-env start
@@ -137,11 +117,48 @@ npm run env:sync
 
 ---
 
+## Config Reference
+
+`wp-env-bin/wp-env.config.json` is gitignored — never commit it.
+
+**Single-site:**
+```json
+{
+  "siteType": "singlesite",
+  "env": "mysite.live",
+  "url": "example.com",
+  "pluginName": "my-plugin"
+}
+```
+
+**Multisite** (pulling one subsite from a Pantheon multisite network):
+```json
+{
+  "siteType": "multisite",
+  "env": "mysite.live",
+  "url": "yoursubsite.example.com",
+  "pluginName": "my-plugin",
+  "oldPrefix": "wpsites_123_",
+  "siteId": "123"
+}
+```
+
+| Field | Description |
+|---|---|
+| `siteType` | `"singlesite"` (default) or `"multisite"` |
+| `env` | Terminus site.environment — **required for `get db` only** (e.g. `mysite.live`) |
+| `url` | Live site domain (e.g. `example.com`) |
+| `pluginName` | Plugin or theme name, for reference |
+| `oldPrefix` | Live DB table prefix — **multisite only** (e.g. `wpsites_123_`) |
+| `siteId` | WordPress multisite site ID — **multisite only** (e.g. `123`) |
+
+---
+
 ## Commands
 
 | Command | Description |
 |---|---|
-| `wp-env-bin install` | Scaffold `wp-env-bin/` config folder in the current project |
+| `wp-env-bin install` | Scaffold `wp-env-bin/` config folder and configure interactively |
 | `wp-env-bin setup` | Run `composer install` in `wp-env-bin/` to install plugins and themes |
 | `wp-env-bin get db` | Export the database from Pantheon via Terminus *(requires `env` in config)* |
 | `wp-env-bin use db <path>` | Validate and use a local SQL file instead of downloading from Pantheon |
@@ -149,26 +166,6 @@ npm run env:sync
 | `wp-env-bin make htaccess` | Generate `.htaccess` to reverse-proxy media uploads from the live site |
 | `wp-env-bin sync` | Run `get db` + `process db` + `make htaccess` in sequence |
 | `wp-env-bin help` | Show command reference |
-
----
-
-## Recommended `package.json` Scripts
-
-Add these to your project's `package.json` for convenient access:
-
-```json
-{
-  "scripts": {
-    "wp-env": "cd wp-env-bin && wp-env",
-    "env:setup": "wp-env-bin setup",
-    "env:get": "wp-env-bin get db",
-    "env:process": "wp-env-bin process db",
-    "env:htaccess": "wp-env-bin make htaccess",
-    "env:sync": "wp-env-bin sync",
-    "env:help": "wp-env-bin help"
-  }
-}
-```
 
 ---
 
@@ -195,13 +192,14 @@ wp db export database.sql
 Then use `wp-env-bin use db` to validate and load it locally:
 
 ```bash
-wp-env-bin use db /path/to/database.sql
+npm run env:install
 npm run wp-env start
-wp-env-bin process db
-wp-env-bin make htaccess
+wp-env-bin use db /path/to/database.sql
+npm run env:process
+npm run env:htaccess
 ```
 
-The `env` field in `wp-env.config.json` is not required for this workflow — only `url` is needed (for search-replace and the upload proxy).
+The `env` field in `wp-env.config.json` is not required for this workflow — only `url` is needed.
 
 `use db` validates the file before copying it by checking for:
 - A mysqldump header (`-- MySQL dump` or `-- MariaDB dump`)
