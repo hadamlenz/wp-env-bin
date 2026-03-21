@@ -1,5 +1,5 @@
 {
-    "name": "wp-env-bin",
+    "name": "hadamlenz/wp-env-bin",
     "require-dev": {},
     "repositories": [],
     "extra": {
