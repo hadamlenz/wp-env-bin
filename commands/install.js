@@ -15,6 +15,7 @@ async function install() {
 	}
 
 	mkdirSync(path.join(dest, "assets"), { recursive: true });
+	mkdirSync(path.join(dest, "plugins/wp-env-bin-plugin/classes"), { recursive: true });
 
 	// Scaffold dotfiles are stored without a leading dot so npm includes them
 	// in the published package. They are copied here with their correct names.
@@ -22,6 +23,8 @@ async function install() {
 		{ src: "wp-env.json",        dest: ".wp-env.json" },
 		{ src: "gitignore",          dest: ".gitignore" },
 		{ src: "assets/gitkeep",     dest: "assets/.gitkeep" },
+		{ src: "plugins/wp-env-bin-plugin/wp-env-bin-plugin.php",         dest: "plugins/wp-env-bin-plugin/wp-env-bin-plugin.php" },
+		{ src: "plugins/wp-env-bin-plugin/classes/class-service-worker.php", dest: "plugins/wp-env-bin-plugin/classes/class-service-worker.php" },
 		{ src: "wp-env.config.json.example", dest: "wp-env.config.json.example" },
 		{ src: "composer.json.example",      dest: "composer.json.example" },
 	];
