@@ -11,7 +11,8 @@
         "wp-content/wp-env-bin": "./assets"
     },
     "lifecycleScripts": {
-        "afterStart": "wp-env run cli -- bash -c 'cp /var/www/html/wp-content/wp-env-bin/.htaccess /var/www/html/.htaccess 2>/dev/null || true'"
+       "afterStart": "wp-env run cli -- bash -c 'cp /var/www/html/wp-content/wp-env-bin/.htaccess /var/www/html/.htaccess 2>/dev/null || true' && wp-env run wordpress -- bash -c 'echo \"KeepAlive Off\" >> /etc/apache2/apache2.conf && apache2ctl graceful'"
+
     },
     "config": {
         "WP_DEBUG": false,
