@@ -10,7 +10,7 @@ function terminus_wp(sitenv, cmd, opts) {
 }
 
 function wpcli(cmd, opts) {
-	const wpcmd = "npm run wp-env run cli -- " + cmd;
+	const wpcmd = "npm run --silent wp-env run cli -- " + cmd;
 	return execSync(wpcmd, { cwd: process.cwd(), stdio: "inherit", ...opts });
 }
 
