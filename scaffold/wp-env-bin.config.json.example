@@ -6,5 +6,8 @@
 	"env": "",
 	"url": "",
 	"oldPrefix": "",
-	"siteId": ""
+	"siteId": "",
+	"adminUsername": "admin",
+	"adminEmail": "admin@localhost.com",
+	"adminPassword": "password"
 }

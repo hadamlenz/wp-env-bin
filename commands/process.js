@@ -73,13 +73,13 @@ function searchReplace(url) {
  *
  * @returns {Promise<void>}
  */
-async function createAdminUser() {
+async function createAdminUser(username, email, password) {
 	try {
-		wpcli("wp user create admin admin@localhost.com --role=administrator --user_pass=password");
-		logger("> created admin user (username: admin, password: password)");
+		wpcli(`wp user create ${username} ${email} --role=administrator --user_pass=${password}`);
+		logger(`> created admin user (username: ${username}, password: ${password})`);
 	} catch {
-		wpcli("wp user update admin --user_pass=password --role=administrator");
-		logger("> reset admin user password to 'password'");
+		wpcli(`wp user update ${username} --user_pass=${password} --role=administrator`);
+		logger(`> reset admin user password to '${password}'`);
 	}
 }
 
@@ -92,7 +92,10 @@ async function createAdminUser() {
  */
 async function processDb() {
 	const config = readLocalConfig();
-	const { oldPrefix, url, containerAssetsPath, siteType } = config;
+	const { oldPrefix, url, containerAssetsPath, siteType, adminUsername, adminEmail, adminPassword } = config;
+	const username = adminUsername || "admin";
+	const email = adminEmail || "admin@localhost.com";
+	const password = adminPassword || "password";
 	const resolvedSiteType = siteType || "singlesite";
 
 	if (oldPrefix) {
@@ -108,14 +111,14 @@ async function processDb() {
 		? "\n  Note: user tables are not downloaded in multisite mode — a new user must be created."
 		: "";
 	const action = await select({
-		message: "Would you like to create or reset a local admin user (admin / password)?" + multisiteNote,
+		message: `Would you like to create or reset a local admin user (${username} / ${password})?` + multisiteNote,
 		choices: [
 			{ name: "Yes, create or reset admin user", value: "yes" },
 			{ name: "No, skip", value: "no" },
 		],
 	});
 	if (action === "yes") {
-		await createAdminUser();
+		await createAdminUser(username, email, password);
 	}
 }
 

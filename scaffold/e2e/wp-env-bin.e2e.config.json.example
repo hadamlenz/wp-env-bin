@@ -1,4 +1,17 @@
 {
   "editor": [],
-  "frontend": []
+  "frontend": [],
+  "wpVersion": "6.9.4",
+  "phpVersion": "8.3",
+  "testTheme": "twentytwentyfive",
+  "port": "8886",
+  "mysqlPort": 51606,
+  "testMysqlPort": 51607,
+  "wpConstants": {
+    "WP_DEBUG": false,
+    "WP_DEBUG_LOG": false,
+    "WP_DEBUG_DISPLAY": false,
+    "SCRIPT_DEBUG": false,
+    "DISABLE_WP_CRON": true
+  }
 }

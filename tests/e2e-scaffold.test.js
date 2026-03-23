@@ -122,6 +122,23 @@ test("theme project: afterStart activates theme only", () => {
 	assert.ok(!wpEnv.lifecycleScripts.afterStart.includes("wp plugin activate"));
 });
 
+// --- Custom mysqlPort, testMysqlPort, and wpConstants ---
+
+test("custom mysqlPort, testMysqlPort, and wpConstants are written to .wp-env.json", () => {
+	const customDir = path.join(tmpDir, "custom-ports", "wp-env-bin", "e2e");
+	scaffoldE2eFiles(customDir, SCAFFOLD_DIR, {
+		...PLUGIN_OPTIONS,
+		mysqlPort: 52000,
+		testMysqlPort: 52001,
+		wpConstants: { WP_DEBUG: true, DISABLE_WP_CRON: false },
+	});
+	const wpEnv = JSON.parse(readFileSync(path.join(customDir, ".wp-env.json"), "utf8"));
+	assert.equal(wpEnv.env.development.mysqlPort, 52000);
+	assert.equal(wpEnv.env.tests.mysqlPort, 52001);
+	assert.equal(wpEnv.config.WP_DEBUG, true);
+	assert.equal(wpEnv.config.DISABLE_WP_CRON, false);
+});
+
 // --- Idempotency ---
 
 test("running scaffold twice does not overwrite existing files", () => {

@@ -2,6 +2,7 @@ const { mkdirSync, existsSync, copyFileSync, writeFileSync, readFileSync } = req
 const path = require("path");
 const { spawnSync } = require("child_process");
 const { logger } = require("../lib/utils/log");
+const { readE2eConfig } = require("../lib/env/config");
 
 /**
  * Perform the file-system scaffolding for `wp-env-bin e2e init`.
@@ -17,7 +18,23 @@ const { logger } = require("../lib/utils/log");
  * @param {string} options.phpVersion  - PHP version string
  * @param {string} options.port        - wp-env development port (string)
  */
-function scaffoldE2eFiles(dest, scaffold, { projectType, slug, testTheme, wpVersion, phpVersion, port }) {
+function scaffoldE2eFiles(dest, scaffold, {
+	projectType,
+	slug,
+	testTheme,
+	wpVersion,
+	phpVersion,
+	port,
+	mysqlPort = 51606,
+	testMysqlPort = 51607,
+	wpConstants = {
+		WP_DEBUG: false,
+		WP_DEBUG_LOG: false,
+		WP_DEBUG_DISPLAY: false,
+		SCRIPT_DEBUG: false,
+		DISABLE_WP_CRON: true,
+	},
+}) {
 	const afterStart = projectType === "plugin"
 		? `wp-env run cli wp plugin activate ${slug} && wp-env run cli wp theme activate ${testTheme}`
 		: `wp-env run cli wp theme activate ${slug}`;
@@ -31,8 +48,6 @@ function scaffoldE2eFiles(dest, scaffold, { projectType, slug, testTheme, wpVers
 
 	const devPort = parseInt(port, 10);
 	const testPort = devPort + 1;
-	const devMysqlPort = 51606;
-	const testMysqlPort = 51607;
 
 	const staticFiles = [
 		{ src: "playwright.config.ts",               dest: "playwright.config.ts" },
@@ -73,15 +88,9 @@ function scaffoldE2eFiles(dest, scaffold, { projectType, slug, testTheme, wpVers
 				"wp-content/plugins": "./plugins",
 			},
 			lifecycleScripts: { afterStart },
-			config: {
-				WP_DEBUG: false,
-				WP_DEBUG_LOG: false,
-				WP_DEBUG_DISPLAY: false,
-				SCRIPT_DEBUG: false,
-				DISABLE_WP_CRON: true,
-			},
+			config: wpConstants,
 			env: {
-				development: { port: devPort, mysqlPort: devMysqlPort },
+				development: { port: devPort, mysqlPort },
 				tests: { port: testPort, mysqlPort: testMysqlPort },
 			},
 		};
@@ -121,6 +130,8 @@ async function initE2e() {
 	// Read existing config for defaults
 	// ------------------------------------------------------------------
 
+	const e2eConfig = readE2eConfig();
+
 	let existingPluginName = "";
 	let existingProjectType = "plugin";
 	try {
@@ -157,34 +168,44 @@ async function initE2e() {
 		default: existingPluginName,
 	});
 
-	let testTheme = "twentytwentyfive";
+	let testTheme = e2eConfig.testTheme;
 	if (projectType === "plugin") {
 		testTheme = await input({
 			message: "Theme to activate during tests",
-			default: "twentytwentyfive",
+			default: e2eConfig.testTheme,
 		});
 	}
 
 	const wpVersion = await input({
 		message: "WordPress version",
-		default: "6.9.4",
+		default: e2eConfig.wpVersion,
 	});
 
 	const phpVersion = await input({
 		message: "PHP version",
-		default: "8.3",
+		default: e2eConfig.phpVersion,
 	});
 
 	const port = await input({
 		message: "wp-env development port for e2e environment (must differ from your dev env, default 8889)",
-		default: "8886",
+		default: e2eConfig.port,
 	});
 
 	// ------------------------------------------------------------------
 	// Build afterStart script and scaffold files
 	// ------------------------------------------------------------------
 
-	await scaffoldE2eFiles(dest, scaffold, { projectType, slug, testTheme, wpVersion, phpVersion, port });
+	await scaffoldE2eFiles(dest, scaffold, {
+		projectType,
+		slug,
+		testTheme,
+		wpVersion,
+		phpVersion,
+		port,
+		mysqlPort: e2eConfig.mysqlPort,
+		testMysqlPort: e2eConfig.testMysqlPort,
+		wpConstants: e2eConfig.wpConstants,
+	});
 
 	// ------------------------------------------------------------------
 	// Print next steps

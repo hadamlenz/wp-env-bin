@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = require("fs");
 const path = require("path");
 const os = require("os");
-const { readLocalConfig, readWpEnvJson } = require("../lib/env/config");
+const { readLocalConfig, readWpEnvJson, readE2eConfig } = require("../lib/env/config");
 
 let tmpDir;
 let savedCwd;
@@ -127,4 +127,54 @@ test("readWpEnvJson falls back to root .wp-env.json", () => {
 	writeFileSync(path.join(tmpDir, ".wp-env.json"), JSON.stringify({ core: "root" }), "utf8");
 	const config = readWpEnvJson();
 	assert.equal(config.core, "root");
+});
+
+// --- readE2eConfig ---
+
+function writeE2eConfig(obj) {
+	mkdirSync(path.join(tmpDir, "wp-env-bin", "e2e"), { recursive: true });
+	writeFileSync(
+		path.join(tmpDir, "wp-env-bin/e2e/wp-env-bin.e2e.config.json"),
+		JSON.stringify(obj),
+		"utf8"
+	);
+}
+
+function removeE2eConfig() {
+	try {
+		rmSync(path.join(tmpDir, "wp-env-bin/e2e/wp-env-bin.e2e.config.json"));
+	} catch { /* already absent */ }
+}
+
+test("readE2eConfig returns all defaults when file is absent", () => {
+	removeE2eConfig();
+	const config = readE2eConfig();
+	assert.equal(config.wpVersion, "6.9.4");
+	assert.equal(config.phpVersion, "8.3");
+	assert.equal(config.testTheme, "twentytwentyfive");
+	assert.equal(config.port, "8886");
+	assert.equal(config.mysqlPort, 51606);
+	assert.equal(config.testMysqlPort, 51607);
+	assert.deepEqual(config.editor, []);
+	assert.deepEqual(config.frontend, []);
+	assert.equal(config.wpConstants.DISABLE_WP_CRON, true);
+	assert.equal(config.wpConstants.WP_DEBUG, false);
+});
+
+test("readE2eConfig merges partial overrides over defaults", () => {
+	writeE2eConfig({ wpVersion: "6.8.0", editor: ["blocks/my-block"] });
+	const config = readE2eConfig();
+	assert.equal(config.wpVersion, "6.8.0");
+	assert.deepEqual(config.editor, ["blocks/my-block"]);
+	// unspecified fields keep defaults
+	assert.equal(config.phpVersion, "8.3");
+	assert.equal(config.testTheme, "twentytwentyfive");
+});
+
+test("readE2eConfig returns configured wpConstants when provided", () => {
+	writeE2eConfig({ wpConstants: { WP_DEBUG: true, WP_DEBUG_LOG: true, DISABLE_WP_CRON: false } });
+	const config = readE2eConfig();
+	assert.equal(config.wpConstants.WP_DEBUG, true);
+	assert.equal(config.wpConstants.WP_DEBUG_LOG, true);
+	assert.equal(config.wpConstants.DISABLE_WP_CRON, false);
 });

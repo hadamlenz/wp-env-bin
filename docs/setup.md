@@ -86,6 +86,9 @@ npm run env:sync
 | `pluginName` | Plugin or theme name, for reference |
 | `oldPrefix` | Live DB table prefix — **multisite only** (e.g. `wpsites_123_`) |
 | `siteId` | WordPress multisite site ID — **multisite only** (e.g. `123`) |
+| `adminUsername` | Username for the local admin account created by `process db` (default: `"admin"`) |
+| `adminEmail` | Email for the local admin account (default: `"admin@localhost.com"`) |
+| `adminPassword` | Password for the local admin account (default: `"password"`) |
 
 ---
 

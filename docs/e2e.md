@@ -85,6 +85,20 @@ cp wp-env-bin/e2e/wp-env-bin.e2e.config.json.example wp-env-bin/e2e/wp-env-bin.e
 }
 ```
 
+| Field | Description |
+|---|---|
+| `editor` | Block directories to include in editor tests |
+| `frontend` | Block directories to include in frontend tests |
+| `wpVersion` | WordPress version used in the test environment (default: `"6.9.4"`) |
+| `phpVersion` | PHP version used in the test environment (default: `"8.3"`) |
+| `testTheme` | Theme activated during tests — plugin projects only (default: `"twentytwentyfive"`) |
+| `port` | wp-env HTTP port for the e2e environment (default: `"8886"`) |
+| `mysqlPort` | MySQL port for the development e2e environment (default: `51606`) |
+| `testMysqlPort` | MySQL port for the tests e2e environment (default: `51607`) |
+| `wpConstants` | WordPress constants written to the test environment's `.wp-env.json` `config` block — overrides the entire object |
+
+These fields are all optional. When present they set the defaults shown during `wp-env-bin e2e init` prompts, and `mysqlPort`, `testMysqlPort`, and `wpConstants` are written directly to the generated `.wp-env.json`.
+
 - A block in `editor` but not `frontend` skips frontend tests (e.g. static blocks or blocks in development).
 - `block.json` is always expected at `{dir}/block.json` — this is the WordPress convention.
 - Block CSS and `render.php` are read at test startup, so tests always reflect the current state of the source without any regeneration step.
