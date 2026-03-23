@@ -176,6 +176,11 @@ import {
   expandPanel,
 } from '@e2e/utils/helpers';
 
+// You can also call the generated-spec registration functions directly
+// to extend or override the standard suite with a custom config:
+// import { registerEditorTests } from '@e2e/utils/editor-tests';
+// import { registerFrontendTests } from '@e2e/utils/frontend-tests';
+
 test.describe('My Block - Custom Interactions', () => {
   // ...
 });
@@ -194,7 +199,7 @@ e2e/
 ├── composer.json             # Minimal test PHP dependencies (gitignored — copy from .example)
 ├── composer.json.example     # Template for test PHP deps
 ├── playwright.config.ts      # Playwright config: testDir ./specs, baseURL :8886
-├── tsconfig.json             # Path alias: @e2e/* → specs/*, @e2e/utils/helpers → wp-env-bin
+├── tsconfig.json             # Path aliases: @e2e/utils/helpers, @e2e/utils/editor-tests, @e2e/utils/frontend-tests → wp-env-bin; @e2e/* → specs/*
 ├── tsconfig.e2e.json         # Extends tsconfig.json, includes specs/**/*.ts
 ├── plugins/                  # Composer-installed test plugins (gitignored)
 ├── themes/                   # Composer-installed test themes (gitignored)

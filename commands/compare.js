@@ -1,7 +1,7 @@
 const { writeFileSync, mkdirSync } = require("fs");
 const path = require("path");
-const { logger } = require("../lib/log");
-const { readLocalConfig, readWpEnvJson } = require("../lib/config");
+const { logger } = require("../lib/utils/log");
+const { readLocalConfig, readWpEnvJson } = require("../lib/env/config");
 const { parseArgs, buildLocalUrl, slugify, diffScreenshots, classify, writeReport } = require("../lib/compare");
 
 // ─── Local helpers ────────────────────────────────────────────────────────────

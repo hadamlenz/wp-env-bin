@@ -1,5 +1,5 @@
-const { wpcli } = require("../lib/run");
-const { logger } = require("../lib/log");
+const { wpcli } = require("../lib/utils/run");
+const { logger } = require("../lib/utils/log");
 const { readComposerPlugins, getInactiveComposerPlugins } = require("../lib/plugins");
 
 /**

@@ -1,7 +1,7 @@
 const { mkdirSync, existsSync, copyFileSync, writeFileSync, readFileSync } = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
-const { logger } = require("../lib/log");
+const { logger } = require("../lib/utils/log");
 
 /**
  * Scaffold an e2e/ test environment in the consuming project.

@@ -1,7 +1,7 @@
 const { copyFileSync } = require("fs");
 const path = require("path");
-const { logger } = require("../lib/log");
-const { checkDatabase } = require("../lib/check");
+const { logger } = require("../lib/utils/log");
+const { checkDatabase } = require("../lib/env/check");
 const { validateSqlFile } = require("../lib/db");
 
 /**

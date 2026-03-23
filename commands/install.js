@@ -1,6 +1,6 @@
 const { mkdirSync, existsSync, copyFileSync, writeFileSync, readFileSync } = require("fs");
 const path = require("path");
-const { logger } = require("../lib/log");
+const { logger } = require("../lib/utils/log");
 
 /**
  * Scaffold the wp-env-bin/ config folder in the consuming project and walk the user

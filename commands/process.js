@@ -1,9 +1,9 @@
 const { readFileSync, writeFileSync } = require("fs");
 const path = require("path");
-const { wpcli } = require("../lib/run");
-const { logger } = require("../lib/log");
-const { checkDatabase } = require("../lib/check");
-const { readLocalConfig, readWpEnvJson } = require("../lib/config");
+const { wpcli } = require("../lib/utils/run");
+const { logger } = require("../lib/utils/log");
+const { checkDatabase } = require("../lib/env/check");
+const { readLocalConfig, readWpEnvJson } = require("../lib/env/config");
 const { renamePrefix } = require("../lib/db");
 
 /**
