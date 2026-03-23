@@ -212,22 +212,16 @@ Next steps:
        cd wp-env-bin/e2e && npx wp-env start
        # Your dev env on port 8889 can run at the same time
 
-  5. Generate block tests from block.json:
-       wp-env-bin e2e generate editor --file=src/blocks/my-block/block.json
-       wp-env-bin e2e generate frontend --file=src/blocks/my-block/block.json
-
-  6. Run tests:
+  5. Run tests:
        cd wp-env-bin/e2e && npx playwright test --config=playwright.config.ts
 
 Add these scripts to your project package.json:
-  "e2e:env:start":         "cd wp-env-bin/e2e && npx wp-env start",
-  "e2e:env:stop":          "cd wp-env-bin/e2e && npx wp-env stop",
-  "test:e2e":              "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --quiet",
-  "test:e2e:editor":       "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-editor --quiet",
-  "test:e2e:frontend":     "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-frontend --quiet",
-  "test:e2e:report":       "cd wp-env-bin/e2e && playwright show-report playwright-report",
-  "e2e:generate:editor":   "wp-env-bin e2e generate editor",
-  "e2e:generate:frontend": "wp-env-bin e2e generate frontend"
+  "e2e:env:start":     "cd wp-env-bin/e2e && npx wp-env start",
+  "e2e:env:stop":      "cd wp-env-bin/e2e && npx wp-env stop",
+  "test:e2e":          "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --quiet",
+  "test:e2e:editor":   "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-editor --quiet",
+  "test:e2e:frontend": "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-frontend --quiet",
+  "test:e2e:report":   "cd wp-env-bin/e2e && playwright show-report playwright-report"
 `);
 }
 

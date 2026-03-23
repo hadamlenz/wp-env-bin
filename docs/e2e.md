@@ -76,11 +76,11 @@ cp wp-env-bin/e2e/wp-env-bin.e2e.config.json.example wp-env-bin/e2e/wp-env-bin.e
 ```json
 {
   "editor": [
-    "elements/accordion",
-    "elements/button"
+    "blocks/accordion",
+    "blocks/button"
   ],
   "frontend": [
-    "elements/accordion"
+    "blocks/accordion"
   ]
 }
 ```
