@@ -33,10 +33,16 @@ wp-env-bin e2e init
 ```
 
 This creates the `e2e/` directory and prompts for:
+- **Plugin or theme** — determines whether `..` is loaded as a plugin or theme, and how the `afterStart` lifecycle script is generated
+- **Slug** — your plugin or theme slug, pre-filled from `wp-env-bin/wp-env.config.json` if `wp-env-bin install` has already been run
+- **Test theme** *(plugin projects only)* — the theme to activate during tests (default: `twentytwentyfive`)
 - WordPress version (default: `6.9.4`)
 - PHP version (default: `8.3`)
-- `afterStart` lifecycle script — e.g. `wp theme activate my-theme && wp plugin activate my-plugin`
 - Development port (default: `8886`)
+
+The `afterStart` lifecycle script is generated automatically:
+- **Plugin**: `wp plugin activate <slug> && wp theme activate <testTheme>`
+- **Theme**: `wp theme activate <slug>` — if your `e2e/composer.json` includes test plugins, add their activations to `afterStart` in `e2e/.wp-env.json` after running `composer install`
 
 **2. Configure and install test PHP dependencies:**
 

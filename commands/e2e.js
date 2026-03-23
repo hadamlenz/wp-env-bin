@@ -6,10 +6,10 @@ const { logger } = require("../lib/log");
 /**
  * Scaffold an e2e/ test environment in the consuming project.
  *
- * Creates an isolated wp-env configuration with separate ports so the
- * test environment can coexist with the development environment. Copies
- * Playwright config, TypeScript configs, and shared helpers. Generator
- * scripts remain bundled in wp-env-bin and are invoked via the CLI.
+ * Asks whether the project is a plugin or theme, then auto-generates the
+ * afterStart lifecycle script and .wp-env.json accordingly. Creates an
+ * isolated wp-env configuration with separate ports so the test environment
+ * can coexist with the development environment.
  *
  * @returns {Promise<void>}
  */
@@ -17,11 +17,55 @@ async function initE2e() {
 	const dest = path.join(process.cwd(), "e2e");
 	const scaffold = path.join(__dirname, "../scaffold/e2e");
 
-	const { confirm, input } = await import("@inquirer/prompts");
+	const { select, input } = await import("@inquirer/prompts");
+
+	// ------------------------------------------------------------------
+	// Read existing config for defaults
+	// ------------------------------------------------------------------
+
+	let existingPluginName = "";
+	let existingProjectType = "plugin";
+	try {
+		const config = JSON.parse(
+			readFileSync(path.join(process.cwd(), "wp-env-bin/wp-env.config.json"), "utf8")
+		);
+		existingPluginName = config.pluginName || "";
+		existingProjectType = config.projectType || "plugin";
+	} catch {
+		// no config yet — try package.json
+		try {
+			const pkg = JSON.parse(readFileSync(path.join(process.cwd(), "package.json"), "utf8"));
+			existingPluginName = pkg.name || "";
+		} catch {
+			// leave blank
+		}
+	}
 
 	// ------------------------------------------------------------------
 	// Prompt for configuration
 	// ------------------------------------------------------------------
+
+	const projectType = await select({
+		message: "Is this project a plugin or a theme?",
+		choices: [
+			{ name: "Plugin", value: "plugin" },
+			{ name: "Theme", value: "theme" },
+		],
+		default: existingProjectType,
+	});
+
+	const slug = await input({
+		message: projectType === "plugin" ? "Plugin slug (used in wp plugin activate)" : "Theme slug (used in wp theme activate)",
+		default: existingPluginName,
+	});
+
+	let testTheme = "twentytwentyfive";
+	if (projectType === "plugin") {
+		testTheme = await input({
+			message: "Theme to activate during tests",
+			default: "twentytwentyfive",
+		});
+	}
 
 	const wpVersion = await input({
 		message: "WordPress version",
@@ -33,15 +77,18 @@ async function initE2e() {
 		default: "8.3",
 	});
 
-	const afterStart = await input({
-		message: "afterStart lifecycle script (e.g. wp theme activate my-theme && wp plugin activate my-plugin)",
-		default: "",
-	});
-
 	const port = await input({
 		message: "wp-env development port for e2e environment (must differ from your dev env, default 8889)",
 		default: "8886",
 	});
+
+	// ------------------------------------------------------------------
+	// Build afterStart script
+	// ------------------------------------------------------------------
+
+	const afterStart = projectType === "plugin"
+		? `wp plugin activate ${slug} && wp theme activate ${testTheme}`
+		: `wp theme activate ${slug}`;
 
 	// ------------------------------------------------------------------
 	// Create directories
@@ -97,13 +144,13 @@ async function initE2e() {
 			$schema: "https://raw.githubusercontent.com/WordPress/gutenberg/refs/heads/trunk/schemas/json/wp-env.json",
 			core: `WordPress/WordPress#${wpVersion}`,
 			phpVersion,
-			plugins: [".."],
+			[projectType === "plugin" ? "plugins" : "themes"]: [".."],
 			mappings: {
 				"wp-content/themes": "./themes",
 				"wp-content/plugins": "./plugins",
 			},
 			lifecycleScripts: {
-				afterStart: afterStart || undefined,
+				afterStart,
 			},
 			config: {
 				WP_DEBUG: false,
@@ -118,11 +165,6 @@ async function initE2e() {
 			},
 		};
 
-		// Remove afterStart key if blank
-		if (!wpEnv.lifecycleScripts.afterStart) {
-			delete wpEnv.lifecycleScripts;
-		}
-
 		writeFileSync(wpEnvPath, JSON.stringify(wpEnv, null, 4), "utf8");
 		logger("> created e2e/.wp-env.json");
 	} else {
@@ -133,9 +175,13 @@ async function initE2e() {
 	// Print next steps
 	// ------------------------------------------------------------------
 
+	const themeNote = projectType === "theme"
+		? `\n  Note: if your test composer.json includes plugins, add them to afterStart in e2e/.wp-env.json:\n    "afterStart": "wp theme activate ${slug} && wp plugin activate plugin-one plugin-two"`
+		: "";
+
 	logger(`
 E2e test environment scaffolded in e2e/
-
+${themeNote}
 Next steps:
   1. Install test dependencies (themes/plugins):
        cp e2e/composer.json.example e2e/composer.json
@@ -165,13 +211,6 @@ Add these scripts to your project package.json:
   "test:e2e:report":       "playwright show-report e2e/playwright-report",
   "e2e:generate:editor":   "wp-env-bin e2e generate editor",
   "e2e:generate:frontend": "wp-env-bin e2e generate frontend"
-
-Required devDependencies (npm install --save-dev):
-  @wordpress/e2e-test-utils-playwright
-  @playwright/test
-  @axe-core/playwright
-  typescript
-  source-map-support
 `);
 }
 
