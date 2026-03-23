@@ -18,7 +18,7 @@ Supports both **single-site** and **multisite** source databases. Works with Pan
 
 ## Installation
 
-Install directly from GitHub as a dev dependency, until we can get on [nmpjs.com:](https://www.npmjs.com/), you will also need to run this to update
+Install directly from GitHub as a dev dependency, until we can get on [nmpjs.com](https://www.npmjs.com/), you will also need to run this to update
 
 ```bash
 npm install --save-dev hadamlenz/wp-env-bin
@@ -75,7 +75,7 @@ npm install --save-dev hadamlenz/wp-env-bin
 
 ## Project Structure
 
-Running `wp-env-bin install` and `wp-env-bin e2e init` creates a `wp-env-bin/` folder in your project root. This folder holds all configuration for the wp-env-bin package — it is **not** part of your plugin or theme source and should be treated like a local tooling config directory. Most files inside it are gitignored; only the non-sensitive config files (`.wp-env.json`, `composer.json`, `playwright.config.ts`, `wp-env-bin.config.json`, etc.) should be committed.
+Running `wp-env-bin install` and `wp-env-bin e2e init` creates a `wp-env-bin/` folder in your project root. This folder holds all configuration for the wp-env-bin package — it is **not** part of your plugin or theme source and should be treated like a local tooling config directory. Most files inside it are gitignored; only the non-sensitive config files (`.wp-env.json`, `composer.json`, `wp-env-bin.config.json`, `wp-env-bin.e2e.config.json`, `playwright.config.ts`, etc.) should be committed.
 
 ```
 wp-env-bin/
@@ -98,7 +98,7 @@ wp-env-bin/
     ├── .env                  # WP_BASE_URL override for Playwright (gitignored)
     ├── wp-env-bin.e2e.config.json # Block opt-in list for e2e tests — lists block directories
     ├── composer.json         # PHP test dependencies (copy from .example; gitignored)
-    ├── composer.json.example # Starter template for test PHP deps
+    ├── composer.json.example # Starter template for test PHP deps — copy to composer.json, then delete
     ├── playwright.config.ts  # Playwright config: projects, testMatch globs, baseURL :8886
     ├── tsconfig.json         # Path aliases: @e2e/utils/* → wp-env-bin lib
     ├── tsconfig.e2e.json     # Extends tsconfig.json, scoped to specs/**/*.ts
@@ -112,9 +112,9 @@ wp-env-bin/
         ├── .auth/            # Saved Playwright session (gitignored)
         ├── global.setup.ts   # Logs in as WordPress admin and saves session
         ├── editor/
-        │   └── blocks.spec.ts  # Discovery spec — registers editor tests from wp-env-bin.config.json
+        │   └── blocks.spec.ts  # Discovery spec — registers editor tests from wp-env-bin.e2e.config.json
         └── frontend/
-            └── blocks.spec.ts  # Discovery spec — registers frontend tests from wp-env-bin.config.json
+            └── blocks.spec.ts  # Discovery spec — registers frontend tests from wp-env-bin.e2e.config.json
 ```
 
 ## License

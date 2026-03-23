@@ -24,7 +24,7 @@ async function getRemoteTables(env, url) {
 /**
  * Export the site database from Pantheon via Terminus and save it to
  * wp-env-bin/assets/database.sql. Prompts to reuse an existing export if present.
- * Requires the `env` field to be set in wp-env.config.json.
+ * Requires the `env` field to be set in wp-env-bin.config.json.
  *
  * @returns {Promise<void>}
  */
@@ -34,7 +34,7 @@ async function getRemoteDb() {
 
 	if (!env) {
 		throw new Error(
-			"wp-env.config.json must have 'env' set to use 'get db'.\n" +
+			"wp-env-bin.config.json must have 'env' set to use 'get db'.\n" +
 			"To use a local SQL file instead, run: wp-env-bin use db <path/to/file.sql>"
 		);
 	}

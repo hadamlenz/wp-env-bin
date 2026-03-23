@@ -30,7 +30,7 @@ Commands:
   help                Show this help message
 
 Config files:
-  wp-env-bin/wp-env.config.json     Your local config (gitignored — copy from wp-env.config.json.example)
+  wp-env-bin/wp-env-bin.config.json     Your local config (gitignored — copy from wp-env-bin.config.json.example)
     siteType    "singlesite" or "multisite"                   default: "singlesite"
     env         Terminus site.environment (get db only)       e.g. "mysite.live"
     url         Live site domain                              e.g. "example.com"
@@ -38,7 +38,7 @@ Config files:
     siteId      WP multisite site ID (multisite only)         e.g. "7"
 
 First-time setup:
-  cp wp-env-bin/wp-env.config.json.example wp-env-bin/wp-env.config.json
+  cp wp-env-bin/wp-env-bin.config.json.example wp-env-bin/wp-env-bin.config.json
   npm run env:setup
   npm run env:htaccess
   npm run wp-env start

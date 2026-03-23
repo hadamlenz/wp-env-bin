@@ -8,7 +8,7 @@
 npm run env:install
 ```
 
-This scaffolds the `wp-env-bin/` config folder and walks you through creating `wp-env.config.json` interactively. The installer will ask for:
+This scaffolds the `wp-env-bin/` config folder and walks you through creating `wp-env-bin.config.json` interactively. The installer will ask for:
 - **Site type** — `singlesite` (default) or `multisite`
 - **Pantheon site.environment** — e.g. `mysite.live` *(skip if not using Pantheon)*
 - **Live site URL** — e.g. `example.com`
@@ -54,7 +54,7 @@ npm run env:sync
 
 ## Config Reference
 
-`wp-env-bin/wp-env.config.json` is gitignored — never commit it.
+`wp-env-bin/wp-env-bin.config.json` is gitignored — never commit it.
 
 **Single-site:**
 ```json
@@ -129,7 +129,7 @@ npm run env:process
 npm run env:htaccess
 ```
 
-The `env` field in `wp-env.config.json` is not required for this workflow — only `url` is needed.
+The `env` field in `wp-env-bin.config.json` is not required for this workflow — only `url` is needed.
 
 `use db` validates the file before copying it by checking for:
 - A mysqldump header (`-- MySQL dump` or `-- MariaDB dump`)

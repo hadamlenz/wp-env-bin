@@ -27,7 +27,7 @@ async function initE2e() {
 	let existingProjectType = "plugin";
 	try {
 		const config = JSON.parse(
-			readFileSync(path.join(process.cwd(), "wp-env-bin/wp-env.config.json"), "utf8")
+			readFileSync(path.join(process.cwd(), "wp-env-bin/wp-env-bin.config.json"), "utf8")
 		);
 		existingPluginName = config.pluginName || "";
 		existingProjectType = config.projectType || "plugin";

@@ -8,7 +8,7 @@ const { parseArgs, buildLocalUrl, slugify, classify } = require("../lib/compare"
 function getLiveDomain() {
 	try {
 		const config = JSON.parse(
-			readFileSync(path.join(process.cwd(), "wp-env-bin/wp-env.config.json"), "utf8")
+			readFileSync(path.join(process.cwd(), "wp-env-bin/wp-env-bin.config.json"), "utf8")
 		);
 		return config.url || "example.com";
 	} catch {

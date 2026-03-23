@@ -21,7 +21,7 @@ wp-env-bin e2e init
 
 This creates the `wp-env-bin/e2e/` directory and prompts for:
 - **Plugin or theme** — determines whether `../..` is loaded as a plugin or theme, and how the `afterStart` lifecycle script is generated
-- **Slug** — your plugin or theme slug, pre-filled from `wp-env-bin/wp-env.config.json` if `wp-env-bin install` has already been run
+- **Slug** — your plugin or theme slug, pre-filled from `wp-env-bin/wp-env-bin.config.json` if `wp-env-bin install` has already been run
 - **Test theme** *(plugin projects only)* — the theme to activate during tests (default: `twentytwentyfive`)
 - WordPress version (default: `6.9.4`)
 - PHP version (default: `8.3`)

@@ -40,10 +40,10 @@ async function makeHtaccess() {
 	const resolvedSiteType = siteType || "singlesite";
 
 	if (!url) {
-		throw new Error("wp-env.config.json must have 'url' set.");
+		throw new Error("wp-env-bin.config.json must have 'url' set.");
 	}
 	if (resolvedSiteType === "multisite" && !siteId) {
-		throw new Error("wp-env.config.json must have 'siteId' set for multisite.");
+		throw new Error("wp-env-bin.config.json must have 'siteId' set for multisite.");
 	}
 
 	if (checkHtaccess()) {

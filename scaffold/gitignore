@@ -1,4 +1,4 @@
-wp-env.config.json
+wp-env-bin.config.json
 assets/database.sql
 assets/database.modified.sql
 assets/.htaccess
