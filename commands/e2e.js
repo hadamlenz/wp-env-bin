@@ -110,12 +110,13 @@ async function initE2e() {
 	const testMysqlPort = 51607;
 
 	const staticFiles = [
-		{ src: "playwright.config.ts",       dest: "playwright.config.ts" },
-		{ src: "tsconfig.json",              dest: "tsconfig.json" },
-		{ src: "tsconfig.e2e.json",          dest: "tsconfig.e2e.json" },
-		{ src: "gitignore",                  dest: ".gitignore" },
-		{ src: "composer.json.example",      dest: "composer.json.example" },
-		{ src: "specs/global.setup.ts",      dest: "specs/global.setup.ts" },
+		{ src: "playwright.config.ts",                    dest: "playwright.config.ts" },
+		{ src: "tsconfig.json",                           dest: "tsconfig.json" },
+		{ src: "tsconfig.e2e.json",                       dest: "tsconfig.e2e.json" },
+		{ src: "gitignore",                               dest: ".gitignore" },
+		{ src: "composer.json.example",                   dest: "composer.json.example" },
+		{ src: "wp-env-bin.e2e.config.json.example",      dest: "wp-env-bin.e2e.config.json.example" },
+		{ src: "specs/global.setup.ts",                   dest: "specs/global.setup.ts" },
 	];
 
 	for (const file of staticFiles) {
@@ -200,18 +201,22 @@ Next steps:
        # Edit wp-env-bin/e2e/composer.json to add your test theme/plugin dependencies
        cd wp-env-bin/e2e && composer install
 
-  2. Install Playwright browser:
+  2. Configure block test targets:
+       cp wp-env-bin/e2e/wp-env-bin.e2e.config.json.example wp-env-bin/e2e/wp-env-bin.e2e.config.json
+       # Edit wp-env-bin/e2e/wp-env-bin.e2e.config.json to add block directories for testing
+
+  3. Install Playwright browser:
        npx playwright install chromium
 
-  3. Start the e2e environment (uses wp-env-bin/e2e/.wp-env.json, port ${devPort}):
+  4. Start the e2e environment (uses wp-env-bin/e2e/.wp-env.json, port ${devPort}):
        cd wp-env-bin/e2e && npx wp-env start
        # Your dev env on port 8889 can run at the same time
 
-  4. Generate block tests from block.json:
+  5. Generate block tests from block.json:
        wp-env-bin e2e generate editor --file=src/blocks/my-block/block.json
        wp-env-bin e2e generate frontend --file=src/blocks/my-block/block.json
 
-  5. Run tests:
+  6. Run tests:
        cd wp-env-bin/e2e && npx playwright test --config=playwright.config.ts
 
 Add these scripts to your project package.json:

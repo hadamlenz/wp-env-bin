@@ -31,7 +31,16 @@ The `afterStart` lifecycle script is generated automatically:
 - **Plugin**: `wp plugin activate <slug> && wp theme activate <testTheme>`
 - **Theme**: `wp theme activate <slug>` — if your `wp-env-bin/e2e/composer.json` includes test plugins, add their activations to `afterStart` in `wp-env-bin/e2e/.wp-env.json` after running `composer install`
 
-**2. Configure and install test PHP dependencies:**
+**2. Configure block test targets:**
+
+```bash
+cp wp-env-bin/e2e/wp-env-bin.e2e.config.json.example wp-env-bin/e2e/wp-env-bin.e2e.config.json
+# Edit wp-env-bin/e2e/wp-env-bin.e2e.config.json to add block directories for testing
+```
+
+See [Block test configuration](#block-test-configuration) below for the file format.
+
+**3. Configure and install test PHP dependencies:**
 
 ```bash
 cp wp-env-bin/e2e/composer.json.example wp-env-bin/e2e/composer.json
@@ -41,13 +50,13 @@ cd wp-env-bin/e2e && composer install
 
 The `wp-env-bin/e2e/composer.json` only needs the packages required for testing — keep it minimal. Theme and plugin packages land in `wp-env-bin/e2e/themes/` and `wp-env-bin/e2e/plugins/`, which are mapped into the test WordPress environment.
 
-**3. Install Playwright browser (one-time):**
+**4. Install Playwright browser (one-time):**
 
 ```bash
 npx playwright install chromium
 ```
 
-**4. Start the test environment:**
+**5. Start the test environment:**
 
 ```bash
 cd wp-env-bin/e2e && npx wp-env start
@@ -58,7 +67,11 @@ cd wp-env-bin/e2e && npx wp-env start
 
 ## Block test configuration
 
-`wp-env-bin e2e init` creates `wp-env-bin/e2e/wp-env-bin.config.json`. Add each block's directory (relative to the project root) to opt it in to testing:
+After running `wp-env-bin e2e init`, copy the example config and add each block's directory (relative to the project root) to opt it in to testing:
+
+```bash
+cp wp-env-bin/e2e/wp-env-bin.e2e.config.json.example wp-env-bin/e2e/wp-env-bin.e2e.config.json
+```
 
 ```json
 {
