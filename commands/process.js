@@ -1,24 +1,10 @@
 const { readFileSync, writeFileSync } = require("fs");
 const path = require("path");
-const { wpcli } = require("./run");
-const { logger } = require("./log");
-const { checkDatabase } = require("./check");
-const { readLocalConfig, readWpEnvJson } = require("./get");
-
-/**
- * Replace all occurrences of a table prefix in a SQL string with `wp_`.
- * Special regex characters in the prefix are escaped before matching.
- *
- * @param {string} content - Raw SQL string
- * @param {string} oldPrefix - The existing table prefix to replace (e.g. `wpsites_7_`)
- * @returns {{ modified: string, count: number }} Modified SQL and number of replacements made
- */
-function renamePrefix(content, oldPrefix) {
-	const escaped = oldPrefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-	const count = (content.match(new RegExp(escaped, "g")) || []).length;
-	const modified = content.split(oldPrefix).join("wp_");
-	return { modified, count };
-}
+const { wpcli } = require("../lib/run");
+const { logger } = require("../lib/log");
+const { checkDatabase } = require("../lib/check");
+const { readLocalConfig, readWpEnvJson } = require("../lib/config");
+const { renamePrefix } = require("../lib/db");
 
 /**
  * Read database.sql, rename the table prefix throughout, and write the result
@@ -133,4 +119,4 @@ async function processDb() {
 	}
 }
 
-module.exports = { renamePrefix, prefixRenameFile, importDb, searchReplace, processDb };
+module.exports = { prefixRenameFile, importDb, searchReplace, processDb };

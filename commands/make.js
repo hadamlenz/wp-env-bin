@@ -1,10 +1,10 @@
 const { writeFileSync, statSync, rmSync } = require("fs");
 const path = require("path");
 const htaccessTemplate = require("../templates/htaccess.tpl");
-const { logger } = require("./log");
-const { wpcli } = require("./run");
-const { readLocalConfig } = require("./get");
-const { checkHtaccess } = require("./check");
+const { logger } = require("../lib/log");
+const { wpcli } = require("../lib/run");
+const { readLocalConfig } = require("../lib/config");
+const { checkHtaccess } = require("../lib/check");
 
 /**
  * Remove a path if it is a directory rather than a file.

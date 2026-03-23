@@ -2,7 +2,7 @@
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { renamePrefix } = require("../commands/process");
+const { renamePrefix } = require("../lib/db");
 
 // --- replacement ---
 

@@ -2,7 +2,7 @@ const { test } = require("node:test");
 const assert = require("assert/strict");
 const path = require("path");
 const { readFileSync } = require("fs");
-const { parseArgs, buildLocalUrl, slugify, classify } = require("../commands/compare");
+const { parseArgs, buildLocalUrl, slugify, classify } = require("../lib/compare");
 
 // Read live domain from config if available, fall back to generic placeholder
 function getLiveDomain() {

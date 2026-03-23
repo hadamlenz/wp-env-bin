@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 const { writeFileSync, mkdtempSync, rmSync } = require("fs");
 const path = require("path");
 const os = require("os");
-const { validateSqlFile } = require("../commands/use");
+const { validateSqlFile } = require("../lib/db");
 
 // Minimal valid WordPress mysqldump — has header, CREATE TABLE, and _options
 const VALID_DUMP = [
