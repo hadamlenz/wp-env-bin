@@ -12,6 +12,7 @@
  * registerFrontendTests(test, { blockName: 'my/block', title: 'My Block', apiAttributes: {}, ... });
  */
 import type { FrontendTestConfig } from './types';
+import type { FrontendLoadOptions } from './block-loader';
 /**
  * Registers the full suite of front-end Playwright tests for a block using
  * the WordPress Block Renderer REST API.
@@ -31,3 +32,23 @@ import type { FrontendTestConfig } from './types';
  * @param config - Block configuration derived from block.json and render.php
  */
 export declare function registerFrontendTests(test: any, config: FrontendTestConfig): void;
+/**
+ * Reads `wp-env-bin.e2e.config.json`, loads each block.json listed under
+ * `"frontend"`, and registers the full front-end test suite for each block.
+ * Block CSS is read from disk and render.php is analysed at test startup —
+ * no spec file regeneration required when block.json or CSS changes.
+ *
+ * @param test       - The test instance from @wordpress/e2e-test-utils-playwright
+ * @param configPath - Absolute path to wp-env-bin.e2e.config.json.
+ *                     Use path.join(__dirname, '../../wp-env-bin.e2e.config.json')
+ *                     from within a spec file.
+ * @param options    - { screenshots?, visualRegression? }
+ *
+ * @example
+ * // specs/frontend/blocks.spec.ts
+ * import { test } from '@wordpress/e2e-test-utils-playwright';
+ * import { registerFrontendTestsFromConfig } from '@e2e/utils/frontend-tests';
+ * import * as path from 'path';
+ * registerFrontendTestsFromConfig(test, path.join(__dirname, '../../wp-env-bin.e2e.config.json'), { screenshots: true });
+ */
+export declare function registerFrontendTestsFromConfig(test: any, configPath: string, options?: FrontendLoadOptions): void;

@@ -56,9 +56,49 @@ cd wp-env-bin/e2e && npx wp-env start
 
 ---
 
-## Generating tests
+## Block test configuration
 
-Run from the **project root**. Generated spec files are written to `wp-env-bin/e2e/specs/editor/` or `wp-env-bin/e2e/specs/frontend/`.
+`wp-env-bin e2e init` creates `wp-env-bin/e2e/wp-env-bin.e2e.config.json`. Add each block's directory (relative to the project root) to opt it in to testing:
+
+```json
+{
+  "editor": [
+    "elements/accordion",
+    "elements/button"
+  ],
+  "frontend": [
+    "elements/accordion"
+  ]
+}
+```
+
+- A block in `editor` but not `frontend` skips frontend tests (e.g. static blocks or blocks in development).
+- `block.json` is always expected at `{dir}/block.json` — this is the WordPress convention.
+- Block CSS and `render.php` are read at test startup, so tests always reflect the current state of the source without any regeneration step.
+
+**Focused runs:**
+
+```bash
+# Editor tests only
+npx playwright test --project=all-blocks-editor
+
+# Frontend tests only
+npx playwright test --project=all-blocks-frontend
+
+# One block by title
+npx playwright test --grep "Accordion"
+
+# One block, editor only
+npx playwright test --project=all-blocks-editor --grep "Accordion"
+```
+
+**Hand-authored tests** in `{block}/test/editor.e2e.ts` and `{block}/test/frontend.e2e.ts` are picked up automatically by the playwright config — no extra configuration needed.
+
+---
+
+## Generating static spec files (optional)
+
+The discovery approach above is recommended. If you prefer explicit per-block spec files — for inspection, debugging, or CI snapshot diffs — use the generate commands. Generated specs are written to `wp-env-bin/e2e/specs/editor/` or `wp-env-bin/e2e/specs/frontend/` and must be regenerated when `block.json` changes.
 
 **Generate editor tests for one block:**
 ```bash
@@ -100,9 +140,9 @@ The e2e environment uses a separate `.wp-env.json` (in `wp-env-bin/e2e/`) with d
 
 ---
 
-## Richer test generation with `block.json`
+## What `block.json` fields drive test coverage
 
-The generators parse `block.json` to produce assertions. Add these fields for better coverage:
+Both the discovery approach and the generate commands derive assertions from these fields. Add them for better coverage:
 
 ```json
 {
@@ -133,7 +173,7 @@ The generators parse `block.json` to produce assertions. Add these fields for be
 }
 ```
 
-- `name` / `title` — `name` is required; generation aborts without it. It determines the block insertion call, the output spec filename (slashes replaced with hyphens, e.g. `my-plugin/my-block` → `my-plugin-my-block.spec.ts`), and the slug used in the comment pointing to hand-authored tests. `title` is optional and falls back to `name`; it becomes the `test.describe` heading in the generated spec.
+- `name` / `title` — `name` is required; loading aborts without it. It determines the block insertion call and (when using `generate`) the output spec filename (slashes replaced with hyphens, e.g. `my-plugin/my-block` → `my-plugin-my-block.spec.ts`). `title` is optional and falls back to `name`; it becomes the `test.describe` heading — use it with `--grep` for focused runs.
 - `example.attributes` — used to insert the block with realistic attribute values; each attribute is asserted in the serialized markup
 - `keywords` — each keyword generates a test that searches the block inserter and confirms the block appears
 - `variations` — each variation generates an insertion + markup assertion test

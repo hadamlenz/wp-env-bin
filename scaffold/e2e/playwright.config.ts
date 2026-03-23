@@ -60,7 +60,8 @@ export default defineConfig({
 				...chromeSettings,
 				storageState: 'specs/.auth/admin.json',
 			},
-			testMatch: ['specs/editor/**/*.spec.ts'],
+			// Picks up discovery spec + any hand-authored {block}/test/editor.e2e.ts files
+			testMatch: ['specs/editor/**/*.spec.ts', '../../**/test/editor.e2e.ts'],
 			dependencies: ['setup'],
 		},
 
@@ -79,7 +80,8 @@ export default defineConfig({
 		{
 			name: 'all-blocks-frontend',
 			use: { ...chromeSettings },
-			testMatch: ['specs/frontend/**/*.spec.ts'],
+			// Picks up discovery spec + any hand-authored {block}/test/frontend.e2e.ts files
+			testMatch: ['specs/frontend/**/*.spec.ts', '../../**/test/frontend.e2e.ts'],
 		},
 	],
 

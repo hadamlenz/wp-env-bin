@@ -12,10 +12,13 @@
  * registerFrontendTests(test, { blockName: 'my/block', title: 'My Block', apiAttributes: {}, ... });
  */
 
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import type { FrontendTestConfig } from './types';
+import { loadFrontendConfig } from './block-loader';
+import type { FrontendLoadOptions } from './block-loader';
 
 // ---------------------------------------------------------------------------
 // Private helpers
@@ -450,4 +453,55 @@ export function registerFrontendTests(test: any, config: FrontendTestConfig): vo
       });
     }
   });
+}
+
+// ---------------------------------------------------------------------------
+// Discovery-based registration
+// ---------------------------------------------------------------------------
+
+/**
+ * Reads `wp-env-bin.e2e.config.json`, loads each block.json listed under
+ * `"frontend"`, and registers the full front-end test suite for each block.
+ * Block CSS is read from disk and render.php is analysed at test startup —
+ * no spec file regeneration required when block.json or CSS changes.
+ *
+ * @param test       - The test instance from @wordpress/e2e-test-utils-playwright
+ * @param configPath - Absolute path to wp-env-bin.e2e.config.json.
+ *                     Use path.join(__dirname, '../../wp-env-bin.e2e.config.json')
+ *                     from within a spec file.
+ * @param options    - { screenshots?, visualRegression? }
+ *
+ * @example
+ * // specs/frontend/blocks.spec.ts
+ * import { test } from '@wordpress/e2e-test-utils-playwright';
+ * import { registerFrontendTestsFromConfig } from '@e2e/utils/frontend-tests';
+ * import * as path from 'path';
+ * registerFrontendTestsFromConfig(test, path.join(__dirname, '../../wp-env-bin.e2e.config.json'), { screenshots: true });
+ */
+export function registerFrontendTestsFromConfig(
+  test:       any,
+  configPath: string,
+  options:    FrontendLoadOptions = {},
+): void {
+  const fs   = require('fs');
+  const path = require('path');
+
+  if (!fs.existsSync(configPath)) {
+    throw new Error(
+      `[wp-env-bin] Config file not found: ${configPath}\n` +
+      'Run "wp-env-bin e2e init" to create it, then add block directories to the "frontend" array.'
+    );
+  }
+
+  const cfg: { frontend?: string[] } = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const root = path.resolve(path.dirname(configPath), '../..');
+
+  for (const dir of (cfg.frontend ?? [])) {
+    const blockJsonPath = path.resolve(root, dir, 'block.json');
+    if (!fs.existsSync(blockJsonPath)) {
+      console.warn(`[wp-env-bin] block.json not found at ${blockJsonPath} — skipping`);
+      continue;
+    }
+    registerFrontendTests(test, loadFrontendConfig(blockJsonPath, options));
+  }
 }

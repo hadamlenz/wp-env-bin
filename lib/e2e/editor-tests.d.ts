@@ -31,3 +31,23 @@ import type { EditorTestConfig } from './types';
  * @param config - Block configuration derived from block.json
  */
 export declare function registerEditorTests(test: any, config: EditorTestConfig): void;
+/**
+ * Reads `wp-env-bin.e2e.config.json`, loads each block.json listed under
+ * `"editor"`, and registers the full editor test suite for each block.
+ *
+ * No spec files need to be regenerated when block.json changes — tests
+ * reflect the current state of the source on every run.
+ *
+ * @param test       - The test instance from @wordpress/e2e-test-utils-playwright
+ * @param configPath - Absolute path to wp-env-bin.e2e.config.json.
+ *                     Use path.join(__dirname, '../../wp-env-bin.e2e.config.json')
+ *                     from within a spec file.
+ *
+ * @example
+ * // specs/editor/blocks.spec.ts
+ * import { test } from '@wordpress/e2e-test-utils-playwright';
+ * import { registerEditorTestsFromConfig } from '@e2e/utils/editor-tests';
+ * import * as path from 'path';
+ * registerEditorTestsFromConfig(test, path.join(__dirname, '../../wp-env-bin.e2e.config.json'));
+ */
+export declare function registerEditorTestsFromConfig(test: any, configPath: string): void;

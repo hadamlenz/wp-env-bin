@@ -11,6 +11,7 @@
  * registerEditorTests(test, { blockName: 'my/block', title: 'My Block', ... });
  */
 
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import {
@@ -21,6 +22,7 @@ import {
   openStylesTab,
 } from './helpers';
 import type { EditorTestConfig, AttributeSchema } from './types';
+import { loadEditorConfig } from './block-loader';
 
 // ---------------------------------------------------------------------------
 // Timeouts
@@ -557,4 +559,51 @@ export function registerEditorTests(test: any, config: EditorTestConfig): void {
       });
     }
   });
+}
+
+// ---------------------------------------------------------------------------
+// Discovery-based registration
+// ---------------------------------------------------------------------------
+
+/**
+ * Reads `wp-env-bin.e2e.config.json`, loads each block.json listed under
+ * `"editor"`, and registers the full editor test suite for each block.
+ *
+ * No spec files need to be regenerated when block.json changes — tests
+ * reflect the current state of the source on every run.
+ *
+ * @param test       - The test instance from @wordpress/e2e-test-utils-playwright
+ * @param configPath - Absolute path to wp-env-bin.e2e.config.json.
+ *                     Use path.join(__dirname, '../../wp-env-bin.e2e.config.json')
+ *                     from within a spec file.
+ *
+ * @example
+ * // specs/editor/blocks.spec.ts
+ * import { test } from '@wordpress/e2e-test-utils-playwright';
+ * import { registerEditorTestsFromConfig } from '@e2e/utils/editor-tests';
+ * import * as path from 'path';
+ * registerEditorTestsFromConfig(test, path.join(__dirname, '../../wp-env-bin.e2e.config.json'));
+ */
+export function registerEditorTestsFromConfig(test: any, configPath: string): void {
+  const fs   = require('fs');
+  const path = require('path');
+
+  if (!fs.existsSync(configPath)) {
+    throw new Error(
+      `[wp-env-bin] Config file not found: ${configPath}\n` +
+      'Run "wp-env-bin e2e init" to create it, then add block directories to the "editor" array.'
+    );
+  }
+
+  const cfg: { editor?: string[] } = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const root = path.resolve(path.dirname(configPath), '../..');
+
+  for (const dir of (cfg.editor ?? [])) {
+    const blockJsonPath = path.resolve(root, dir, 'block.json');
+    if (!fs.existsSync(blockJsonPath)) {
+      console.warn(`[wp-env-bin] block.json not found at ${blockJsonPath} — skipping`);
+      continue;
+    }
+    registerEditorTests(test, loadEditorConfig(blockJsonPath));
+  }
 }
