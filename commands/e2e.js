@@ -14,7 +14,7 @@ const { logger } = require("../lib/utils/log");
  * @returns {Promise<void>}
  */
 async function initE2e() {
-	const dest = path.join(process.cwd(), "e2e");
+	const dest = path.join(process.cwd(), "wp-env-bin", "e2e");
 	const scaffold = path.join(__dirname, "../scaffold/e2e");
 
 	const { select, input } = await import("@inquirer/prompts");
@@ -87,8 +87,8 @@ async function initE2e() {
 	// ------------------------------------------------------------------
 
 	const afterStart = projectType === "plugin"
-		? `wp plugin activate ${slug} && wp theme activate ${testTheme}`
-		: `wp theme activate ${slug}`;
+		? `wp-env run cli wp plugin activate ${slug} && wp-env run cli wp theme activate ${testTheme}`
+		: `wp-env run cli wp theme activate ${slug}`;
 
 	// ------------------------------------------------------------------
 	// Create directories
@@ -122,9 +122,9 @@ async function initE2e() {
 		const destPath = path.join(dest, file.dest);
 		if (!existsSync(destPath)) {
 			copyFileSync(path.join(scaffold, file.src), destPath);
-			logger("> created e2e/" + file.dest);
+			logger("> created wp-env-bin/e2e/" + file.dest);
 		} else {
-			logger("> skipped e2e/" + file.dest + " (already exists)");
+			logger("> skipped wp-env-bin/e2e/" + file.dest + " (already exists)");
 		}
 	}
 
@@ -166,9 +166,21 @@ async function initE2e() {
 		};
 
 		writeFileSync(wpEnvPath, JSON.stringify(wpEnv, null, 4), "utf8");
-		logger("> created e2e/.wp-env.json");
+		logger("> created wp-env-bin/e2e/.wp-env.json");
 	} else {
-		logger("> skipped e2e/.wp-env.json (already exists)");
+		logger("> skipped wp-env-bin/e2e/.wp-env.json (already exists)");
+	}
+
+	// ------------------------------------------------------------------
+	// Generate .env with WP_BASE_URL (loaded by Playwright and @wordpress/e2e-test-utils-playwright)
+	// ------------------------------------------------------------------
+
+	const envPath = path.join(dest, ".env");
+	if (!existsSync(envPath)) {
+		writeFileSync(envPath, `WP_BASE_URL=http://localhost:${devPort}\n`, "utf8");
+		logger("> created wp-env-bin/e2e/.env");
+	} else {
+		logger("> skipped wp-env-bin/e2e/.env (already exists)");
 	}
 
 	// ------------------------------------------------------------------
@@ -176,23 +188,23 @@ async function initE2e() {
 	// ------------------------------------------------------------------
 
 	const themeNote = projectType === "theme"
-		? `\n  Note: if your test composer.json includes plugins, add them to afterStart in e2e/.wp-env.json:\n    "afterStart": "wp theme activate ${slug} && wp plugin activate plugin-one plugin-two"`
+		? `\n  Note: if your test composer.json includes plugins, add them to afterStart in wp-env-bin/e2e/.wp-env.json:\n    "afterStart": "wp theme activate ${slug} && wp plugin activate plugin-one plugin-two"`
 		: "";
 
 	logger(`
-E2e test environment scaffolded in e2e/
+E2e test environment scaffolded in wp-env-bin/e2e/
 ${themeNote}
 Next steps:
   1. Install test dependencies (themes/plugins):
-       cp e2e/composer.json.example e2e/composer.json
-       # Edit e2e/composer.json to add your test theme/plugin dependencies
-       cd e2e && composer install
+       cp wp-env-bin/e2e/composer.json.example wp-env-bin/e2e/composer.json
+       # Edit wp-env-bin/e2e/composer.json to add your test theme/plugin dependencies
+       cd wp-env-bin/e2e && composer install
 
   2. Install Playwright browser:
        npx playwright install chromium
 
-  3. Start the e2e environment (uses e2e/.wp-env.json, port ${devPort}):
-       cd e2e && npx wp-env start
+  3. Start the e2e environment (uses wp-env-bin/e2e/.wp-env.json, port ${devPort}):
+       cd wp-env-bin/e2e && npx wp-env start
        # Your dev env on port 8889 can run at the same time
 
   4. Generate block tests from block.json:
@@ -200,15 +212,15 @@ Next steps:
        wp-env-bin e2e generate frontend --file=src/blocks/my-block/block.json
 
   5. Run tests:
-       npx playwright test --config=e2e/playwright.config.ts
+       cd wp-env-bin/e2e && npx playwright test --config=playwright.config.ts
 
 Add these scripts to your project package.json:
-  "e2e:env:start":         "cd e2e && npx wp-env start",
-  "e2e:env:stop":          "cd e2e && npx wp-env stop",
-  "test:e2e":              "playwright test --config=e2e/playwright.config.ts --quiet",
-  "test:e2e:editor":       "playwright test --config=e2e/playwright.config.ts --project=all-blocks-editor --quiet",
-  "test:e2e:frontend":     "playwright test --config=e2e/playwright.config.ts --project=all-blocks-frontend --quiet",
-  "test:e2e:report":       "playwright show-report e2e/playwright-report",
+  "e2e:env:start":         "cd wp-env-bin/e2e && npx wp-env start",
+  "e2e:env:stop":          "cd wp-env-bin/e2e && npx wp-env stop",
+  "test:e2e":              "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --quiet",
+  "test:e2e:editor":       "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-editor --quiet",
+  "test:e2e:frontend":     "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-frontend --quiet",
+  "test:e2e:report":       "cd wp-env-bin/e2e && playwright show-report playwright-report",
   "e2e:generate:editor":   "wp-env-bin e2e generate editor",
   "e2e:generate:frontend": "wp-env-bin e2e generate frontend"
 `);

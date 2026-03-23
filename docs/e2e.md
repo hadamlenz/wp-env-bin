@@ -13,14 +13,14 @@ Both test types run entirely from local data — no remote hosts are contacted d
 
 ## Environment isolation
 
-The e2e environment uses a separate `.wp-env.json` (in `e2e/`) with different ports from your development environment, so both can run at the same time:
+The e2e environment uses a separate `.wp-env.json` (in `wp-env-bin/e2e/`) with different ports from your development environment, so both can run at the same time:
 
 | Environment | Default port | MySQL port |
 |---|---|---|
 | Development (`wp-env-bin/`) | `8889` | `51600` |
-| E2E tests (`e2e/`) | `8886` | `51606` |
+| E2E tests (`wp-env-bin/e2e/`) | `8886` | `51606` |
 
-`wp-env` reads the config from whichever directory you run it in, so `cd e2e && npx wp-env start` starts the test environment independently.
+`wp-env` reads the config from whichever directory you run it in, so `cd wp-env-bin/e2e && npx wp-env start` starts the test environment independently.
 
 ---
 
@@ -32,8 +32,8 @@ The e2e environment uses a separate `.wp-env.json` (in `e2e/`) with different po
 wp-env-bin e2e init
 ```
 
-This creates the `e2e/` directory and prompts for:
-- **Plugin or theme** — determines whether `..` is loaded as a plugin or theme, and how the `afterStart` lifecycle script is generated
+This creates the `wp-env-bin/e2e/` directory and prompts for:
+- **Plugin or theme** — determines whether `../..` is loaded as a plugin or theme, and how the `afterStart` lifecycle script is generated
 - **Slug** — your plugin or theme slug, pre-filled from `wp-env-bin/wp-env.config.json` if `wp-env-bin install` has already been run
 - **Test theme** *(plugin projects only)* — the theme to activate during tests (default: `twentytwentyfive`)
 - WordPress version (default: `6.9.4`)
@@ -42,17 +42,17 @@ This creates the `e2e/` directory and prompts for:
 
 The `afterStart` lifecycle script is generated automatically:
 - **Plugin**: `wp plugin activate <slug> && wp theme activate <testTheme>`
-- **Theme**: `wp theme activate <slug>` — if your `e2e/composer.json` includes test plugins, add their activations to `afterStart` in `e2e/.wp-env.json` after running `composer install`
+- **Theme**: `wp theme activate <slug>` — if your `wp-env-bin/e2e/composer.json` includes test plugins, add their activations to `afterStart` in `wp-env-bin/e2e/.wp-env.json` after running `composer install`
 
 **2. Configure and install test PHP dependencies:**
 
 ```bash
-cp e2e/composer.json.example e2e/composer.json
-# Edit e2e/composer.json to add test themes/plugins (e.g. a testing theme)
-cd e2e && composer install
+cp wp-env-bin/e2e/composer.json.example wp-env-bin/e2e/composer.json
+# Edit wp-env-bin/e2e/composer.json to add test themes/plugins (e.g. a testing theme)
+cd wp-env-bin/e2e && composer install
 ```
 
-The `e2e/composer.json` only needs the packages required for testing — keep it minimal. Theme and plugin packages land in `e2e/themes/` and `e2e/plugins/`, which are mapped into the test WordPress environment.
+The `wp-env-bin/e2e/composer.json` only needs the packages required for testing — keep it minimal. Theme and plugin packages land in `wp-env-bin/e2e/themes/` and `wp-env-bin/e2e/plugins/`, which are mapped into the test WordPress environment.
 
 **3. Install Playwright browser (one-time):**
 
@@ -63,7 +63,7 @@ npx playwright install chromium
 **4. Start the test environment:**
 
 ```bash
-cd e2e && npx wp-env start
+cd wp-env-bin/e2e && npx wp-env start
 # Your dev environment (on port 8889) can run simultaneously
 ```
 
@@ -71,7 +71,7 @@ cd e2e && npx wp-env start
 
 ## Generating tests
 
-Run from the **project root**. Generated spec files are written to `e2e/specs/editor/` or `e2e/specs/frontend/`.
+Run from the **project root**. Generated spec files are written to `wp-env-bin/e2e/specs/editor/` or `wp-env-bin/e2e/specs/frontend/`.
 
 **Generate editor tests for one block:**
 ```bash
@@ -94,9 +94,9 @@ wp-env-bin e2e generate frontend --glob="src/blocks/**/block.json" --screenshots
 
 | Flag | Description |
 |---|---|
-| `--screenshots` | Save a dated PNG screenshot of each block during test runs (stored in `test-results/screenshots/frontend/`) |
+| `--screenshots` | Save a dated PNG screenshot of each block during test runs (stored in `wp-env-bin/e2e/test-results/screenshots/frontend/`) |
 | `--visual-regression` | Generate `toHaveScreenshot()` tests — baselines created on first run, compared on subsequent runs |
-| `--output=<dir>` | Override output directory (defaults: `./specs/editor` or `./specs/frontend` relative to project root) |
+| `--output=<dir>` | Override output directory (defaults: `./wp-env-bin/e2e/specs/editor` or `./wp-env-bin/e2e/specs/frontend` relative to project root) |
 
 ---
 
@@ -128,16 +128,16 @@ Attributes whose `example` value matches their `block.json` default are asserted
 
 ```bash
 # All tests
-npx playwright test --config=e2e/playwright.config.ts
+npx playwright test --config=wp-env-bin/e2e/playwright.config.ts
 
 # Editor tests only
-npx playwright test --config=e2e/playwright.config.ts --project=all-blocks-editor
+npx playwright test --config=wp-env-bin/e2e/playwright.config.ts --project=all-blocks-editor
 
 # Frontend tests only
-npx playwright test --config=e2e/playwright.config.ts --project=all-blocks-frontend
+npx playwright test --config=wp-env-bin/e2e/playwright.config.ts --project=all-blocks-frontend
 
 # Open HTML report
-npx playwright show-report e2e/playwright-report
+npx playwright show-report wp-env-bin/e2e/playwright-report
 ```
 
 ---
@@ -147,12 +147,12 @@ npx playwright show-report e2e/playwright-report
 ```json
 {
   "scripts": {
-    "e2e:env:start":         "cd e2e && npx wp-env start",
-    "e2e:env:stop":          "cd e2e && npx wp-env stop",
-    "test:e2e":              "playwright test --config=e2e/playwright.config.ts --quiet",
-    "test:e2e:editor":       "playwright test --config=e2e/playwright.config.ts --project=all-blocks-editor --quiet",
-    "test:e2e:frontend":     "playwright test --config=e2e/playwright.config.ts --project=all-blocks-frontend --quiet",
-    "test:e2e:report":       "playwright show-report e2e/playwright-report",
+    "e2e:env:start":         "cd wp-env-bin/e2e && npx wp-env start",
+    "e2e:env:stop":          "cd wp-env-bin/e2e && npx wp-env stop",
+    "test:e2e":              "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --quiet",
+    "test:e2e:editor":       "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-editor --quiet",
+    "test:e2e:frontend":     "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-frontend --quiet",
+    "test:e2e:report":       "cd wp-env-bin/e2e && playwright show-report playwright-report",
     "e2e:generate:editor":   "wp-env-bin e2e generate editor",
     "e2e:generate:frontend": "wp-env-bin e2e generate frontend"
   }
@@ -190,23 +190,43 @@ Add your custom test files to `playwright.config.ts` projects alongside the gene
 
 ---
 
-## `e2e/` directory structure
+## `wp-env-bin/` directory structure in the consumer project
+
+All local development infrastructure lives under `wp-env-bin/`. The dev environment and e2e test environment are siblings within it.
 
 ```
-e2e/
-├── .wp-env.json              # Isolated test environment (port 8886)
-├── .gitignore                # Ignores vendor/, plugins/, themes/, .auth/, reports
-├── composer.json             # Minimal test PHP dependencies (gitignored — copy from .example)
-├── composer.json.example     # Template for test PHP deps
-├── playwright.config.ts      # Playwright config: testDir ./specs, baseURL :8886
-├── tsconfig.json             # Path aliases: @e2e/utils/helpers, @e2e/utils/editor-tests, @e2e/utils/frontend-tests → wp-env-bin; @e2e/* → specs/*
-├── tsconfig.e2e.json         # Extends tsconfig.json, includes specs/**/*.ts
-├── plugins/                  # Composer-installed test plugins (gitignored)
-├── themes/                   # Composer-installed test themes (gitignored)
-├── snapshots/                # Visual regression baselines (commit these)
-└── specs/
-    ├── .auth/                # Playwright session storage (gitignored)
-    ├── global.setup.ts       # WordPress admin login → .auth/admin.json
-    ├── editor/               # Generated and hand-authored editor spec files
-    └── frontend/             # Generated and hand-authored frontend spec files
+wp-env-bin/
+├── .wp-env.json              # Dev environment config (port 8889, MySQL 51600)
+├── .wp-env.override.json     # Local overrides (gitignored)
+├── wp-env.config.json        # wp-env-bin settings: pluginName, projectType, site ID (gitignored)
+├── composer.json             # PHP dependencies for the dev environment
+├── composer.json.example     # Template for composer.json
+├── assets/
+│   ├── database.sql          # Downloaded production DB snapshot (gitignored)
+│   ├── database.modified.sql # Processed DB ready for import (gitignored)
+│   └── .htaccess             # Reverse proxy for media assets (gitignored)
+├── plugins/                  # Composer-installed dev plugins (gitignored)
+├── themes/                   # Composer-installed dev themes (gitignored)
+├── vendor/                   # Composer packages (gitignored)
+├── compare-report/           # Visual regression HTML reports (gitignored)
+└── e2e/
+    ├── .wp-env.json          # Isolated test environment (port 8886, MySQL 51606)
+    ├── .gitignore            # Ignores vendor/, plugins/, themes/, .auth/, reports
+    ├── .env                  # WP_BASE_URL for Playwright (gitignored)
+    ├── composer.json         # Minimal test PHP dependencies (gitignored — copy from .example)
+    ├── composer.json.example # Template for test PHP deps
+    ├── playwright.config.ts  # Playwright config: testDir ./specs, baseURL :8886
+    ├── tsconfig.json         # Path aliases: @e2e/* → specs/*; @e2e/utils/* → wp-env-bin lib
+    ├── tsconfig.e2e.json     # Extends tsconfig.json, includes specs/**/*.ts
+    ├── plugins/              # Composer-installed test plugins (gitignored)
+    ├── themes/               # Composer-installed test themes (gitignored)
+    ├── vendor/               # Composer packages (gitignored)
+    ├── snapshots/            # Visual regression baselines (commit these)
+    ├── test-results/         # Playwright failure artifacts (gitignored)
+    ├── playwright-report/    # HTML test report (gitignored)
+    └── specs/
+        ├── .auth/            # Playwright session storage (gitignored)
+        ├── global.setup.ts   # WordPress admin login → .auth/admin.json
+        ├── editor/           # Generated and hand-authored editor spec files
+        └── frontend/         # Generated and hand-authored frontend spec files
 ```

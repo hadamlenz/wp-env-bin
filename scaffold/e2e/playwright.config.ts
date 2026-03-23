@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Force the correct base URL before @wordpress/e2e-test-utils-playwright reads
+// process.env.WP_BASE_URL from its own config.js (defaults to 8889).
+const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8886';
+process.env.WP_BASE_URL = BASE_URL;
+
 const chromeSettings = { ...devices['Desktop Chrome'], viewport: { width: 1920, height: 1080 } };
 
 export default defineConfig({
@@ -17,7 +22,7 @@ export default defineConfig({
 	workers: 1,
 
 	use: {
-		baseURL: process.env.WP_BASE_URL || 'http://localhost:8886',
+		baseURL: BASE_URL,
 		actionTimeout: 5_000,
 		navigationTimeout: 15_000,
 		screenshot: 'only-on-failure',
