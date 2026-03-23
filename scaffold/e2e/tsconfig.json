@@ -6,9 +6,9 @@
     "inlineSources": true,
     "baseUrl": ".",
     "paths": {
-      "@e2e/utils/helpers": ["../node_modules/wp-env-bin/lib/e2e/helpers"],
-      "@e2e/utils/editor-tests": ["../node_modules/wp-env-bin/lib/e2e/editor-tests"],
-      "@e2e/utils/frontend-tests": ["../node_modules/wp-env-bin/lib/e2e/frontend-tests"],
+      "@e2e/utils/helpers": ["../../node_modules/wp-env-bin/lib/e2e/helpers"],
+      "@e2e/utils/editor-tests": ["../../node_modules/wp-env-bin/lib/e2e/editor-tests"],
+      "@e2e/utils/frontend-tests": ["../../node_modules/wp-env-bin/lib/e2e/frontend-tests"],
       "@e2e/*": ["specs/*"]
     }
   }

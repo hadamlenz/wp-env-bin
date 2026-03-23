@@ -18,17 +18,18 @@ Supports both **single-site** and **multisite** source databases. Works with Pan
 
 ## Installation
 
-Install directly from GitHub as a dev dependency:
+Install directly from GitHub as a dev dependency, until we can get on [nmpjs.com:](https://www.npmjs.com/), you will also need to run this to update
 
 ```bash
 npm install --save-dev hadamlenz/wp-env-bin
 ```
+---
 
-To install from a specific branch:
+## Documentation
 
-```bash
-npm install --save-dev hadamlenz/wp-env-bin#dev
-```
+- [**Setup & Configuration**](docs/setup.md) — First-time setup, config reference, day-to-day workflow, non-Pantheon workflow, how it works, project structure
+- [**Visual Regression Testing**](docs/compare.md) — `compare` command usage, options, report output
+- [**E2E Block Testing**](docs/e2e.md) — Playwright block tests, environment isolation, generating tests, writing custom tests
 
 ---
 
@@ -82,7 +83,7 @@ wp-env-bin/
 ├── .wp-env.override.json     # Local overrides (gitignored)
 ├── wp-env.config.json        # wp-env-bin settings: pluginName, projectType, site ID (gitignored)
 ├── composer.json             # PHP dependencies for the dev environment
-├── composer.json.example     # Template for composer.json
+├── composer.json.example     # Template for composer.json (can be deleted)
 ├── assets/
 │   ├── database.sql          # Downloaded production DB snapshot (gitignored)
 │   ├── database.modified.sql # Processed DB ready for import (gitignored)
@@ -96,7 +97,7 @@ wp-env-bin/
     ├── .gitignore            # Ignores vendor/, plugins/, themes/, .auth/, reports
     ├── .env                  # WP_BASE_URL for Playwright (gitignored)
     ├── composer.json         # Minimal test PHP dependencies (gitignored — copy from .example)
-    ├── composer.json.example # Template for test PHP deps
+    ├── composer.json.example # Template for test PHP deps (can be deleted)
     ├── playwright.config.ts  # Playwright config: testDir ./specs, baseURL :8886
     ├── tsconfig.json         # Path aliases: @e2e/* → specs/*; @e2e/utils/* → wp-env-bin lib
     ├── tsconfig.e2e.json     # Extends tsconfig.json, includes specs/**/*.ts
@@ -112,16 +113,7 @@ wp-env-bin/
         ├── editor/           # Generated and hand-authored editor spec files
         └── frontend/         # Generated and hand-authored frontend spec files
 ```
-
----
-
-## Documentation
-
-- [**Setup & Configuration**](docs/setup.md) — First-time setup, config reference, day-to-day workflow, non-Pantheon workflow, how it works, project structure
-- [**Visual Regression Testing**](docs/compare.md) — `compare` command usage, options, report output
-- [**E2E Block Testing**](docs/e2e.md) — Playwright block tests, environment isolation, generating tests, writing custom tests
-
----
+This folder is used to house the config files that control this package. Be sure not to publish any credentials to your repos!
 
 ## License
 

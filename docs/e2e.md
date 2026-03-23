@@ -11,19 +11,6 @@ Both test types run entirely from local data — no remote hosts are contacted d
 
 ---
 
-## Environment isolation
-
-The e2e environment uses a separate `.wp-env.json` (in `wp-env-bin/e2e/`) with different ports from your development environment, so both can run at the same time:
-
-| Environment | Default port | MySQL port |
-|---|---|---|
-| Development (`wp-env-bin/`) | `8889` | `51600` |
-| E2E tests (`wp-env-bin/e2e/`) | `8886` | `51606` |
-
-`wp-env` reads the config from whichever directory you run it in, so `cd wp-env-bin/e2e && npx wp-env start` starts the test environment independently.
-
----
-
 ## First-time setup
 
 **1. Scaffold the e2e environment:**
@@ -100,25 +87,58 @@ wp-env-bin e2e generate frontend --glob="src/blocks/**/block.json" --screenshots
 
 ---
 
+## Environment isolation
+
+The e2e environment uses a separate `.wp-env.json` (in `wp-env-bin/e2e/`) with different ports from your development environment, so both can run at the same time:
+
+| Environment | Default port | MySQL port |
+|---|---|---|
+| Development (`wp-env-bin/`) | `8889` | `51600` |
+| E2E tests (`wp-env-bin/e2e/`) | `8886` | `51606` |
+
+`wp-env` reads the config from whichever directory you run it in, so `cd wp-env-bin/e2e && npx wp-env start` starts the test environment independently.
+
+---
+
 ## Richer test generation with `block.json`
 
 The generators parse `block.json` to produce assertions. Add these fields for better coverage:
 
 ```json
 {
+  "name": "my-block-plugin/my-block",
+	"title": "My Block",
   "example": {
-    "attributes": { "heading": "Hello World", "iconName": "star" }
+    "attributes": {
+      "heading": "Hello World",
+      "iconName": "star"
+    }
   },
-  "keywords": ["accordion", "collapse", "faq"],
-  "variations": [{ "name": "outline", "title": "Outline", "attributes": { "style": "outline" } }],
-  "styles": [{ "name": "outline", "label": "Outline" }]
+  "keywords": ["accordion","collapse","faq"],
+  "variations": [{
+    "name": "outline",
+    "title": "Outline",
+    "attributes": {
+      "style": "outline"
+    }
+  }],
+  "styles": [{
+    "name": "outline",
+    "label": "Outline"
+  }],
+  "supports":{
+    "color":true, 
+    "typography":true 
+  }
 }
 ```
 
+- `name` / `title` — `name` is required; generation aborts without it. It determines the block insertion call, the output spec filename (slashes replaced with hyphens, e.g. `my-plugin/my-block` → `my-plugin-my-block.spec.ts`), and the slug used in the comment pointing to hand-authored tests. `title` is optional and falls back to `name`; it becomes the `test.describe` heading in the generated spec.
 - `example.attributes` — used to insert the block with realistic attribute values; each attribute is asserted in the serialized markup
 - `keywords` — each keyword generates a test that searches the block inserter and confirms the block appears
 - `variations` — each variation generates an insertion + markup assertion test
 - `styles` — each non-default style generates a test that applies the style and confirms the CSS class appears
+- `supports` — each enabled support (`color`, `typography`, `spacing`, `anchor`, `customClassName`) generates a test that opens the relevant inspector panel, applies the control, and asserts the resulting CSS class or inline style appears on the block in the editor
 
 Attributes whose `example` value matches their `block.json` default are asserted **absent** from markup (WordPress omits defaults intentionally).
 
