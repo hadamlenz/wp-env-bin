@@ -1,6 +1,6 @@
 const path = require("path");
-const { run } = require("./run");
-const { logger } = require("./log");
+const { run } = require("../lib/utils/run");
+const { logger } = require("../lib/utils/log");
 
 /**
  * Run `composer install` inside the wp-env-bin/ directory to install
