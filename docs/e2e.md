@@ -175,8 +175,6 @@ test.describe('My Block - Custom Interactions', () => {
 });
 ```
 
-The `@e2e/utils/helpers` alias is pre-configured in `e2e/tsconfig.json` to resolve to the `helpers.ts` bundled in `wp-env-bin` — no local copy needed. All other `@e2e/*` paths resolve to `e2e/specs/*`.
-
 Add your custom test files to `playwright.config.ts` projects alongside the generated specs.
 
 ---
