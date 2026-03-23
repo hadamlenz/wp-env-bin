@@ -460,14 +460,14 @@ export function registerFrontendTests(test: any, config: FrontendTestConfig): vo
 // ---------------------------------------------------------------------------
 
 /**
- * Reads `wp-env-bin.e2e.config.json`, loads each block.json listed under
+ * Reads `wp-env-bin.config.json`, loads each block.json listed under
  * `"frontend"`, and registers the full front-end test suite for each block.
  * Block CSS is read from disk and render.php is analysed at test startup —
  * no spec file regeneration required when block.json or CSS changes.
  *
  * @param test       - The test instance from @wordpress/e2e-test-utils-playwright
- * @param configPath - Absolute path to wp-env-bin.e2e.config.json.
- *                     Use path.join(__dirname, '../../wp-env-bin.e2e.config.json')
+ * @param configPath - Absolute path to wp-env-bin.config.json.
+ *                     Use path.join(__dirname, '../../wp-env-bin.config.json')
  *                     from within a spec file.
  * @param options    - { screenshots?, visualRegression? }
  *
@@ -476,7 +476,7 @@ export function registerFrontendTests(test: any, config: FrontendTestConfig): vo
  * import { test } from '@wordpress/e2e-test-utils-playwright';
  * import { registerFrontendTestsFromConfig } from '@e2e/utils/frontend-tests';
  * import * as path from 'path';
- * registerFrontendTestsFromConfig(test, path.join(__dirname, '../../wp-env-bin.e2e.config.json'), { screenshots: true });
+ * registerFrontendTestsFromConfig(test, path.join(__dirname, '../../wp-env-bin.config.json'), { screenshots: true });
  */
 export function registerFrontendTestsFromConfig(
   test:       any,

@@ -58,7 +58,7 @@ cd wp-env-bin/e2e && npx wp-env start
 
 ## Block test configuration
 
-`wp-env-bin e2e init` creates `wp-env-bin/e2e/wp-env-bin.e2e.config.json`. Add each block's directory (relative to the project root) to opt it in to testing:
+`wp-env-bin e2e init` creates `wp-env-bin/e2e/wp-env-bin.config.json`. Add each block's directory (relative to the project root) to opt it in to testing:
 
 ```json
 {
