@@ -13,6 +13,7 @@
 		"scaffold/"
 	],
 	"scripts": {
+		"build": "tsc",
 		"test": "node --test tests/htaccess.test.js tests/validate.test.js tests/prefix.test.js tests/compare.test.js tests/install.test.js"
 	},
 	"engines": {
