@@ -81,7 +81,7 @@ Running `wp-env-bin install` and `wp-env-bin e2e init` creates a `wp-env-bin/` f
 wp-env-bin/
 ├── .wp-env.json              # wp-env config: maps plugins/themes, sets port 8889 / MySQL 51600
 ├── .wp-env.override.json     # Per-machine overrides — never commit (gitignored)
-├── wp-env-bin.config.json        # wp-env-bin settings: slug, projectType, Pantheon site ID (gitignored)
+├── wp-env-bin.config.json    # wp-env-bin settings: slug, projectType, Pantheon site ID (gitignored)
 ├── composer.json             # PHP plugins/themes to install in the dev environment
 ├── composer.json.example     # Starter template — copy to composer.json, then delete
 ├── assets/
