@@ -13,6 +13,10 @@ Commands:
   process db          Rename table prefix, import DB, and run URL search-replace
   make htaccess       Generate .htaccess with reverse proxy for /wp-content/uploads/
   sync                Run get db + process db + make htaccess in sequence
+  compare             Visual A/B regression: screenshot live vs local and diff
+    --url <path>      Path to compare (e.g. --url / or --url /about/)
+    --threshold <n>   Pixel diff % to flag as failure (default: 1)
+    --limit <n>       Max sitemap URLs to test when no --url given (default: 10)
   help                Show this help message
 
 Config files:

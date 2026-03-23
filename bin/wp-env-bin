@@ -62,6 +62,11 @@ async function init() {
 			await activateComposerPlugins();
 			break;
 		}
+		case "compare": {
+			const { compare } = require("../commands/compare");
+			await compare(process.argv.slice(3));
+			break;
+		}
 		case "help":
 		default: {
 			const { help } = require("../commands/help");
