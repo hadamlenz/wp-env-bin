@@ -111,10 +111,8 @@ wp-env-bin/
     └── specs/
         ├── .auth/            # Saved Playwright session (gitignored)
         ├── global.setup.ts   # Logs in as WordPress admin and saves session
-        ├── editor/
-        │   └── blocks.spec.ts  # Discovery spec — registers editor tests from wp-env-bin.e2e.config.json
-        └── frontend/
-            └── blocks.spec.ts  # Discovery spec — registers frontend tests from wp-env-bin.e2e.config.json
+        ├── editor/               # Empty — discovery spec is provided by the wp-env-bin package lib
+        └── frontend/             # Empty — discovery spec is provided by the wp-env-bin package lib
 ```
 
 ## License
