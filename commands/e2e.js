@@ -4,6 +4,104 @@ const { spawnSync } = require("child_process");
 const { logger } = require("../lib/utils/log");
 
 /**
+ * Perform the file-system scaffolding for `wp-env-bin e2e init`.
+ * Separated from prompt logic so it can be called and tested independently.
+ *
+ * @param {string} dest    - Absolute path to the e2e destination directory
+ * @param {string} scaffold - Absolute path to the scaffold source directory
+ * @param {object} options
+ * @param {string} options.projectType - "plugin" or "theme"
+ * @param {string} options.slug        - Plugin or theme slug
+ * @param {string} options.testTheme   - Theme slug to activate during tests (plugin only)
+ * @param {string} options.wpVersion   - WordPress version string
+ * @param {string} options.phpVersion  - PHP version string
+ * @param {string} options.port        - wp-env development port (string)
+ */
+function scaffoldE2eFiles(dest, scaffold, { projectType, slug, testTheme, wpVersion, phpVersion, port }) {
+	const afterStart = projectType === "plugin"
+		? `wp-env run cli wp plugin activate ${slug} && wp-env run cli wp theme activate ${testTheme}`
+		: `wp-env run cli wp theme activate ${slug}`;
+
+	// Create directories
+	mkdirSync(path.join(dest, "specs/.auth"), { recursive: true });
+	mkdirSync(path.join(dest, "specs/editor"), { recursive: true });
+	mkdirSync(path.join(dest, "specs/frontend"), { recursive: true });
+	mkdirSync(path.join(dest, "plugins"), { recursive: true });
+	mkdirSync(path.join(dest, "themes"), { recursive: true });
+
+	const devPort = parseInt(port, 10);
+	const testPort = devPort + 1;
+	const devMysqlPort = 51606;
+	const testMysqlPort = 51607;
+
+	const staticFiles = [
+		{ src: "playwright.config.ts",               dest: "playwright.config.ts" },
+		{ src: "tsconfig.json",                      dest: "tsconfig.json" },
+		{ src: "tsconfig.e2e.json",                  dest: "tsconfig.e2e.json" },
+		{ src: "gitignore",                          dest: ".gitignore" },
+		{ src: "composer.json.example",              dest: "composer.json.example" },
+		{ src: "wp-env-bin.e2e.config.json.example", dest: "wp-env-bin.e2e.config.json.example" },
+		{ src: "specs/global.setup.ts",              dest: "specs/global.setup.ts" },
+	];
+
+	for (const file of staticFiles) {
+		const destPath = path.join(dest, file.dest);
+		if (!existsSync(destPath)) {
+			copyFileSync(path.join(scaffold, file.src), destPath);
+			logger("> created wp-env-bin/e2e/" + file.dest);
+		} else {
+			logger("> skipped wp-env-bin/e2e/" + file.dest + " (already exists)");
+		}
+	}
+
+	// Create .auth/.gitkeep placeholder
+	const authGitkeep = path.join(dest, "specs/.auth/.gitkeep");
+	if (!existsSync(authGitkeep)) {
+		writeFileSync(authGitkeep, "", "utf8");
+	}
+
+	// Generate .wp-env.json
+	const wpEnvPath = path.join(dest, ".wp-env.json");
+	if (!existsSync(wpEnvPath)) {
+		const wpEnv = {
+			$schema: "https://raw.githubusercontent.com/WordPress/gutenberg/refs/heads/trunk/schemas/json/wp-env.json",
+			core: `WordPress/WordPress#${wpVersion}`,
+			phpVersion,
+			[projectType === "plugin" ? "plugins" : "themes"]: [".."],
+			mappings: {
+				"wp-content/themes": "./themes",
+				"wp-content/plugins": "./plugins",
+			},
+			lifecycleScripts: { afterStart },
+			config: {
+				WP_DEBUG: false,
+				WP_DEBUG_LOG: false,
+				WP_DEBUG_DISPLAY: false,
+				SCRIPT_DEBUG: false,
+				DISABLE_WP_CRON: true,
+			},
+			env: {
+				development: { port: devPort, mysqlPort: devMysqlPort },
+				tests: { port: testPort, mysqlPort: testMysqlPort },
+			},
+		};
+		writeFileSync(wpEnvPath, JSON.stringify(wpEnv, null, 4), "utf8");
+		logger("> created wp-env-bin/e2e/.wp-env.json");
+	} else {
+		logger("> skipped wp-env-bin/e2e/.wp-env.json (already exists)");
+	}
+
+	// Generate .env
+	const envPath = path.join(dest, ".env");
+	if (!existsSync(envPath)) {
+		writeFileSync(envPath, `WP_BASE_URL=http://localhost:${devPort}\n`, "utf8");
+		logger("> created wp-env-bin/e2e/.env");
+	} else {
+		logger("> skipped wp-env-bin/e2e/.env (already exists)");
+	}
+}
+
+/**
  * Scaffold an e2e/ test environment in the consuming project.
  *
  * Asks whether the project is a plugin or theme, then auto-generates the
@@ -83,106 +181,10 @@ async function initE2e() {
 	});
 
 	// ------------------------------------------------------------------
-	// Build afterStart script
+	// Build afterStart script and scaffold files
 	// ------------------------------------------------------------------
 
-	const afterStart = projectType === "plugin"
-		? `wp-env run cli wp plugin activate ${slug} && wp-env run cli wp theme activate ${testTheme}`
-		: `wp-env run cli wp theme activate ${slug}`;
-
-	// ------------------------------------------------------------------
-	// Create directories
-	// ------------------------------------------------------------------
-
-	mkdirSync(path.join(dest, "specs/.auth"), { recursive: true });
-	mkdirSync(path.join(dest, "specs/editor"), { recursive: true });
-	mkdirSync(path.join(dest, "specs/frontend"), { recursive: true });
-	mkdirSync(path.join(dest, "plugins"), { recursive: true });
-	mkdirSync(path.join(dest, "themes"), { recursive: true });
-
-	// ------------------------------------------------------------------
-	// Copy static scaffold files (skip if already exist)
-	// ------------------------------------------------------------------
-
-	const devPort = parseInt(port, 10);
-	const testPort = devPort + 1;
-	const devMysqlPort = 51606;
-	const testMysqlPort = 51607;
-
-	const staticFiles = [
-		{ src: "playwright.config.ts",                    dest: "playwright.config.ts" },
-		{ src: "tsconfig.json",                           dest: "tsconfig.json" },
-		{ src: "tsconfig.e2e.json",                       dest: "tsconfig.e2e.json" },
-		{ src: "gitignore",                               dest: ".gitignore" },
-		{ src: "composer.json.example",                   dest: "composer.json.example" },
-		{ src: "wp-env-bin.e2e.config.json.example",      dest: "wp-env-bin.e2e.config.json.example" },
-		{ src: "specs/global.setup.ts",                   dest: "specs/global.setup.ts" },
-	];
-
-	for (const file of staticFiles) {
-		const destPath = path.join(dest, file.dest);
-		if (!existsSync(destPath)) {
-			copyFileSync(path.join(scaffold, file.src), destPath);
-			logger("> created wp-env-bin/e2e/" + file.dest);
-		} else {
-			logger("> skipped wp-env-bin/e2e/" + file.dest + " (already exists)");
-		}
-	}
-
-	// Create .auth/.gitkeep placeholder so the directory is tracked
-	const authGitkeep = path.join(dest, "specs/.auth/.gitkeep");
-	if (!existsSync(authGitkeep)) {
-		writeFileSync(authGitkeep, "", "utf8");
-	}
-
-	// ------------------------------------------------------------------
-	// Generate .wp-env.json with user-supplied values
-	// ------------------------------------------------------------------
-
-	const wpEnvPath = path.join(dest, ".wp-env.json");
-	if (!existsSync(wpEnvPath)) {
-		const wpEnv = {
-			$schema: "https://raw.githubusercontent.com/WordPress/gutenberg/refs/heads/trunk/schemas/json/wp-env.json",
-			core: `WordPress/WordPress#${wpVersion}`,
-			phpVersion,
-			[projectType === "plugin" ? "plugins" : "themes"]: [".."],
-			mappings: {
-				"wp-content/themes": "./themes",
-				"wp-content/plugins": "./plugins",
-			},
-			lifecycleScripts: {
-				afterStart,
-			},
-			config: {
-				WP_DEBUG: false,
-				WP_DEBUG_LOG: false,
-				WP_DEBUG_DISPLAY: false,
-				SCRIPT_DEBUG: false,
-				DISABLE_WP_CRON: true,
-			},
-			env: {
-				development: { port: devPort, mysqlPort: devMysqlPort },
-				tests: { port: testPort, mysqlPort: testMysqlPort },
-			},
-		};
-
-		writeFileSync(wpEnvPath, JSON.stringify(wpEnv, null, 4), "utf8");
-		logger("> created wp-env-bin/e2e/.wp-env.json");
-	} else {
-		logger("> skipped wp-env-bin/e2e/.wp-env.json (already exists)");
-	}
-
-	// ------------------------------------------------------------------
-	// Generate .env with WP_BASE_URL (loaded by Playwright and @wordpress/e2e-test-utils-playwright)
-	// ------------------------------------------------------------------
-
-	const envPath = path.join(dest, ".env");
-	if (!existsSync(envPath)) {
-		writeFileSync(envPath, `WP_BASE_URL=http://localhost:${devPort}\n`, "utf8");
-		logger("> created wp-env-bin/e2e/.env");
-	} else {
-		logger("> skipped wp-env-bin/e2e/.env (already exists)");
-	}
+	await scaffoldE2eFiles(dest, scaffold, { projectType, slug, testTheme, wpVersion, phpVersion, port });
 
 	// ------------------------------------------------------------------
 	// Print next steps
@@ -254,4 +256,4 @@ function generateE2eTests(type, args = []) {
 	}
 }
 
-module.exports = { initE2e, generateE2eTests };
+module.exports = { initE2e, generateE2eTests, scaffoldE2eFiles };

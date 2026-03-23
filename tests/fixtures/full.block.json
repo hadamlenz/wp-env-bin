@@ -1,0 +1,25 @@
+{
+	"name": "my-plugin/full-block",
+	"title": "Full Block",
+	"attributes": {
+		"heading": { "type": "string" },
+		"backgroundColor": { "type": "string" }
+	},
+	"supports": {
+		"color": { "background": true }
+	},
+	"keywords": ["hero", "banner"],
+	"variations": [
+		{ "name": "variation-one", "title": "Variation One" }
+	],
+	"styles": [
+		{ "name": "default", "label": "Default", "isDefault": true },
+		{ "name": "outlined", "label": "Outlined" }
+	],
+	"example": {
+		"attributes": {
+			"heading": "Hello World",
+			"backgroundColor": "vivid-red"
+		}
+	}
+}

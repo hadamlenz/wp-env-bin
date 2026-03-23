@@ -30,6 +30,7 @@ npm install --save-dev hadamlenz/wp-env-bin
 - [**Setup & Configuration**](docs/setup.md) — First-time setup, config reference, day-to-day workflow, non-Pantheon workflow, how it works, project structure
 - [**Visual Regression Testing**](docs/compare.md) — `compare` command usage, options, report output
 - [**E2E Block Testing**](docs/e2e.md) — Playwright block tests, environment isolation, generating tests, writing custom tests
+- [**Testing wp-env-bin**](docs/testing.md) — Running the unit test suite, test file index, fixtures, and patterns for adding new tests
 
 ---
 

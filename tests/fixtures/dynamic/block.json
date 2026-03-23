@@ -1,0 +1,19 @@
+{
+	"name": "my-plugin/dynamic-block",
+	"title": "Dynamic Block",
+	"attributes": {
+		"heading": { "type": "string" },
+		"label": { "type": "string" },
+		"colorSlug": { "type": "string" },
+		"count": { "type": "integer" }
+	},
+	"render": "file:./render.php",
+	"example": {
+		"attributes": {
+			"heading": "My Heading",
+			"label": "Click me",
+			"colorSlug": "vivid-red",
+			"count": 42
+		}
+	}
+}
