@@ -46,17 +46,7 @@ wp-env-bin compare --limit 10
 
 ## Report
 
-After each run, the report is written to:
-
-```
-wp-env-bin/compare-report/
-├── index.html          # Summary: all pages with diff % and pass/warn/fail status
-└── pages/
-    └── <slug>/
-        ├── live.png    # Screenshot from the live site
-        ├── local.png   # Screenshot from localhost
-        └── diff.png    # Highlighted pixel diff
-```
+After each run, the report is written to `wp-env-bin/compare-report/`. The `index.html` summarizes all pages with their diff percentage and pass/warn/fail status. Each page gets its own subfolder under `pages/<slug>/` containing `live.png`, `local.png`, and `diff.png`.
 
 Open `wp-env-bin/compare-report/index.html` in your browser to review side-by-side screenshots and click into individual pages for a closer look.
 

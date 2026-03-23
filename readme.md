@@ -65,10 +65,53 @@ npm install --save-dev hadamlenz/wp-env-bin#dev
 | `wp-env-bin make htaccess` | Generate `.htaccess` to reverse-proxy media uploads from the live site |
 | `wp-env-bin sync` | Run `get db` + `process db` + `make htaccess` in sequence |
 | `wp-env-bin compare` | Visual A/B regression test — screenshot live vs local and diff |
-| `wp-env-bin e2e init` | Scaffold `e2e/` block test environment with its own `.wp-env.json` |
+| `wp-env-bin e2e init` | Scaffold `wp-env-bin/e2e/` block test environment with its own `.wp-env.json` |
 | `wp-env-bin e2e generate editor --file=<path>` | Generate Playwright editor tests from a `block.json` file |
 | `wp-env-bin e2e generate frontend --file=<path>` | Generate Playwright frontend tests from a `block.json` file |
 | `wp-env-bin help` | Show command reference |
+
+---
+
+## Project Structure
+
+The `wp-env-bin install` and `wp-env-bin e2e init` commands create the following folder inside your consumer project:
+
+```
+wp-env-bin/
+├── .wp-env.json              # Dev environment config (port 8889, MySQL 51600)
+├── .wp-env.override.json     # Local overrides (gitignored)
+├── wp-env.config.json        # wp-env-bin settings: pluginName, projectType, site ID (gitignored)
+├── composer.json             # PHP dependencies for the dev environment
+├── composer.json.example     # Template for composer.json
+├── assets/
+│   ├── database.sql          # Downloaded production DB snapshot (gitignored)
+│   ├── database.modified.sql # Processed DB ready for import (gitignored)
+│   └── .htaccess             # Reverse proxy for media assets (gitignored)
+├── plugins/                  # Composer-installed dev plugins (gitignored)
+├── themes/                   # Composer-installed dev themes (gitignored)
+├── vendor/                   # Composer packages (gitignored)
+├── compare-report/           # Visual regression HTML reports (gitignored)
+└── e2e/
+    ├── .wp-env.json          # Isolated test environment (port 8886, MySQL 51606)
+    ├── .gitignore            # Ignores vendor/, plugins/, themes/, .auth/, reports
+    ├── .env                  # WP_BASE_URL for Playwright (gitignored)
+    ├── composer.json         # Minimal test PHP dependencies (gitignored — copy from .example)
+    ├── composer.json.example # Template for test PHP deps
+    ├── playwright.config.ts  # Playwright config: testDir ./specs, baseURL :8886
+    ├── tsconfig.json         # Path aliases: @e2e/* → specs/*; @e2e/utils/* → wp-env-bin lib
+    ├── tsconfig.e2e.json     # Extends tsconfig.json, includes specs/**/*.ts
+    ├── plugins/              # Composer-installed test plugins (gitignored)
+    ├── themes/               # Composer-installed test themes (gitignored)
+    ├── vendor/               # Composer packages (gitignored)
+    ├── snapshots/            # Visual regression baselines (commit these)
+    ├── test-results/         # Playwright failure artifacts (gitignored)
+    ├── playwright-report/    # HTML test report (gitignored)
+    └── specs/
+        ├── .auth/            # Playwright session storage (gitignored)
+        ├── global.setup.ts   # WordPress admin login → .auth/admin.json
+        ├── editor/           # Generated and hand-authored editor spec files
+        └── frontend/         # Generated and hand-authored frontend spec files
+```
 
 ---
 

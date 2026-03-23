@@ -8,19 +8,7 @@
 npm run env:install
 ```
 
-This scaffolds the `wp-env-bin/` config folder and walks you through creating `wp-env.config.json` interactively:
-
-```
-wp-env-bin/
-├── .wp-env.json              # WordPress environment Docker config
-├── .gitignore                # Ignores generated files
-├── assets/                   # Database and .htaccess files (gitignored)
-├── wp-env.config.json        # Your local config (gitignored)
-├── wp-env.config.json.example
-└── composer.json.example
-```
-
-The installer will ask for:
+This scaffolds the `wp-env-bin/` config folder and walks you through creating `wp-env.config.json` interactively. The installer will ask for:
 - **Site type** — `singlesite` (default) or `multisite`
 - **Pantheon site.environment** — e.g. `mysite.live` *(skip if not using Pantheon)*
 - **Live site URL** — e.g. `example.com`
@@ -49,7 +37,7 @@ Edit `wp-env-bin/.wp-env.json` to point to your plugin or theme and set your pre
 cp wp-env-bin/composer.json.example wp-env-bin/composer.json
 ```
 
-Add your plugin and theme dependencies, then install them:
+Add your plugin and theme dependencies to the composer.json, then install them:
 
 ```bash
 npm run env:setup
@@ -156,35 +144,3 @@ The `env` field in `wp-env.config.json` is not required for this workflow — on
 2. **`process db`** — For multisite: renames the subsite's table prefix (e.g. `wpsites_7_`) to `wp_` then imports. For single-site: imports the database directly. Then runs search-replace to swap the live URL for `localhost`
 3. **`make htaccess`** — Generates an `.htaccess` file that reverse-proxies media upload requests to the live site, so media appears locally without downloading the full uploads directory. For multisite, proxies from `/wp-content/uploads/sites/{siteId}/`; for single-site, proxies from `/wp-content/uploads/`
 
----
-
-## Project Structure
-
-```
-wp-env-bin/               # Dev environment config (created by wp-env-bin install)
-├── .wp-env.json          # Docker environment config — port 8889
-├── .gitignore
-├── assets/               # Generated files (database exports, .htaccess)
-├── compare-report/       # Visual regression report output (gitignored)
-│   ├── index.html
-│   └── pages/<slug>/     # live.png, local.png, diff.png per page
-├── composer.json         # PHP plugin/theme dependencies
-└── wp-env.config.json    # Local credentials (gitignored)
-
-e2e/                      # E2e test environment (created by wp-env-bin e2e init)
-├── .wp-env.json          # Isolated test environment config — port 8886
-├── .gitignore
-├── composer.json         # Minimal test PHP dependencies (gitignored)
-├── composer.json.example
-├── playwright.config.ts  # Playwright config: testDir ./specs, baseURL :8886
-├── tsconfig.json         # @e2e/* → specs/*, @e2e/utils/helpers → wp-env-bin package
-├── tsconfig.e2e.json
-├── plugins/              # Composer-installed test plugins (gitignored)
-├── themes/               # Composer-installed test themes (gitignored)
-├── snapshots/            # Visual regression baselines
-└── specs/
-    ├── .auth/            # Playwright session storage (gitignored)
-    ├── global.setup.ts
-    ├── editor/           # Generated editor spec files
-    └── frontend/         # Generated frontend spec files
-```
