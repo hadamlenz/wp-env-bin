@@ -2,6 +2,7 @@ wp-env.config.json
 assets/database.sql
 assets/database.modified.sql
 assets/.htaccess
+compare-report/
 plugins/
 themes/
 vendor/

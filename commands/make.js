@@ -6,6 +6,13 @@ const { wpcli } = require("./run");
 const { readLocalConfig } = require("./get");
 const { checkHtaccess } = require("./check");
 
+/**
+ * Remove a path if it is a directory rather than a file.
+ * Docker creates empty directories as placeholders when a mapped file doesn't exist yet;
+ * this clears those so the file can be written in its place.
+ *
+ * @param {string} filePath - Absolute path to check and potentially remove
+ */
 function clearIfDirectory(filePath) {
 	try {
 		const stat = statSync(filePath);
@@ -18,6 +25,15 @@ function clearIfDirectory(filePath) {
 	}
 }
 
+/**
+ * Generate the .htaccess file for the local environment and write it to
+ * wp-env-bin/assets/.htaccess. The file sets up a reverse proxy that redirects
+ * media upload requests to the live site so assets load without a full download.
+ * Prompts to reuse an existing file if one is present, then attempts to copy
+ * the file into the running Docker container immediately.
+ *
+ * @returns {Promise<void>}
+ */
 async function makeHtaccess() {
 	const config = readLocalConfig();
 	const { url, siteId, containerAssetsPath, siteType } = config;

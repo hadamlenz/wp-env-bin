@@ -2,6 +2,13 @@ const { mkdirSync, existsSync, copyFileSync, writeFileSync, readFileSync } = req
 const path = require("path");
 const { logger } = require("./log");
 
+/**
+ * Scaffold the wp-env-bin/ config folder in the consuming project and walk the user
+ * through creating wp-env.config.json interactively. Copies template files, updates
+ * .wp-env.json for the correct project type (plugin or theme), and prints next steps.
+ *
+ * @returns {Promise<void>}
+ */
 async function install() {
 	const dest = path.join(process.cwd(), "wp-env-bin");
 	const scaffold = path.join(__dirname, "../scaffold");

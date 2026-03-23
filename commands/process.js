@@ -5,6 +5,14 @@ const { logger } = require("./log");
 const { checkDatabase } = require("./check");
 const { readLocalConfig, readWpEnvJson } = require("./get");
 
+/**
+ * Replace all occurrences of a table prefix in a SQL string with `wp_`.
+ * Special regex characters in the prefix are escaped before matching.
+ *
+ * @param {string} content - Raw SQL string
+ * @param {string} oldPrefix - The existing table prefix to replace (e.g. `wpsites_7_`)
+ * @returns {{ modified: string, count: number }} Modified SQL and number of replacements made
+ */
 function renamePrefix(content, oldPrefix) {
 	const escaped = oldPrefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 	const count = (content.match(new RegExp(escaped, "g")) || []).length;
@@ -12,6 +20,12 @@ function renamePrefix(content, oldPrefix) {
 	return { modified, count };
 }
 
+/**
+ * Read database.sql, rename the table prefix throughout, and write the result
+ * to database.modified.sql. Throws if the source file does not exist.
+ *
+ * @param {string} oldPrefix - The existing table prefix to replace (e.g. `wpsites_7_`)
+ */
 function prefixRenameFile(oldPrefix) {
 	if (!checkDatabase()) {
 		throw new Error("wp-env-bin/assets/database.sql not found. Run 'wp-env-bin get db' first.");
@@ -30,6 +44,12 @@ function prefixRenameFile(oldPrefix) {
 	logger("> written to wp-env-bin/assets/database.modified.sql");
 }
 
+/**
+ * Import a SQL file into the local WordPress database via WP-CLI inside the Docker container.
+ *
+ * @param {string} containerAssetsPath - Path to the assets directory inside the container
+ * @param {string} [filename='database.modified.sql'] - SQL filename to import
+ */
 function importDb(containerAssetsPath, filename) {
 	const importPath = containerAssetsPath + "/" + (filename || "database.modified.sql");
 	logger("> importing database from " + importPath + "...");
@@ -37,6 +57,13 @@ function importDb(containerAssetsPath, filename) {
 	logger("> database imported.");
 }
 
+/**
+ * Run WP-CLI search-replace to swap the live site URL for the local localhost URL
+ * in the WordPress database. Handles both http:// and https:// variants.
+ * Reads the local port from .wp-env.json, defaulting to 8889.
+ *
+ * @param {string} url - Live site domain (e.g. `example.com`)
+ */
 function searchReplace(url) {
 	let port = 8889;
 	try {
@@ -54,6 +81,12 @@ function searchReplace(url) {
 	wpcli("wp search-replace http://" + url + " " + local + " --report-changed-only");
 }
 
+/**
+ * Create a local admin user (`admin` / `password`) in the WordPress database,
+ * or reset the password and role if the user already exists.
+ *
+ * @returns {Promise<void>}
+ */
 async function createAdminUser() {
 	try {
 		wpcli("wp user create admin admin@localhost.com --role=administrator --user_pass=password");
@@ -64,6 +97,13 @@ async function createAdminUser() {
 	}
 }
 
+/**
+ * Full database processing pipeline: rename table prefix (multisite only),
+ * import the SQL file into the local environment, run URL search-replace,
+ * and optionally create a local admin user.
+ *
+ * @returns {Promise<void>}
+ */
 async function processDb() {
 	const config = readLocalConfig();
 	const { oldPrefix, url, containerAssetsPath, siteType } = config;

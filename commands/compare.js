@@ -2,9 +2,17 @@ const { mkdirSync, writeFileSync } = require("fs");
 const path = require("path");
 const { readLocalConfig, readWpEnvJson } = require("./get");
 const { logger } = require("./log");
+const { summaryTemplate, pageTemplate } = require("../templates/report.tpl");
 
 // ─── Argument parsing ────────────────────────────────────────────────────────
 
+/**
+ * Parse CLI flags from the argv array passed to the compare command.
+ * Supports both `--flag value` and `--flag=value` forms.
+ *
+ * @param {string[]} argv - Arguments after `wp-env-bin compare`
+ * @returns {{ url: string|null, limit: number, threshold: number }}
+ */
 function parseArgs(argv) {
 	const args = { url: null, limit: 10, threshold: 1 };
 	for (let i = 0; i < argv.length; i++) {
@@ -27,6 +35,12 @@ function parseArgs(argv) {
 
 // ─── URL helpers ─────────────────────────────────────────────────────────────
 
+/**
+ * Read the local wp-env port from .wp-env.json.
+ * Falls back to 8889 if the file is missing or the port is not set.
+ *
+ * @returns {number}
+ */
 function readPort() {
 	try {
 		const wpEnv = readWpEnvJson();
@@ -36,6 +50,15 @@ function readPort() {
 	}
 }
 
+/**
+ * Convert a live URL or bare path into the equivalent localhost URL.
+ * e.g. `https://example.com/about/` → `http://localhost:8889/about/`
+ *
+ * @param {string} liveDomain - Live site domain (e.g. `example.com`)
+ * @param {string} urlPath - Full live URL or bare path (e.g. `/about/`)
+ * @param {number} port - Local wp-env port
+ * @returns {string}
+ */
 function buildLocalUrl(liveDomain, urlPath, port) {
 	// urlPath may be a full URL or a bare path like /about/
 	let p = urlPath;
@@ -48,6 +71,13 @@ function buildLocalUrl(liveDomain, urlPath, port) {
 	return "http://localhost:" + port + p;
 }
 
+/**
+ * Convert a URL path into a filesystem-safe folder name for the report.
+ * e.g. `/about/us/` → `about-us`, `/` → `home`
+ *
+ * @param {string} urlPath - Full URL or bare path
+ * @returns {string}
+ */
 function slugify(urlPath) {
 	let p = urlPath;
 	try {
@@ -61,6 +91,13 @@ function slugify(urlPath) {
 
 // ─── Sitemap fetch ────────────────────────────────────────────────────────────
 
+/**
+ * Extract all `<loc>` URLs from a sitemap XML string.
+ * If the XML is a sitemap index, recursively fetches and parses the first child sitemap.
+ *
+ * @param {string} xml - Raw sitemap XML content
+ * @returns {Promise<string[]>}
+ */
 async function fetchSitemapUrls(xml) {
 	const isSitemapIndex = /<sitemap>/i.test(xml);
 	if (isSitemapIndex) {
@@ -79,6 +116,13 @@ async function fetchSitemapUrls(xml) {
 	return locs;
 }
 
+/**
+ * Fetch the sitemap from the live site and return all page URLs.
+ * Handles both regular sitemaps and sitemap index files.
+ *
+ * @param {string} liveDomain - Live site domain (e.g. `example.com`)
+ * @returns {Promise<string[]>}
+ */
 async function fetchSitemap(liveDomain) {
 	const sitemapUrl = "https://" + liveDomain + "/sitemap.xml";
 	const res = await fetch(sitemapUrl);
@@ -91,11 +135,28 @@ async function fetchSitemap(liveDomain) {
 
 // ─── Screenshot + diff ───────────────────────────────────────────────────────
 
+/**
+ * Navigate a Playwright page to a URL and capture a full-page screenshot.
+ *
+ * @param {import('playwright').Page} page - Playwright page instance
+ * @param {string} url - URL to navigate to
+ * @returns {Promise<Buffer>} PNG image buffer
+ */
 async function takeScreenshot(page, url) {
 	await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
 	return page.screenshot({ fullPage: true });
 }
 
+/**
+ * Run a pixel-level diff between two PNG screenshots.
+ * Images are padded to the same dimensions (white fill) before comparison
+ * to handle pages that render at different heights.
+ *
+ * @param {Buffer} livePng - PNG buffer from the live site
+ * @param {Buffer} localPng - PNG buffer from the local environment
+ * @param {number} threshold - Passed through to classify(); not used directly by pixelmatch here
+ * @returns {{ diffPixels: number, totalPixels: number, diffPercent: number, diffPng: Buffer }}
+ */
 function diffScreenshots(livePng, localPng, threshold) {
 	const { PNG } = require("pngjs");
 	const pixelmatch = require("pixelmatch");
@@ -107,6 +168,12 @@ function diffScreenshots(livePng, localPng, threshold) {
 	const width = Math.max(liveImg.width, localImg.width);
 	const height = Math.max(liveImg.height, localImg.height);
 
+	/**
+	 * Pad a decoded PNG to the target width/height with a white background.
+	 *
+	 * @param {import('pngjs').PNG} img
+	 * @returns {import('pngjs').PNG}
+	 */
 	function padImage(img) {
 		if (img.width === width && img.height === height) return img;
 		const out = new PNG({ width, height, filterType: -1 });
@@ -141,6 +208,16 @@ function diffScreenshots(livePng, localPng, threshold) {
 	return { diffPixels, totalPixels, diffPercent, diffPng };
 }
 
+/**
+ * Classify a diff percentage as pass, warn, or fail relative to a threshold.
+ * - pass: below threshold
+ * - warn: between threshold and 5× threshold
+ * - fail: at or above 5× threshold
+ *
+ * @param {number} diffPercent - Percentage of pixels that differ
+ * @param {number} threshold - Base threshold percentage (e.g. 1 for 1%)
+ * @returns {'pass'|'warn'|'fail'}
+ */
 function classify(diffPercent, threshold) {
 	if (diffPercent < threshold) return "pass";
 	if (diffPercent < threshold * 5) return "warn";
@@ -149,94 +226,32 @@ function classify(diffPercent, threshold) {
 
 // ─── HTML report ─────────────────────────────────────────────────────────────
 
+/**
+ * Write the HTML comparison report to the report directory.
+ * Creates a summary index.html and a per-page index.html with side-by-side screenshots.
+ *
+ * @param {string} reportDir - Absolute path to wp-env-bin/compare-report/
+ * @param {{ path: string, slug: string, diffPercent: number, status: 'pass'|'warn'|'fail' }[]} pages
+ */
 function writeReport(reportDir, pages) {
-	const rows = pages.map((p) => {
-		const icon = p.status === "pass" ? "✓" : p.status === "warn" ? "!" : "✗";
-		const color = p.status === "pass" ? "#2d7d46" : p.status === "warn" ? "#9a6700" : "#cf222e";
-		const pageDir = "pages/" + p.slug;
-		return `
-		<tr>
-			<td><a href="${pageDir}/index.html">${p.path}</a></td>
-			<td style="color:${color};font-weight:bold;text-align:center">${icon}</td>
-			<td style="text-align:right">${p.diffPercent.toFixed(2)}%</td>
-		</tr>`;
-	}).join("\n");
+	writeFileSync(path.join(reportDir, "index.html"), summaryTemplate(pages), "utf8");
 
-	const passCount = pages.filter((p) => p.status === "pass").length;
-	const warnCount = pages.filter((p) => p.status === "warn").length;
-	const failCount = pages.filter((p) => p.status === "fail").length;
-
-	const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>wp-env-bin visual comparison report</title>
-<style>
-  body { font-family: system-ui, sans-serif; margin: 2rem; color: #1f2328; }
-  h1 { font-size: 1.4rem; }
-  .summary { margin: 1rem 0; font-size: 0.9rem; color: #57606a; }
-  table { border-collapse: collapse; width: 100%; max-width: 700px; }
-  th, td { padding: 0.5rem 0.75rem; border: 1px solid #d0d7de; text-align: left; }
-  th { background: #f6f8fa; }
-  tr:hover td { background: #f6f8fa; }
-  .pass { color: #2d7d46; } .warn { color: #9a6700; } .fail { color: #cf222e; }
-</style>
-</head>
-<body>
-<h1>Visual Comparison Report</h1>
-<p class="summary">
-  <span class="pass">✓ ${passCount} passed</span> &nbsp;
-  <span class="warn">! ${warnCount} warnings</span> &nbsp;
-  <span class="fail">✗ ${failCount} failed</span> &nbsp;
-  &mdash; ${pages.length} pages tested
-</p>
-<table>
-  <thead><tr><th>Path</th><th>Status</th><th>Diff %</th></tr></thead>
-  <tbody>${rows}</tbody>
-</table>
-</body>
-</html>`;
-
-	writeFileSync(path.join(reportDir, "index.html"), html, "utf8");
-
-	// Per-page reports
 	for (const p of pages) {
-		const pageDir = path.join(reportDir, "pages", p.slug);
-		const icon = p.status === "pass" ? "✓" : p.status === "warn" ? "!" : "✗";
-		const color = p.status === "pass" ? "#2d7d46" : p.status === "warn" ? "#9a6700" : "#cf222e";
-		const pageHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>${p.path} — comparison</title>
-<style>
-  body { font-family: system-ui, sans-serif; margin: 1.5rem; color: #1f2328; }
-  h1 { font-size: 1.2rem; }
-  .status { color: ${color}; font-weight: bold; }
-  .grid { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
-  .col { flex: 1; min-width: 280px; }
-  .col h2 { font-size: 0.85rem; text-transform: uppercase; color: #57606a; margin: 0 0 0.4rem; }
-  img { width: 100%; border: 1px solid #d0d7de; display: block; }
-  a { color: #0969da; font-size: 0.85rem; }
-</style>
-</head>
-<body>
-<p><a href="../../index.html">&larr; Back to summary</a></p>
-<h1>${p.path}</h1>
-<p class="status">${icon} ${p.diffPercent.toFixed(2)}% pixel difference</p>
-<div class="grid">
-  <div class="col"><h2>Live</h2><img src="live.png" alt="Live screenshot"></div>
-  <div class="col"><h2>Local</h2><img src="local.png" alt="Local screenshot"></div>
-  <div class="col"><h2>Diff</h2><img src="diff.png" alt="Pixel diff"></div>
-</div>
-</body>
-</html>`;
-		writeFileSync(path.join(pageDir, "index.html"), pageHtml, "utf8");
+		writeFileSync(path.join(reportDir, "pages", p.slug, "index.html"), pageTemplate(p), "utf8");
 	}
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Main entry point for the compare command.
+ * Discovers URLs (from --url flag or sitemap), screenshots each on live and local,
+ * runs pixel diffs, saves PNGs, and writes an HTML report.
+ * Exits with code 1 if any pages fail.
+ *
+ * @param {string[]} argv - Raw CLI arguments after `wp-env-bin compare`
+ * @returns {Promise<void>}
+ */
 async function compare(argv) {
 	const { url: urlFlag, limit, threshold } = parseArgs(argv);
 
@@ -299,7 +314,7 @@ async function compare(argv) {
 		mkdirSync(pageDir, { recursive: true });
 
 		let livePng, localPng;
-		const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+		const page = await browser.newPage({ viewport: { width: 1980, height: 900 } });
 		try {
 			livePng = await takeScreenshot(page, liveUrl);
 			await page.goto("about:blank");

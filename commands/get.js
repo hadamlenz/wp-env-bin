@@ -4,6 +4,12 @@ const { terminus_wp } = require("./run");
 const { logger } = require("./log");
 const { checkDatabase } = require("./check");
 
+/**
+ * Read and validate wp-env-bin/wp-env.config.json from the current working directory.
+ * Throws with a helpful message if the file is missing or required fields are absent.
+ *
+ * @returns {{ siteType: string, url: string, env?: string, oldPrefix?: string, siteId?: string, pluginName?: string, containerAssetsPath?: string }}
+ */
 function readLocalConfig() {
 	let config;
 	try {
@@ -30,6 +36,13 @@ function readLocalConfig() {
 	return config;
 }
 
+/**
+ * Read the wp-env JSON config from the first file found among:
+ * wp-env-bin/.wp-env.json, wp-env-bin/.wp-env.override.json, .wp-env.json
+ * Throws if none are found.
+ *
+ * @returns {object} Parsed wp-env config object
+ */
 function readWpEnvJson() {
 	const candidates = [
 		"wp-env-bin/.wp-env.json",
@@ -46,6 +59,13 @@ function readWpEnvJson() {
 	throw new Error("No wp-env config file found.");
 }
 
+/**
+ * Fetch the list of database tables for a given Pantheon site environment and URL via Terminus.
+ *
+ * @param {string} env - Pantheon site.environment (e.g. `mysite.live`)
+ * @param {string} url - Live site URL used as the --url flag for WP-CLI
+ * @returns {string} Comma-separated list of table names
+ */
 async function getRemoteTables(env, url) {
 	logger("> fetching remote table list from " + env + " (" + url + ")...");
 	const result = terminus_wp(
@@ -56,6 +76,13 @@ async function getRemoteTables(env, url) {
 	return result.trim();
 }
 
+/**
+ * Export the site database from Pantheon via Terminus and save it to
+ * wp-env-bin/assets/database.sql. Prompts to reuse an existing export if present.
+ * Requires the `env` field to be set in wp-env.config.json.
+ *
+ * @returns {Promise<void>}
+ */
 async function getRemoteDb() {
 	const config = readLocalConfig();
 	const { env, url } = config;

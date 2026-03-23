@@ -1,3 +1,6 @@
+/**
+ * Print the wp-env-bin command reference to stdout.
+ */
 function help() {
 	console.log(`
 wp-env-bin — wp-env subsite testing tool

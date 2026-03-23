@@ -3,6 +3,14 @@ const path = require("path");
 const { logger } = require("./log");
 const { checkDatabase } = require("./check");
 
+/**
+ * Validate that a file is a suitable WordPress mysqldump export.
+ * Checks file extension, existence, non-empty size, mysqldump header,
+ * presence of a CREATE TABLE statement, and a WordPress _options table.
+ * Throws a descriptive Error if any check fails.
+ *
+ * @param {string} filePath - Absolute path to the SQL file
+ */
 function validateSqlFile(filePath) {
 	if (!filePath.toLowerCase().endsWith(".sql")) {
 		throw new Error("File must have a .sql extension.");
@@ -47,6 +55,13 @@ function validateSqlFile(filePath) {
 	}
 }
 
+/**
+ * Validate a local SQL file and copy it to wp-env-bin/assets/database.sql
+ * for use as the local database source. Prompts before overwriting an existing file.
+ *
+ * @param {string} filePath - Path to the SQL file provided by the user
+ * @returns {Promise<void>}
+ */
 async function useDb(filePath) {
 	if (!filePath) {
 		throw new Error("Please provide a path: wp-env-bin use db <path/to/file.sql>");
