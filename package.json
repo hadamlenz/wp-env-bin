@@ -12,7 +12,7 @@
 		"scaffold/"
 	],
 	"scripts": {
-		"test": "node --test tests/htaccess.test.js tests/validate.test.js tests/prefix.test.js tests/compare.test.js"
+		"test": "node --test tests/htaccess.test.js tests/validate.test.js tests/prefix.test.js tests/compare.test.js tests/install.test.js"
 	},
 	"engines": {
 		"node": ">=18"

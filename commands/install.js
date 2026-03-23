@@ -168,14 +168,8 @@ async function install() {
 	const wpEnvPath = path.join(dest, ".wp-env.json");
 	try {
 		const wpEnv = JSON.parse(readFileSync(wpEnvPath, "utf8"));
-		if (projectType === "theme") {
-			delete wpEnv.plugins;
-			wpEnv.themes = [".."];
-		} else {
-			delete wpEnv.themes;
-			wpEnv.plugins = [".."];
-		}
-		writeFileSync(wpEnvPath, JSON.stringify(wpEnv, null, 4), "utf8");
+		const updatedWpEnv = applyProjectType(wpEnv, projectType);
+		writeFileSync(wpEnvPath, JSON.stringify(updatedWpEnv, null, 4), "utf8");
 		logger("> updated wp-env-bin/.wp-env.json (" + projectType + ")");
 	} catch {
 		// .wp-env.json missing or malformed — leave it as-is
@@ -193,4 +187,25 @@ async function install() {
 	logger("  Then run: npx playwright install chromium  (one-time browser install)");
 }
 
-module.exports = { install };
+/**
+ * Apply project type to a parsed .wp-env.json object.
+ * Sets `themes: [".."]` for theme projects, `plugins: [".."]` for plugin projects,
+ * and removes the opposing key if present.
+ *
+ * @param {object} wpEnvObj - Parsed .wp-env.json contents
+ * @param {'theme'|'plugin'} projectType
+ * @returns {object} Updated copy of wpEnvObj
+ */
+function applyProjectType(wpEnvObj, projectType) {
+	const out = { ...wpEnvObj };
+	if (projectType === "theme") {
+		delete out.plugins;
+		out.themes = [".."];
+	} else {
+		delete out.themes;
+		out.plugins = [".."];
+	}
+	return out;
+}
+
+module.exports = { install, applyProjectType };

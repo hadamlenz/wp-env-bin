@@ -67,6 +67,19 @@ async function init() {
 			await compare(process.argv.slice(3));
 			break;
 		}
+		case "e2e": {
+			if (subcommand === "init") {
+				const { initE2e } = require("../commands/e2e");
+				await initE2e();
+			} else if (subcommand === "generate") {
+				const type = process.argv[4]; // "editor" or "frontend"
+				const { generateE2eTests } = require("../commands/e2e");
+				generateE2eTests(type, process.argv.slice(5));
+			} else {
+				console.log('Unknown e2e subcommand. Try:\n  wp-env-bin e2e init\n  wp-env-bin e2e generate editor|frontend --file=path/to/block.json');
+			}
+			break;
+		}
 		case "help":
 		default: {
 			const { help } = require("../commands/help");

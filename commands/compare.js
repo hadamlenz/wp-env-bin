@@ -61,14 +61,14 @@ function readPort() {
  */
 function buildLocalUrl(liveDomain, urlPath, port) {
 	// urlPath may be a full URL or a bare path like /about/
-	let p = urlPath;
+	let pathname = urlPath;
 	try {
-		p = new URL(urlPath).pathname;
+		pathname = new URL(urlPath).pathname;
 	} catch {
 		// already a path
 	}
-	if (!p.startsWith("/")) p = "/" + p;
-	return "http://localhost:" + port + p;
+	if (!pathname.startsWith("/")) pathname = "/" + pathname;
+	return "http://localhost:" + port + pathname;
 }
 
 /**
@@ -79,13 +79,13 @@ function buildLocalUrl(liveDomain, urlPath, port) {
  * @returns {string}
  */
 function slugify(urlPath) {
-	let p = urlPath;
+	let pathname = urlPath;
 	try {
-		p = new URL(urlPath).pathname;
+		pathname = new URL(urlPath).pathname;
 	} catch {
 		// already a path
 	}
-	const slug = p.replace(/^\/|\/$/g, "").replace(/\//g, "-") || "home";
+	const slug = pathname.replace(/^\/|\/$/g, "").replace(/\//g, "-") || "home";
 	return slug;
 }
 
@@ -108,10 +108,10 @@ async function fetchSitemapUrls(xml) {
 		return fetchSitemapUrls(childXml);
 	}
 	const locs = [];
-	const re = /<loc>(https?:\/\/[^<]+)<\/loc>/gi;
-	let m;
-	while ((m = re.exec(xml)) !== null) {
-		locs.push(m[1].trim());
+	const locRegex = /<loc>(https?:\/\/[^<]+)<\/loc>/gi;
+	let match;
+	while ((match = locRegex.exec(xml)) !== null) {
+		locs.push(match[1].trim());
 	}
 	return locs;
 }
@@ -144,6 +144,7 @@ async function fetchSitemap(liveDomain) {
  */
 async function takeScreenshot(page, url) {
 	await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
+	await page.waitForTimeout(500); // let animations/lazy rendering settle
 	return page.screenshot({ fullPage: true });
 }
 
@@ -193,11 +194,11 @@ function diffScreenshots(livePng, localPng, threshold) {
 		return out;
 	}
 
-	const a = padImage(liveImg);
-	const b = padImage(localImg);
+	const paddedLiveImg = padImage(liveImg);
+	const paddedLocalImg = padImage(localImg);
 	const diff = new PNG({ width, height });
 
-	const diffPixels = pixelmatch(a.data, b.data, diff.data, width, height, {
+	const diffPixels = pixelmatch(paddedLiveImg.data, paddedLocalImg.data, diff.data, width, height, {
 		threshold: 0.1,
 	});
 
@@ -275,10 +276,10 @@ async function compare(argv) {
 		urls = [fullUrl];
 	} else {
 		process.stdout.write("Fetching sitemap...");
-		const all = await fetchSitemap(liveDomain);
-		const taken = all.slice(0, limit);
-		process.stdout.write(" " + all.length + " URLs found. Testing first " + taken.length + ".\n\n");
-		urls = taken;
+		const allSitemapUrls = await fetchSitemap(liveDomain);
+		const urlsToTest = allSitemapUrls.slice(0, limit);
+		process.stdout.write(" " + allSitemapUrls.length + " URLs found. Testing first " + urlsToTest.length + ".\n\n");
+		urls = urlsToTest;
 	}
 
 	// Launch Playwright

@@ -20,6 +20,13 @@ Commands:
     --url <path>      Path to compare (e.g. --url / or --url /about/)
     --threshold <n>   Pixel diff % to flag as failure (default: 1)
     --limit <n>       Max sitemap URLs to test when no --url given (default: 10)
+  e2e init            Scaffold e2e/ block test environment (separate .wp-env.json, Playwright config)
+  e2e generate editor --file=<path>    Generate editor Playwright tests from block.json
+  e2e generate frontend --file=<path>  Generate frontend Playwright tests from block.json
+    --glob=<pattern>  Match multiple block.json files (requires: npm i --save-dev glob)
+    --output=<dir>    Override output dir (default: e2e/specs/editor or e2e/specs/frontend)
+    --screenshots     Save dated PNG of each block during frontend test runs
+    --visual-regression  Generate toHaveScreenshot() visual regression tests
   help                Show this help message
 
 Config files:

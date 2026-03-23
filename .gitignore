@@ -5,6 +5,6 @@ wp-env.config.json
 assets/database.sql
 assets/database.modified.sql
 themes/
-plugins/
+/plugins/
 vendor/
 composer.lock

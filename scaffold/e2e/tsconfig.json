@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    "baseUrl": ".",
+    "paths": {
+      "@e2e/utils/helpers": ["../node_modules/wp-env-bin/lib/e2e/helpers"],
+      "@e2e/*": ["specs/*"]
+    }
+  }
+}

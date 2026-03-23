@@ -1,0 +1,32 @@
+{
+    "$schema": "https://raw.githubusercontent.com/WordPress/gutenberg/refs/heads/trunk/schemas/json/wp-env.json",
+    "core": "WordPress/WordPress#6.9.4",
+    "phpVersion": "8.3",
+    "plugins": [
+        ".."
+    ],
+    "mappings": {
+        "wp-content/themes": "./themes",
+        "wp-content/plugins": "./plugins"
+    },
+    "lifecycleScripts": {
+        "afterStart": ""
+    },
+    "config": {
+        "WP_DEBUG": false,
+        "WP_DEBUG_LOG": false,
+        "WP_DEBUG_DISPLAY": false,
+        "SCRIPT_DEBUG": false,
+        "DISABLE_WP_CRON": true
+    },
+    "env": {
+        "development": {
+            "port": 8886,
+            "mysqlPort": 51606
+        },
+        "tests": {
+            "port": 8887,
+            "mysqlPort": 51607
+        }
+    }
+}

@@ -1,0 +1,10 @@
+node_modules/
+vendor/
+composer.lock
+composer.json
+plugins/
+themes/
+specs/.auth/
+test-results/
+playwright-report/
+snapshots/

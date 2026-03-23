@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@e2e/*": ["specs/*"]
+    }
+  },
+  "include": [
+    "specs/**/*.ts"
+  ]
+}
