@@ -225,13 +225,11 @@ npx playwright show-report wp-env-bin/e2e/playwright-report
     "test:e2e":              "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --quiet",
     "test:e2e:editor":       "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-editor --quiet",
     "test:e2e:frontend":     "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-frontend --quiet",
-    "test:e2e:report":       "cd wp-env-bin/e2e && playwright show-report playwright-report",
-    "e2e:generate:editor":   "wp-env-bin e2e generate editor",
-    "e2e:generate:frontend": "wp-env-bin e2e generate frontend"
+    "test:e2e:report":       "cd wp-env-bin/e2e && playwright show-report playwright-report"
   }
 }
 ```
-
+feel free to add projects to the `./wp-env-bin/e2e/playwright.config.ts` file
 ---
 
 ## Writing custom tests

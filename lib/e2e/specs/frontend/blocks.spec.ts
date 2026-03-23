@@ -1,5 +1,5 @@
 import { test } from '@wordpress/e2e-test-utils-playwright';
-import { registerFrontendTestsFromConfig } from '@e2e/utils/frontend-tests';
+import { registerFrontendTestsFromConfig } from '../../frontend-tests';
 import * as path from 'path';
 
 // Discovery-based frontend tests — block CSS and render.php are read at test
@@ -7,6 +7,6 @@ import * as path from 'path';
 // Add block directories to wp-env-bin.e2e.config.json to include them here.
 // Run a specific block: npx playwright test --project=all-blocks-frontend --grep "Block Title"
 
-registerFrontendTestsFromConfig(test, path.join(__dirname, '../../wp-env-bin.e2e.config.json'), {
-  screenshots: true,
+registerFrontendTestsFromConfig(test, path.join(process.cwd(), 'wp-env-bin.e2e.config.json'), {
+	screenshots: true,
 });

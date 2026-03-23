@@ -17,6 +17,7 @@ export default defineConfig({
 	retries: 1,
 	reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
 	testDir: './specs',
+	testIgnore: ['**/.git/**', '**/node_modules/!(wp-env-bin)/**'],
 	timeout: 30_000,
 	tsconfig: './tsconfig.e2e.json',
 	workers: 1,
@@ -56,12 +57,12 @@ export default defineConfig({
 		// Convenience: run all editor specs at once (add after naming individual projects)
 		{
 			name: 'all-blocks-editor',
+			testDir: '../../node_modules/wp-env-bin/lib/e2e/specs',
+			testMatch: ['**/editor/*.spec.js'],
 			use: {
 				...chromeSettings,
 				storageState: 'specs/.auth/admin.json',
 			},
-			// Picks up discovery spec + any hand-authored {block}/test/editor.e2e.ts files
-			testMatch: ['specs/editor/**/*.spec.ts', '../../**/test/editor.e2e.ts'],
 			dependencies: ['setup'],
 		},
 
@@ -79,9 +80,9 @@ export default defineConfig({
 		// Convenience: run all frontend specs at once
 		{
 			name: 'all-blocks-frontend',
+			testDir: '../../node_modules/wp-env-bin/lib/e2e/specs',
+			testMatch: ['**/frontend/*.spec.js'],
 			use: { ...chromeSettings },
-			// Picks up discovery spec + any hand-authored {block}/test/frontend.e2e.ts files
-			testMatch: ['specs/frontend/**/*.spec.ts', '../../**/test/frontend.e2e.ts'],
 		},
 	],
 

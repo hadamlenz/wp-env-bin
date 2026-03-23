@@ -9,6 +9,6 @@
     "outDir": "lib/e2e",
     "rootDir": "lib/e2e"
   },
-  "include": ["lib/e2e/*.ts"],
+  "include": ["lib/e2e/**/*.ts"],
   "exclude": ["node_modules"]
 }
