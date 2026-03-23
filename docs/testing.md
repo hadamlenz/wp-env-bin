@@ -76,3 +76,9 @@ Because `node --test` runs test files sequentially, `process.chdir()` is safe wi
    ```
 
 Functions that require Docker or WP-CLI (e.g., `importDb()`, `searchReplace()`, `getInactiveComposerPlugins()`) are not unit-tested. Test those paths through the full `wp-env-bin` workflow in a live environment.
+
+---
+
+## E2E block tests and visual regression
+
+The unit tests above cover the wp-env-bin package itself. For running Playwright block tests in a consuming project — including visual regression snapshots — see [E2E Block Testing](e2e.md).

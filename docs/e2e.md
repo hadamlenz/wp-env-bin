@@ -140,6 +140,87 @@ wp-env-bin e2e generate frontend --glob="src/blocks/**/block.json" --screenshots
 
 ---
 
+## Visual regression snapshots
+
+Frontend tests support two distinct screenshot modes. Both are opt-in and disabled by default.
+
+### Documentation screenshots (`screenshots`)
+
+Saves a dated PNG of each block element after every test run. These are **not** compared against a baseline — they're useful for visual documentation, changelogs, or manually spotting regressions.
+
+- Files written to: `wp-env-bin/e2e/test-results/screenshots/frontend/wp-block-{name}-{date}.png`
+- Gitignored — not committed
+
+### Visual regression (`visualRegression`)
+
+Uses Playwright's built-in `toHaveScreenshot()` to compare the block element against a stored baseline PNG. The test fails if pixel differences exceed 2%.
+
+- Baselines stored in: `wp-env-bin/e2e/snapshots/`
+- **Commit the `snapshots/` directory** — baselines must be checked in for CI to compare against them
+- Snapshot filename: `wp-block-{block-name}.png` (e.g. `wp-block-my-plugin-accordion.png`)
+
+### Enabling visual regression
+
+**Discovery approach (recommended)** — pass `{ visualRegression: true }` in `specs/frontend/blocks.spec.ts`:
+
+```typescript
+registerFrontendTestsFromConfig(test, path.join(process.cwd(), 'wp-env-bin.e2e.config.json'), {
+  visualRegression: true,
+});
+```
+
+You can also combine both modes:
+
+```typescript
+registerFrontendTestsFromConfig(test, path.join(process.cwd(), 'wp-env-bin.e2e.config.json'), {
+  screenshots:      true,
+  visualRegression: true,
+});
+```
+
+**Static spec files** — pass `--visual-regression` when generating:
+
+```bash
+wp-env-bin e2e generate frontend --file=src/blocks/my-block/block.json --visual-regression
+```
+
+### Creating initial baselines
+
+Run the frontend tests once with `updateSnapshots: 'missing'` set in `playwright.config.ts` (this is the default). Playwright creates a baseline PNG for each block on the first run — no separate command needed.
+
+```bash
+cd wp-env-bin/e2e && npx playwright test --project=all-blocks-frontend
+```
+
+After the run, commit the generated files in `snapshots/`:
+
+```bash
+git add wp-env-bin/e2e/snapshots/
+git commit -m "Add visual regression baselines"
+```
+
+### Updating baselines after intentional visual changes
+
+When a block's appearance changes intentionally (new styles, markup refactor), update the stored baselines:
+
+```bash
+cd wp-env-bin/e2e && npx playwright test --project=all-blocks-frontend --update-snapshots
+```
+
+Then commit the updated PNGs. Review the diff in your PR to confirm only the expected blocks changed.
+
+Add this to your `package.json` for convenience:
+
+```json
+{
+  "scripts": {
+    "test:e2e:update-snapshots": "cd wp-env-bin/e2e && playwright test --project=all-blocks-frontend --update-snapshots"
+  }
+}
+```
+
+---
+
 ## Environment isolation
 
 The e2e environment uses a separate `.wp-env.json` (in `wp-env-bin/e2e/`) with different ports from your development environment, so both can run at the same time:

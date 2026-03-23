@@ -8,5 +8,6 @@ import * as path from 'path';
 // Run a specific block: npx playwright test --project=all-blocks-frontend --grep "Block Title"
 
 registerFrontendTestsFromConfig(test, path.join(process.cwd(), 'wp-env-bin.e2e.config.json'), {
-	screenshots: true,
+	screenshots:      true,
+	visualRegression: true,
 });
