@@ -62,13 +62,42 @@ async function init() {
 			await activateComposerPlugins();
 			break;
 		}
+		case "env": {
+			const argv = process.argv.slice(3);
+			if (!argv.length || argv[0] === "help" || argv[0] === "--help" || argv[0] === "-h") {
+				const { envHelp } = require("../commands/env");
+				envHelp();
+			} else {
+				const { runWpEnv } = require("../commands/env");
+				runWpEnv(argv);
+			}
+			break;
+		}
 		case "compare": {
-			const { compare } = require("../commands/compare");
-			await compare(process.argv.slice(3));
+			const argv = process.argv.slice(3);
+			if (argv[0] === "help" || argv[0] === "--help" || argv[0] === "-h") {
+				const { compareHelp } = require("../commands/compare");
+				compareHelp();
+			} else {
+				const { compare } = require("../commands/compare");
+				await compare(argv);
+			}
 			break;
 		}
 		case "e2e": {
-			if (subcommand === "init") {
+			if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				const { e2eHelp } = require("../commands/e2e");
+				e2eHelp();
+			} else if (subcommand === "env") {
+				const envArgs = process.argv.slice(4);
+				if (!envArgs.length || envArgs[0] === "help" || envArgs[0] === "--help" || envArgs[0] === "-h") {
+					const { e2eEnvHelp } = require("../commands/env");
+					e2eEnvHelp();
+				} else {
+					const { runWpEnvE2e } = require("../commands/env");
+					runWpEnvE2e(envArgs);
+				}
+			} else if (subcommand === "init") {
 				const { initE2e } = require("../commands/e2e");
 				await initE2e();
 			} else if (subcommand === "generate") {

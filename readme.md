@@ -35,6 +35,7 @@ npm install -g wp-env-bin
 > git clone git@github.com:hadamlenz/wp-env-bin.git
 > cd wp-env-bin
 > npm link
+> wp-env-bin help #should display the help command
 > ```
 
 ### Optional: single-script fallback
@@ -78,6 +79,8 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 | `wp-env-bin process db` | Rename table prefix, import DB into local env, run URL search-replace |
 | `wp-env-bin make htaccess` | Generate `.htaccess` to reverse-proxy media uploads from the live site |
 | `wp-env-bin sync` | Run `get db` + `process db` + `make htaccess` in sequence |
+| `wp-env-bin env <command>` | Pass any wp-env command to the dev environment in `wp-env-bin/` |
+| `wp-env-bin e2e env <command>` | Pass any wp-env command to the e2e environment in `wp-env-bin/e2e/` |
 | `wp-env-bin compare --url /` | Visual A/B regression test — screenshot live vs local and diff |
 | `wp-env-bin compare --url /your-page/` | Compare a specific page path |
 | `wp-env-bin e2e init` | Scaffold `wp-env-bin/e2e/` block test environment with its own `.wp-env.json` |

@@ -198,4 +198,37 @@ async function compare(argv) {
 	}
 }
 
-module.exports = { compare };
+/**
+ * Print compare-specific usage to stdout.
+ */
+function compareHelp() {
+	console.log(`
+wp-env-bin compare — Visual A/B regression: screenshot live vs local and diff
+
+Usage:
+  wp-env-bin compare [flags]
+
+Flags:
+  --url <path|url>    Compare a single page. Accepts a path (/about/) or a full URL.
+                      Omit to pull all URLs from the live site's sitemap.xml instead.
+  --limit <n>         Max number of sitemap URLs to test (default: 10)
+  --threshold <n>     Pixel diff % used to classify results (default: 1)
+
+Result classification:
+  pass  diff% is below --threshold
+  warn  diff% is between --threshold and 5× --threshold
+  fail  diff% is at or above 5× --threshold
+
+Output:
+  Screenshots and an HTML report are written to:
+  wp-env-bin/compare-report/index.html
+
+Examples:
+  wp-env-bin compare                          Test first 10 sitemap URLs
+  wp-env-bin compare --limit 50               Test first 50 sitemap URLs
+  wp-env-bin compare --url /                  Compare the homepage only
+  wp-env-bin compare --url /about/ --threshold 0.5
+`);
+}
+
+module.exports = { compare, compareHelp };

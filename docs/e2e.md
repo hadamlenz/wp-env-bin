@@ -59,9 +59,11 @@ npx playwright install chromium
 **5. Start the test environment:**
 
 ```bash
-cd wp-env-bin/e2e && npx wp-env start
+wp-env-bin e2e env start
 # Your dev environment (on port 8889) can run simultaneously
 ```
+
+> Or manually: `cd wp-env-bin/e2e && npx wp-env start`
 
 ---
 
@@ -187,7 +189,7 @@ The e2e environment uses a separate `.wp-env.json` (in `wp-env-bin/e2e/`) with d
 | Development (`wp-env-bin/`) | `8889` | `51600` |
 | E2E tests (`wp-env-bin/e2e/`) | `8886` | `51606` |
 
-`wp-env` reads the config from whichever directory you run it in, so `cd wp-env-bin/e2e && npx wp-env start` starts the test environment independently.
+`wp-env` reads the config from whichever directory you run it in. Use `wp-env-bin e2e env start` to start the test environment from the project root, or run `cd wp-env-bin/e2e && npx wp-env start` manually.
 
 ---
 

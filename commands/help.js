@@ -16,10 +16,12 @@ Commands:
   process db          Rename table prefix, import DB, and run URL search-replace
   make htaccess       Generate .htaccess with reverse proxy for /wp-content/uploads/
   sync                Run get db + process db + make htaccess in sequence
+  env <command>       Pass any wp-env command to the dev environment (wp-env-bin/)
   compare             Visual A/B regression: screenshot live vs local and diff
     --url <path>      Path to compare (e.g. --url / or --url /about/)
     --threshold <n>   Pixel diff % to flag as failure (default: 1)
     --limit <n>       Max sitemap URLs to test when no --url given (default: 10)
+  e2e env <command>   Pass any wp-env command to the e2e environment (wp-env-bin/e2e/)
   e2e init            Scaffold e2e/ block test environment (separate .wp-env.json, Playwright config)
   e2e generate editor --file=<path>    Generate editor Playwright tests from block.json
   e2e generate frontend --file=<path>  Generate frontend Playwright tests from block.json
