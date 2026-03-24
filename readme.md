@@ -72,7 +72,10 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 
 | Command | Description |
 |---|---|
-| `wp-env-bin install` | Scaffold `wp-env-bin/` config folder and configure interactively |
+| `wp-env-bin config install` | Scaffold `wp-env-bin/` config folder and configure interactively |
+| `wp-env-bin config update` | Re-run configuration prompts using existing values as defaults |
+| `wp-env-bin config switch` | Pick a named profile from `site-configs/` and activate it |
+| `wp-env-bin install` | Alias for `config install` *(backward compatible)* |
 | `wp-env-bin setup` | Run `composer install` in `wp-env-bin/` to install plugins and themes |
 | `wp-env-bin get db` | Export the database from Pantheon via Terminus *(requires `env` in config)* |
 | `wp-env-bin use db <path>` | Validate and use a local SQL file instead of downloading from Pantheon |
@@ -95,15 +98,19 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 
 ## Project Structure
 
-Running `wp-env-bin install` and `wp-env-bin e2e init` creates a `wp-env-bin/` folder in your project root. This folder holds all configuration for the wp-env-bin package — it is **not** part of your plugin or theme source and should be treated like a local tooling config directory. Most files inside it are gitignored; only the non-sensitive config files (`.wp-env.json`, `composer.json`, `wp-env-bin.config.json`, `wp-env-bin.e2e.config.json`, `playwright.config.ts`, etc.) should be committed.
+Running `wp-env-bin config install` and `wp-env-bin e2e init` creates a `wp-env-bin/` folder in your project root. This folder holds all configuration for the wp-env-bin package — it is **not** part of your plugin or theme source and should be treated like a local tooling config directory. The active `wp-env-bin.config.json` and `composer.json` are gitignored; named profiles in `site-configs/` are tracked so teammates can share them.
 
 ```
 wp-env-bin/
 ├── .wp-env.json              # wp-env config: maps plugins/themes, sets port 8889 / MySQL 51600
 ├── .wp-env.override.json     # Per-machine overrides — never commit (gitignored)
-├── wp-env-bin.config.json    # wp-env-bin settings: slug, projectType, Pantheon site ID (gitignored)
-├── composer.json             # PHP plugins/themes to install in the dev environment
+├── wp-env-bin.config.json    # Active config — copied from site-configs/ by `config switch` (gitignored)
+├── composer.json             # Active PHP deps — copied from site-configs/ by `config switch` (gitignored)
 ├── composer.json.example     # Starter template — copy to composer.json, then delete
+├── site-configs/             # Named config + composer profiles, one per remote site (tracked in git)
+│   ├── cci.unc.edu.wp-env-bin.config.json
+│   ├── cci.unc.edu.composer.json
+│   └── ...                   # Add more profiles with `config install` or `config update`
 ├── assets/
 │   ├── database.sql          # Production DB snapshot downloaded by `get db` (gitignored)
 │   ├── database.modified.sql # Processed DB ready for import by `process db` (gitignored)

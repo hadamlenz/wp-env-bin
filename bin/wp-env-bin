@@ -5,6 +5,21 @@ const subcommand = process.argv[3];
 
 async function init() {
 	switch (command) {
+		case "config": {
+			if (subcommand === "install") {
+				const { configInstall } = require("../commands/config");
+				await configInstall();
+			} else if (subcommand === "update") {
+				const { configUpdate } = require("../commands/config");
+				await configUpdate();
+			} else if (subcommand === "switch") {
+				const { configSwitch } = require("../commands/config");
+				await configSwitch();
+			} else {
+				console.log("Unknown config subcommand. Try:\n  wp-env-bin config install\n  wp-env-bin config update\n  wp-env-bin config switch");
+			}
+			break;
+		}
 		case "install": {
 			const { install } = require("../commands/install");
 			await install();

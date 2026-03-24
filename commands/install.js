@@ -1,6 +1,7 @@
 const { mkdirSync, existsSync, copyFileSync, writeFileSync, readFileSync } = require("fs");
 const path = require("path");
 const { logger } = require("../lib/utils/log");
+const { applyProjectType } = require("../lib/config");
 
 /**
  * Scaffold the wp-env-bin/ config folder in the consuming project and walk the user
@@ -173,25 +174,4 @@ async function install() {
 	logger("  wp-env-bin setup");
 }
 
-/**
- * Apply project type to a parsed .wp-env.json object.
- * Sets `themes: [".."]` for theme projects, `plugins: [".."]` for plugin projects,
- * and removes the opposing key if present.
- *
- * @param {object} wpEnvObj - Parsed .wp-env.json contents
- * @param {'theme'|'plugin'} projectType
- * @returns {object} Updated copy of wpEnvObj
- */
-function applyProjectType(wpEnvObj, projectType) {
-	const out = { ...wpEnvObj };
-	if (projectType === "theme") {
-		delete out.plugins;
-		out.themes = [".."];
-	} else {
-		delete out.themes;
-		out.plugins = [".."];
-	}
-	return out;
-}
-
-module.exports = { install, applyProjectType };
+module.exports = { install };

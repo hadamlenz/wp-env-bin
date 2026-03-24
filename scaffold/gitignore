@@ -1,4 +1,6 @@
 wp-env-bin.config.json
+composer.json
+composer.lock
 assets/database.sql
 assets/database.modified.sql
 assets/.htaccess
@@ -6,5 +8,5 @@ compare-report/
 plugins/
 themes/
 vendor/
-composer.lock
 .wp-env.override.json
+# site-configs/ is intentionally NOT gitignored so profiles can be shared with teammates

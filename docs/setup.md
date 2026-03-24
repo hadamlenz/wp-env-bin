@@ -5,8 +5,10 @@
 ### 1. Run the installer
 
 ```bash
-wp-env-bin install
+wp-env-bin config install
 ```
+
+(`wp-env-bin install` also works as an alias.)
 
 This scaffolds the `wp-env-bin/` config folder and walks you through creating `wp-env-bin.config.json` interactively. The installer will ask for:
 - **Site type** â€” `singlesite` (default) or `multisite`
@@ -131,7 +133,7 @@ For a simple single-site install with no shared tables, `wp db export database.s
 Then use `wp-env-bin use db` to validate and load it locally:
 
 ```bash
-wp-env-bin install
+wp-env-bin config install
 cd wp-env-bin && wp-env start
 wp-env-bin use db /path/to/database.sql
 wp-env-bin process db
@@ -144,6 +146,45 @@ The `env` field in `wp-env-bin.config.json` is not required for this workflow â€
 - A mysqldump header (`-- MySQL dump` or `-- MariaDB dump`)
 - A `CREATE TABLE` statement
 - A WordPress `_options` table
+
+---
+
+## Managing Multiple Site Configs
+
+When you work against multiple remote sites (e.g., different Pantheon subsites), you can store a named profile for each one in `wp-env-bin/site-configs/`. The active `wp-env-bin.config.json` and `composer.json` are always plain copies of whichever profile is active.
+
+### Saving a profile
+
+After running `wp-env-bin config install` or `wp-env-bin config update`, you are prompted to save the current config as a named profile. The default profile name is the `url` value (e.g., `cci.unc.edu`), which produces:
+
+```
+wp-env-bin/site-configs/cci.unc.edu.wp-env-bin.config.json
+wp-env-bin/site-configs/cci.unc.edu.composer.json      (optional)
+wp-env-bin/site-configs/cci.unc.edu.composer.lock      (optional)
+```
+
+Profile files in `site-configs/` are tracked in git so teammates can share them.
+
+### Switching profiles
+
+```bash
+wp-env-bin config switch
+```
+
+Displays a list of all profiles in `site-configs/`. Selecting one copies its files to the active `wp-env-bin.config.json`, `composer.json`, and `composer.lock`. Then run:
+
+```bash
+wp-env-bin setup
+wp-env-bin sync
+```
+
+### Updating an existing config
+
+```bash
+wp-env-bin config update
+```
+
+Re-runs the configuration prompts with all existing values pre-filled as defaults. Useful when a site's Pantheon environment, URL, or multisite prefix changes. Offers to save the result as a new or updated named profile.
 
 ---
 

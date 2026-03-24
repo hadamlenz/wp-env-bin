@@ -9,7 +9,10 @@ Usage:
   wp-env-bin <command> [subcommand]
 
 Commands:
-  install             Scaffold wp-env-bin/ config folder in the current project
+  config install      Scaffold wp-env-bin/ config folder and configure interactively
+  config update       Re-run configuration prompts using existing values as defaults
+  config switch       Switch the active config + composer.json from a named profile in site-configs/
+  install             Alias for config install (backward compatible)
   setup               Install required themes and plugins via composer (runs in wp-env-bin/)
     --delete-lock     Delete composer.lock before installing (use when new packages are added)
   get db              Export the database from Pantheon via Terminus (requires env in config)
@@ -41,7 +44,7 @@ Config files:
     siteId      WP multisite site ID (multisite only)         e.g. "7"
 
 First-time setup:
-  cp wp-env-bin/wp-env-bin.config.json.example wp-env-bin/wp-env-bin.config.json
+  wp-env-bin config install
   wp-env-bin setup
   wp-env-bin make htaccess
   wp-env-bin env start
