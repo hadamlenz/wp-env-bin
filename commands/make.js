@@ -77,7 +77,7 @@ async function makeHtaccess() {
 		wpcli("bash -c 'cp " + containerAssetsPath + "/.htaccess /var/www/html/.htaccess'");
 		logger("> htaccess applied to running container.");
 	} catch {
-		logger("> note: run `npm run wp-env start` to apply htaccess to the container.");
+		logger("> note: run `npx wp-env start` to apply htaccess to the container.");
 	}
 }
 

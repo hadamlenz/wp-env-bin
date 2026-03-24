@@ -3,7 +3,7 @@
  */
 function help() {
 	console.log(`
-wp-env-bin — wp-env subsite testing tool
+wp-env-bin — wp-env scripts and utilities for WordPress plugin and theme development
 
 Usage:
   wp-env-bin <command> [subcommand]
@@ -39,13 +39,13 @@ Config files:
 
 First-time setup:
   cp wp-env-bin/wp-env-bin.config.json.example wp-env-bin/wp-env-bin.config.json
-  npm run env:setup
-  npm run env:htaccess
-  npm run wp-env start
-  npm run env:sync
+  wp-env-bin setup
+  wp-env-bin make htaccess
+  npx wp-env start
+  wp-env-bin sync
 
 Refresh DB:
-  npm run env:sync
+  wp-env-bin sync
 `);
 }
 

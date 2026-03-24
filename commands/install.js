@@ -72,7 +72,7 @@ async function install() {
 				logger("  cp wp-env-bin/composer.json.example wp-env-bin/composer.json");
 				logger("  # Edit composer.json to add your plugin and theme dependencies");
 			}
-			logger("  npm run env:setup");
+			logger("  wp-env-bin setup");
 			logger("\nAdd these scripts to your project package.json for visual regression testing:");
 			logger('  "env:compare":      "wp-env-bin compare --url /"');
 			logger('  "env:compare:page": "wp-env-bin compare --url /your-page-path/"');
@@ -98,7 +98,7 @@ async function install() {
 			logger("  cp wp-env-bin/composer.json.example wp-env-bin/composer.json");
 			logger("  # Edit composer.json to add your plugin and theme dependencies");
 		}
-		logger("  npm run env:setup");
+		logger("  wp-env-bin setup");
 		logger("\nAdd these scripts to your project package.json for visual regression testing:");
 		logger('  "env:compare":      "wp-env-bin compare --url /"');
 		logger('  "env:compare:page": "wp-env-bin compare --url /your-page-path/"');
@@ -180,7 +180,7 @@ async function install() {
 		logger("  cp wp-env-bin/composer.json.example wp-env-bin/composer.json");
 		logger("  # Edit composer.json to add your plugin and theme dependencies");
 	}
-	logger("  npm run env:setup");
+	logger("  wp-env-bin setup");
 	logger("\nAdd these scripts to your project package.json for visual regression testing:");
 	logger('  "env:compare":      "wp-env-bin compare --url /"');
 	logger('  "env:compare:page": "wp-env-bin compare --url /your-page-path/"');
