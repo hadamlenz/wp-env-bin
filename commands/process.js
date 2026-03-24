@@ -3,7 +3,7 @@ const path = require("path");
 const { wpcli } = require("../lib/utils/run");
 const { logger } = require("../lib/utils/log");
 const { checkDatabase } = require("../lib/env/check");
-const { readLocalConfig, readWpEnvJson } = require("../lib/env/config");
+const { readLocalConfig, readWpEnvJson, CONTAINER_ASSETS_PATH } = require("../lib/env/config");
 const { renamePrefix } = require("../lib/db");
 
 /**
@@ -33,11 +33,10 @@ function prefixRenameFile(oldPrefix) {
 /**
  * Import a SQL file into the local WordPress database via WP-CLI inside the Docker container.
  *
- * @param {string} containerAssetsPath - Path to the assets directory inside the container
  * @param {string} [filename='database.modified.sql'] - SQL filename to import
  */
-function importDb(containerAssetsPath, filename) {
-	const importPath = containerAssetsPath + "/" + (filename || "database.modified.sql");
+function importDb(filename) {
+	const importPath = CONTAINER_ASSETS_PATH + "/" + (filename || "database.modified.sql");
 	logger("> importing database from " + importPath + "...");
 	wpcli("wp db import " + importPath);
 	logger("> database imported.");
@@ -92,7 +91,7 @@ async function createAdminUser(username, email, password) {
  */
 async function processDb() {
 	const config = readLocalConfig();
-	const { oldPrefix, url, containerAssetsPath, siteType, adminUsername, adminEmail, adminPassword } = config;
+	const { oldPrefix, url, siteType, adminUsername, adminEmail, adminPassword } = config;
 	const username = adminUsername || "admin";
 	const email = adminEmail || "admin@localhost.com";
 	const password = adminPassword || "password";
@@ -100,9 +99,9 @@ async function processDb() {
 
 	if (oldPrefix) {
 		prefixRenameFile(oldPrefix);
-		importDb(containerAssetsPath, "database.modified.sql");
+		importDb("database.modified.sql");
 	} else {
-		importDb(containerAssetsPath, "database.sql");
+		importDb("database.sql");
 	}
 	searchReplace(url);
 

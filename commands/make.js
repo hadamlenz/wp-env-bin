@@ -3,7 +3,7 @@ const path = require("path");
 const htaccessTemplate = require("../templates/htaccess.tpl");
 const { logger } = require("../lib/utils/log");
 const { wpcli } = require("../lib/utils/run");
-const { readLocalConfig } = require("../lib/env/config");
+const { readLocalConfig, CONTAINER_ASSETS_PATH } = require("../lib/env/config");
 const { checkHtaccess } = require("../lib/env/check");
 
 /**
@@ -36,7 +36,7 @@ function clearIfDirectory(filePath) {
  */
 async function makeHtaccess() {
 	const config = readLocalConfig();
-	const { url, siteId, containerAssetsPath, siteType } = config;
+	const { url, siteId, siteType } = config;
 	const resolvedSiteType = siteType || "singlesite";
 
 	if (!url) {

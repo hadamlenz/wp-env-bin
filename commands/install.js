@@ -144,7 +144,6 @@ async function install() {
 	const config = {
 		commandName: "wp-env-bin",
 		pluginName,
-		containerAssetsPath: "/var/www/html/wp-content/wp-env-bin",
 		projectType,
 		siteType,
 		env,
