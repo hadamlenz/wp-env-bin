@@ -18,23 +18,16 @@ Supports both **single-site** and **multisite** source databases. Works with Pan
 
 ## Installation
 
-Clone the repo and install globally from a local pack:
+Install globally from npm:
 
 ```bash
-git clone https://github.com/hadamlenz/wp-env-bin.git
-cd wp-env-bin
-npm pack
-npm install -g wp-env-bin-1.0.0.tgz
+npm install -g wp-env-bin
 ```
 
-To update, pull the latest and reinstall:
-
-```bash
-cd wp-env-bin
-git pull
-npm pack
-npm install -g wp-env-bin-1.0.0.tgz
-```
+> **Note:** wp-env-bin is not yet published to the npm registry. In the meantime, install from GitHub as a dev dependency:
+> ```bash
+> npm install hadamlenz/wp-env-bin --save-dev
+> ```
 
 ### Optional: single-script fallback
 
