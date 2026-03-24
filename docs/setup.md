@@ -43,10 +43,16 @@ Add your plugin and theme dependencies to the composer.json, then install them:
 wp-env-bin setup
 ```
 
+If you add new packages to `composer.json` after an initial install and get a lock file error (`not present in the lock file`), delete the lock file and reinstall:
+
+```bash
+wp-env-bin setup --delete-lock
+```
+
 ### 4. Start the environment and sync the database
 
 ```bash
-cd wp-env-bin && wp-env start
+wp-env-bin env start
 wp-env-bin sync
 ```
 

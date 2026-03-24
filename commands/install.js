@@ -73,10 +73,6 @@ async function install() {
 				logger("  # Edit composer.json to add your plugin and theme dependencies");
 			}
 			logger("  wp-env-bin setup");
-			logger("\nAdd these scripts to your project package.json for visual regression testing:");
-			logger('  "env:compare":      "wp-env-bin compare --url /"');
-			logger('  "env:compare:page": "wp-env-bin compare --url /your-page-path/"');
-			logger("  Then run: npx playwright install chromium  (one-time browser install)");
 			return;
 		}
 		shouldConfigure = true;
@@ -99,10 +95,6 @@ async function install() {
 			logger("  # Edit composer.json to add your plugin and theme dependencies");
 		}
 		logger("  wp-env-bin setup");
-		logger("\nAdd these scripts to your project package.json for visual regression testing:");
-		logger('  "env:compare":      "wp-env-bin compare --url /"');
-		logger('  "env:compare:page": "wp-env-bin compare --url /your-page-path/"');
-		logger("  Then run: npx playwright install chromium  (one-time browser install)");
 		return;
 	}
 
@@ -142,7 +134,6 @@ async function install() {
 	});
 
 	const config = {
-		commandName: "wp-env-bin",
 		pluginName,
 		projectType,
 		siteType,
@@ -180,10 +171,6 @@ async function install() {
 		logger("  # Edit composer.json to add your plugin and theme dependencies");
 	}
 	logger("  wp-env-bin setup");
-	logger("\nAdd these scripts to your project package.json for visual regression testing:");
-	logger('  "env:compare":      "wp-env-bin compare --url /"');
-	logger('  "env:compare:page": "wp-env-bin compare --url /your-page-path/"');
-	logger("  Then run: npx playwright install chromium  (one-time browser install)");
 }
 
 /**

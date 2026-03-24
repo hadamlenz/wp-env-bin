@@ -12,7 +12,7 @@ async function init() {
 		}
 		case "setup": {
 			const { setup } = require("../commands/setup");
-			setup();
+			setup(process.argv.slice(3));
 			break;
 		}
 		case "get": {

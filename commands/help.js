@@ -11,6 +11,7 @@ Usage:
 Commands:
   install             Scaffold wp-env-bin/ config folder in the current project
   setup               Install required themes and plugins via composer (runs in wp-env-bin/)
+    --delete-lock     Delete composer.lock before installing (use when new packages are added)
   get db              Export the database from Pantheon via Terminus (requires env in config)
   use db <path>       Validate and use a local SQL file (for non-Pantheon hosts)
   process db          Rename table prefix, import DB, and run URL search-replace
