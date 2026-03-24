@@ -237,30 +237,27 @@ Attributes whose `example` value matches their `block.json` default are asserted
 
 ## Writing custom tests
 
-The generators cover structural tests automatically. For attribute controls, interactive behaviors, or keyboard navigation, write hand-authored tests in a `*.e2e.ts` file alongside your block source and import the shared helpers:
+The generators cover structural tests automatically. For attribute controls, interactive behaviors, or keyboard navigation, write hand-authored tests in an `editor.e2e.ts` or `frontend.e2e.ts` file alongside your block source and import the shared helpers:
+
+[Editor E2E example file](editor-example.e2e.ts)
+[Frontend E2E example file](frontend-example.e2e.ts)
+
+Add your custom test files to `wp-env-bin/e2e/playwright.config.ts` projects alongside the generated specs like this:
 
 ```typescript
-import { test, expect } from '@wordpress/e2e-test-utils-playwright';
-import {
-  createPostAndGetId,
-  waitForEditorReady,
-  deletePost,
-  openInspectorSidebar,
-  openStylesTab,
-  expandPanel,
-} from '@e2e/utils/helpers';
-
-// You can also call the generated-spec registration functions directly
-// to extend or override the standard suite with a custom config:
-// import { registerEditorTests } from '@e2e/utils/editor-tests';
-// import { registerFrontendTests } from '@e2e/utils/frontend-tests';
-
-test.describe('My Block - Custom Interactions', () => {
-  // ...
-});
+{
+  name:'icon-block',
+  use: { ...devices['Desktop Chrome'] },
+  testDir: '../../block/icon/test',
+  testMatch: ['**/*.e2e.ts'],
+  dependencies: ['setup'],//only needed if you need the tests to log into the site
+},
 ```
+now you can run the following command to run the icon-block test:
 
-Add your custom test files to `playwright.config.ts` projects alongside the generated specs.
+```bash
+wp-env-bin e2e test --project=icon-block 
+```
 
 ---
 

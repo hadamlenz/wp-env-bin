@@ -18,7 +18,7 @@ Supports both **single-site** and **multisite** source databases. Works with Pan
 
 ## Installation
 
-Install globally from GitHub — no local clone required:
+Install globally from GitHub:
 
 ```bash
 npm install -g github:hadamlenz/wp-env-bin
