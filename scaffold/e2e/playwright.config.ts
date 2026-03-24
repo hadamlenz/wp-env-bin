@@ -86,11 +86,11 @@ export default defineConfig({
 		},
 	],
 
-	// wp-env is started via: cd e2e && npx wp-env start
+	// wp-env is started via: wp-env-bin e2e env start
 	// Run that first, or add it as a webServer command below.
 	//
 	// webServer: {
-	// 	command: 'npx wp-env start',
+	// 	command: 'wp-env-bin e2e env start',
 	// 	url: 'http://localhost:8886',
 	// 	reuseExistingServer: true,
 	// 	timeout: 120_000,

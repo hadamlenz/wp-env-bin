@@ -232,7 +232,7 @@ Next steps:
        npx playwright install chromium
 
   4. Start the e2e environment (uses wp-env-bin/e2e/.wp-env.json, port ${devPort}):
-       cd wp-env-bin/e2e && npx wp-env start
+       cd wp-env-bin e2e env start
        # Your dev env on port 8889 can run at the same time
 
   5. Run tests:
@@ -338,7 +338,7 @@ First-time setup after init:
   cp wp-env-bin/e2e/wp-env-bin.e2e.config.json.example wp-env-bin/e2e/wp-env-bin.e2e.config.json
   cd wp-env-bin/e2e && composer install
   npx playwright install chromium
-  cd wp-env-bin/e2e && npx wp-env start
+  cd wp-env-bin e2e env start
   wp-env-bin e2e test
 `);
 }

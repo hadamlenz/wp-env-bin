@@ -44,7 +44,7 @@ First-time setup:
   cp wp-env-bin/wp-env-bin.config.json.example wp-env-bin/wp-env-bin.config.json
   wp-env-bin setup
   wp-env-bin make htaccess
-  npx wp-env start
+  wp-env-bin env start
   wp-env-bin sync
 
 Refresh DB:
