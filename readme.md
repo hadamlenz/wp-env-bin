@@ -29,6 +29,14 @@ npm install -g wp-env-bin
 > npm install hadamlenz/wp-env-bin --save-dev
 > ```
 
+
+> or better, clone this repo to any place on your computer an use npm link to use the command
+> ```bash
+> git clone git@github.com:hadamlenz/wp-env-bin.git
+> cd wp-env-bin
+> npm link
+> ```
+
 ### Optional: single-script fallback
 
 If you prefer not to install globally, add one script to your project's `package.json`:
