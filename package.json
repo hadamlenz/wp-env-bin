@@ -1,6 +1,6 @@
 {
 	"name": "wp-env-bin",
-	"version": "1.0.0",
+	"version": "1.0.2",
 	"description": "WordPress local environment manager for wp-env",
 	"bin": {
 		"wp-env-bin": "bin/wp-env-bin"
@@ -23,7 +23,9 @@
 		"glob": "^13.0.0",
 		"@inquirer/prompts": "^8.0.0",
 		"pixelmatch": "^5.3.0",
-		"pngjs": "^7.0.0",
+		"pngjs": "^7.0.0"
+	},
+	"devDependencies": {
 		"source-map-support": "^0.5.21",
 		"typescript": "^5.0.0"
 	},
@@ -46,6 +48,17 @@
 		"terminus",
 		"pantheon"
 	],
-	"author": "H. Adam Lenz",
-	"license": "ISC"
+	"author": {
+		"name": "H. Adam Lenz",
+		"url": "https://github.com/hadamlenz"
+	},
+	"license": "ISC",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/hadamlenz/wp-env-bin.git"
+	},
+	"homepage": "https://github.com/hadamlenz/wp-env-bin#readme",
+	"bugs": {
+		"url": "https://github.com/hadamlenz/wp-env-bin/issues"
+	}
 }

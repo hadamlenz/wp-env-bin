@@ -1,0 +1,15 @@
+# Dev & build artifacts
+node_modules/
+*.tgz
+package-lock.json
+tsconfig.json
+
+# Test & docs
+tests/
+docs/
+
+# OS artifacts
+.DS_Store
+
+# Local config
+config.local.json

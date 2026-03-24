@@ -1,0 +1,5 @@
+# TypeScript source files (compiled .js and .d.ts are sufficient for consumers)
+*.ts
+!*.d.ts
+specs/*.ts
+!specs/*.d.ts

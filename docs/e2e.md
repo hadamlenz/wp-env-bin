@@ -254,7 +254,7 @@ Add your custom test files to `wp-env-bin/e2e/playwright.config.ts` projects alo
 },
 ```
 now you can run the following command to run the icon-block test:
-
+cod
 ```bash
 wp-env-bin e2e test --project=icon-block 
 ```
