@@ -75,7 +75,7 @@ async function fetchSitemap(liveDomain) {
  * @returns {Promise<Buffer>} PNG image buffer
  */
 async function takeScreenshot(page, url) {
-	await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
+	await page.goto(url, { waitUntil: "load", timeout: 30000 });
 	await page.waitForTimeout(500); // let animations/lazy rendering settle
 	return page.screenshot({ fullPage: true });
 }
@@ -92,18 +92,40 @@ async function takeScreenshot(page, url) {
  * @returns {Promise<void>}
  */
 async function compare(argv) {
-	const { url: urlFlag, limit, threshold } = parseArgs(argv);
+	const { url: urlFlag, limit, threshold, testPaths } = parseArgs(argv);
 
 	const config = readLocalConfig();
 	const liveDomain = config.url;
 	const port = readPort();
-	const reportDir = path.join(process.cwd(), "wp-env-bin/compare-report");
+
+	const now = new Date();
+	const pad = (n) => String(n).padStart(2, "0");
+	const timestamp =
+		now.getFullYear() +
+		pad(now.getMonth() + 1) +
+		pad(now.getDate()) +
+		"-" +
+		pad(now.getHours()) +
+		":" +
+		pad(now.getMinutes());
+	const reportFolderName = liveDomain + "-" + timestamp;
+	const reportDir = path.join(process.cwd(), "wp-env-bin/compare-reports", reportFolderName);
 
 	logger("wp-env-bin compare — live: " + liveDomain + " → local: localhost:" + port + "\n");
 
 	// Discover URLs
 	let urls;
-	if (urlFlag) {
+	if (testPaths) {
+		const paths = config["test-paths"];
+		if (!Array.isArray(paths) || paths.length === 0) {
+			throw new Error(
+				'wp-env-bin.config.json is missing a "test-paths" array. ' +
+				'Add one or omit --test-paths.'
+			);
+		}
+		urls = paths.map((p) => "https://" + liveDomain + (p.startsWith("/") ? p : "/" + p));
+		process.stdout.write("Using " + urls.length + " path" + (urls.length !== 1 ? "s" : "") + " from test-paths config.\n\n");
+	} else if (urlFlag) {
 		let fullUrl;
 		try {
 			new URL(urlFlag);
@@ -160,6 +182,11 @@ async function compare(argv) {
 			livePng = await takeScreenshot(page, liveUrl);
 			await page.goto("about:blank");
 			localPng = await takeScreenshot(page, localUrl);
+		} catch (err) {
+			const msg = err.message.split("\n")[0];
+			process.stdout.write("E  " + msg + "\n");
+			results.push({ path: urlPath, slug, diffPercent: null, status: "error", error: msg });
+			continue;
 		} finally {
 			await page.close();
 		}
@@ -185,15 +212,17 @@ async function compare(argv) {
 	const passCount = results.filter((r) => r.status === "pass").length;
 	const warnCount = results.filter((r) => r.status === "warn").length;
 	const failCount = results.filter((r) => r.status === "fail").length;
+	const errorCount = results.filter((r) => r.status === "error").length;
 
 	logger(
 		"\n" + "─".repeat(52) + "\n" +
 		"Results: " + passCount + " passed, " + warnCount + " warning" + (warnCount !== 1 ? "s" : "") +
-		", " + failCount + " failed (" + results.length + " tested)"
+		", " + failCount + " failed, " + errorCount + " error" + (errorCount !== 1 ? "s" : "") +
+		" (" + results.length + " tested)"
 	);
-	logger("Report:  wp-env-bin/compare-report/index.html");
+	logger("Report:  wp-env-bin/compare-reports/" + reportFolderName + "/index.html");
 
-	if (failCount > 0) {
+	if (failCount > 0 || errorCount > 0) {
 		process.exit(1);
 	}
 }
@@ -211,6 +240,8 @@ Usage:
 Flags:
   --url <path|url>    Compare a single page. Accepts a path (/about/) or a full URL.
                       Omit to pull all URLs from the live site's sitemap.xml instead.
+  --test-paths        Read paths from the "test-paths" array in wp-env-bin.config.json
+                      and compare each one. Takes precedence over --url and sitemap.
   --limit <n>         Max number of sitemap URLs to test (default: 10)
   --threshold <n>     Pixel diff % used to classify results (default: 1)
 
@@ -228,6 +259,7 @@ Examples:
   wp-env-bin compare --limit 50               Test first 50 sitemap URLs
   wp-env-bin compare --url /                  Compare the homepage only
   wp-env-bin compare --url /about/ --threshold 0.5
+  wp-env-bin compare --test-paths             Compare paths listed in wp-env-bin.config.json
 `);
 }
 

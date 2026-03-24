@@ -33,19 +33,42 @@ wp-env-bin compare --url /research/labs/
 wp-env-bin compare --limit 10
 ```
 
+**Compare a curated list of paths from config:**
+```bash
+wp-env-bin compare --test-paths
+```
+
 ## Options
 
 | Flag | Default | Description |
 |---|---|---|
 | `--url <path>` | *(none — uses sitemap)* | Path to compare, e.g. `/about/` |
+| `--test-paths` | *(off)* | Read paths from `"test-paths"` in `wp-env-bin.config.json` |
 | `--threshold <n>` | `1` | Pixel diff % above which a page is flagged as a failure |
 | `--limit <n>` | `10` | Max pages to pull from sitemap when no `--url` is given |
 
+## Configuring `test-paths`
+
+Add a `test-paths` array to `wp-env-bin/wp-env-bin.config.json` listing the paths you want to test. Paths are joined with `url` from the same config to form the full live URL, then diffed against your local environment.
+
+```json
+{
+  "url": "example.com",
+  "test-paths": [
+    "/education/pharmd/",
+    "/fellowships/",
+    "/our-people/office-of-the-dean/"
+  ]
+}
+```
+
+When `--test-paths` is passed, `--url` and `--limit` are ignored — only the paths in the config list are tested.
+
 ## Report
 
-After each run, the report is written to `wp-env-bin/compare-report/`. The `index.html` summarizes all pages with their diff percentage and pass/warn/fail status. Each page gets its own subfolder under `pages/<slug>/` containing `live.png`, `local.png`, and `diff.png`.
+After each run, the report is written to `wp-env-bin/compare-reports/{url}-{yyyymmdd-hh:mm}/`. Each run gets its own timestamped folder, so previous reports are preserved. The `index.html` summarizes all pages with their diff percentage and pass/warn/fail status. Each page gets its own subfolder under `pages/<slug>/` containing `live.png`, `local.png`, and `diff.png`.
 
-Open `wp-env-bin/compare-report/index.html` in your browser to review side-by-side screenshots and click into individual pages for a closer look.
+Open the reported path in your browser to review side-by-side screenshots and click into individual pages for a closer look.
 
 ## Status thresholds
 

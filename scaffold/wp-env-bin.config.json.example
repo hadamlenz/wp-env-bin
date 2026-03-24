@@ -9,5 +9,6 @@
 	"siteId": "",
 	"adminUsername": "admin",
 	"adminEmail": "admin@localhost.com",
-	"adminPassword": "password"
+	"adminPassword": "password",
+	"test-paths": []
 }
