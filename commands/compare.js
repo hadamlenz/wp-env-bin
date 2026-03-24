@@ -120,10 +120,12 @@ async function compare(argv) {
 		urls = urlsToTest;
 	}
 
-	// Launch Playwright
+	// Launch Playwright — resolve from the project's local node_modules so this
+	// works whether wp-env-bin is installed globally or as a dev dependency.
 	let chromium;
 	try {
-		({ chromium } = require("playwright"));
+		const playwrightPath = require.resolve("playwright", { paths: [process.cwd()] });
+		({ chromium } = require(playwrightPath));
 	} catch {
 		throw new Error(
 			"Playwright is not installed. Run: npm install\n" +
