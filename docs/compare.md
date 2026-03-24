@@ -14,15 +14,12 @@ npx playwright install chromium
 
 **Compare the home page:**
 ```bash
-npm run env:compare
-# equivalent: wp-env-bin compare --url /
+wp-env-bin compare --url /
 ```
 
 **Compare a specific page:**
 ```bash
-# Edit env:compare:page in package.json to point at your target path, then:
-npm run env:compare:page
-# equivalent: wp-env-bin compare --url /your-page-path/
+wp-env-bin compare --url /your-page-path/
 ```
 
 **Compare directly with any path:**

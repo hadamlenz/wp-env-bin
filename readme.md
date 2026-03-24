@@ -18,11 +18,37 @@ Supports both **single-site** and **multisite** source databases. Works with Pan
 
 ## Installation
 
-Install directly from GitHub as a dev dependency, until we can get on [nmpjs.com](https://www.npmjs.com/), you will also need to run this to update
+Install globally from GitHub — no local clone required:
 
 ```bash
-npm install --save-dev hadamlenz/wp-env-bin
+npm install -g github:hadamlenz/wp-env-bin
 ```
+
+To update:
+
+```bash
+npm install -g github:hadamlenz/wp-env-bin
+```
+
+### Optional: single-script fallback
+
+If you prefer not to install globally, add one script to your project's `package.json`:
+
+```json
+{
+  "scripts": {
+    "wp-env-bin": "wp-env-bin"
+  }
+}
+```
+
+Then invoke any command via `npm run wp-env-bin --` followed by the command (the `--` is required to forward arguments):
+
+```bash
+npm run wp-env-bin -- sync
+npm run wp-env-bin -- e2e test --project=all-blocks-editor
+```
+
 ---
 
 ## Documentation
@@ -31,27 +57,6 @@ npm install --save-dev hadamlenz/wp-env-bin
 - [**Visual Regression Testing**](docs/compare.md) — `compare` command usage, options, report output
 - [**E2E Block Testing**](docs/e2e.md) — Playwright block tests, environment isolation, generating tests, writing custom tests
 - [**Testing wp-env-bin**](docs/testing.md) — Running the unit test suite, test file index, fixtures, and patterns for adding new tests
-
----
-
-## Recommended `package.json` Scripts
-
-```json
-{
-  "scripts": {
-    "wp-env": "cd wp-env-bin && wp-env",
-    "env:install": "wp-env-bin install",
-    "env:setup": "wp-env-bin setup",
-    "env:get": "wp-env-bin get db",
-    "env:process": "wp-env-bin process db",
-    "env:htaccess": "wp-env-bin make htaccess",
-    "env:sync": "wp-env-bin sync",
-    "env:compare": "wp-env-bin compare --url /",
-    "env:compare:page": "wp-env-bin compare --url /your-page-path/",
-    "env:help": "wp-env-bin help"
-  }
-}
-```
 
 ---
 
@@ -66,8 +71,12 @@ npm install --save-dev hadamlenz/wp-env-bin
 | `wp-env-bin process db` | Rename table prefix, import DB into local env, run URL search-replace |
 | `wp-env-bin make htaccess` | Generate `.htaccess` to reverse-proxy media uploads from the live site |
 | `wp-env-bin sync` | Run `get db` + `process db` + `make htaccess` in sequence |
-| `wp-env-bin compare` | Visual A/B regression test — screenshot live vs local and diff |
+| `wp-env-bin compare --url /` | Visual A/B regression test — screenshot live vs local and diff |
+| `wp-env-bin compare --url /your-page/` | Compare a specific page path |
 | `wp-env-bin e2e init` | Scaffold `wp-env-bin/e2e/` block test environment with its own `.wp-env.json` |
+| `wp-env-bin e2e test` | Run all Playwright tests from `wp-env-bin/e2e/` |
+| `wp-env-bin e2e test --project=all-blocks-editor` | Run editor tests only |
+| `wp-env-bin e2e test --project=all-blocks-frontend` | Run frontend tests only |
 | `wp-env-bin e2e generate editor --file=<path>` | Generate Playwright editor tests from a `block.json` file |
 | `wp-env-bin e2e generate frontend --file=<path>` | Generate Playwright frontend tests from a `block.json` file |
 | `wp-env-bin help` | Show command reference |

@@ -5,7 +5,7 @@
 ### 1. Run the installer
 
 ```bash
-npm run env:install
+wp-env-bin install
 ```
 
 This scaffolds the `wp-env-bin/` config folder and walks you through creating `wp-env-bin.config.json` interactively. The installer will ask for:
@@ -40,14 +40,14 @@ cp wp-env-bin/composer.json.example wp-env-bin/composer.json
 Add your plugin and theme dependencies to the composer.json, then install them:
 
 ```bash
-npm run env:setup
+wp-env-bin setup
 ```
 
 ### 4. Start the environment and sync the database
 
 ```bash
-npm run wp-env start
-npm run env:sync
+cd wp-env-bin && wp-env start
+wp-env-bin sync
 ```
 
 ---
@@ -97,7 +97,7 @@ npm run env:sync
 Pull the latest production database and sync your local environment:
 
 ```bash
-npm run env:sync
+wp-env-bin sync
 ```
 
 This runs the full pipeline: exports from Pantheon, renames table prefixes, imports into Docker, runs URL search-replace, and regenerates the media proxy `.htaccess`.
@@ -125,11 +125,11 @@ For a simple single-site install with no shared tables, `wp db export database.s
 Then use `wp-env-bin use db` to validate and load it locally:
 
 ```bash
-npm run env:install
-npm run wp-env start
+wp-env-bin install
+cd wp-env-bin && wp-env start
 wp-env-bin use db /path/to/database.sql
-npm run env:process
-npm run env:htaccess
+wp-env-bin process db
+wp-env-bin make htaccess
 ```
 
 The `env` field in `wp-env-bin.config.json` is not required for this workflow — only `url` is needed.

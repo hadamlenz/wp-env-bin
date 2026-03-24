@@ -103,110 +103,65 @@ These fields are all optional. When present they set the defaults shown during `
 - `block.json` is always expected at `{dir}/block.json` — this is the WordPress convention.
 - Block CSS and `render.php` are read at test startup, so tests always reflect the current state of the source without any regeneration step.
 
-**Focused runs:**
-
-```bash
-# Editor tests only
-npx playwright test --project=all-blocks-editor
-
-# Frontend tests only
-npx playwright test --project=all-blocks-frontend
-
-# One block by title
-npx playwright test --grep "Accordion"
-
-# One block, editor only
-npx playwright test --project=all-blocks-editor --grep "Accordion"
-```
-
 **Hand-authored tests** in `{block}/test/editor.e2e.ts` and `{block}/test/frontend.e2e.ts` are picked up automatically by the playwright config — no extra configuration needed.
 
 ---
 
-## Generating static spec files (optional)
+## Running tests
 
-The discovery approach above is recommended. If you prefer explicit per-block spec files — for inspection, debugging, or CI snapshot diffs — use the generate commands. Generated specs are written to `wp-env-bin/e2e/specs/editor/` or `wp-env-bin/e2e/specs/frontend/` and must be regenerated when `block.json` changes.
+The test environment must be running before executing tests — see [First-time setup](#first-time-setup) step 5.
 
-**Generate editor tests for one block:**
 ```bash
-wp-env-bin e2e generate editor --file=src/blocks/my-block/block.json
+# All tests
+wp-env-bin e2e test
+
+# Editor tests only
+wp-env-bin e2e test --project=all-blocks-editor
+
+# Frontend tests only
+wp-env-bin e2e test --project=all-blocks-frontend
+
+# One block by title
+wp-env-bin e2e test --grep "Accordion"
+
+# One block, editor only
+wp-env-bin e2e test --project=all-blocks-editor --grep "Accordion"
+
+# Headed mode (see the browser)
+wp-env-bin e2e test --headed
+
+# Debug mode (Playwright inspector)
+wp-env-bin e2e test --debug
+
+# Open HTML report
+cd wp-env-bin/e2e && npx playwright show-report playwright-report
 ```
-
-**Generate frontend tests for one block:**
-```bash
-wp-env-bin e2e generate frontend --file=src/blocks/my-block/block.json
-```
-
-**Generate for all blocks at once (requires `glob` package):**
-```bash
-npm install --save-dev glob
-wp-env-bin e2e generate editor --glob="src/blocks/**/block.json"
-wp-env-bin e2e generate frontend --glob="src/blocks/**/block.json" --screenshots
-```
-
-**Options for `generate frontend`:**
-
-| Flag | Description |
-|---|---|
-| `--screenshots` | Save a dated PNG screenshot of each block during test runs (stored in `wp-env-bin/e2e/test-results/screenshots/frontend/`) |
-| `--visual-regression` | Generate `toHaveScreenshot()` tests — baselines created on first run, compared on subsequent runs |
-| `--output=<dir>` | Override output directory (defaults: `./wp-env-bin/e2e/specs/editor` or `./wp-env-bin/e2e/specs/frontend` relative to project root) |
 
 ---
 
 ## Visual regression snapshots
 
-Frontend tests support two distinct screenshot modes. Both are opt-in and disabled by default.
+Frontend tests support two screenshot modes, both opt-in:
 
-### Documentation screenshots (`screenshots`)
+- **`--screenshots`** — saves a dated PNG of each block after every run, useful for visual documentation. Files land in `wp-env-bin/e2e/test-results/screenshots/frontend/` and are gitignored.
+- **`--visual-regression`** — compares each block against a stored baseline PNG using Playwright's `toHaveScreenshot()`. Fails if pixel differences exceed 2%. Baselines are stored in `wp-env-bin/e2e/snapshots/` — **commit this directory** so CI can compare against them.
 
-Saves a dated PNG of each block element after every test run. These are **not** compared against a baseline — they're useful for visual documentation, changelogs, or manually spotting regressions.
-
-- Files written to: `wp-env-bin/e2e/test-results/screenshots/frontend/wp-block-{name}-{date}.png`
-- Gitignored — not committed
-
-### Visual regression (`visualRegression`)
-
-Uses Playwright's built-in `toHaveScreenshot()` to compare the block element against a stored baseline PNG. The test fails if pixel differences exceed 2%.
-
-- Baselines stored in: `wp-env-bin/e2e/snapshots/`
-- **Commit the `snapshots/` directory** — baselines must be checked in for CI to compare against them
-- Snapshot filename: `wp-block-{block-name}.png` (e.g. `wp-block-my-plugin-accordion.png`)
-
-### Enabling visual regression
-
-**Discovery approach (recommended)** — pass `{ visualRegression: true }` in `specs/frontend/blocks.spec.ts`:
-
-```typescript
-registerFrontendTestsFromConfig(test, path.join(process.cwd(), 'wp-env-bin.e2e.config.json'), {
-  visualRegression: true,
-});
-```
-
-You can also combine both modes:
-
-```typescript
-registerFrontendTestsFromConfig(test, path.join(process.cwd(), 'wp-env-bin.e2e.config.json'), {
-  screenshots:      true,
-  visualRegression: true,
-});
-```
-
-**Static spec files** — pass `--visual-regression` when generating:
+Enable either flag when generating frontend specs:
 
 ```bash
 wp-env-bin e2e generate frontend --file=src/blocks/my-block/block.json --visual-regression
+wp-env-bin e2e generate frontend --glob="src/blocks/**/block.json" --screenshots
 ```
 
 ### Creating initial baselines
 
-Run the frontend tests once with `updateSnapshots: 'missing'` set in `playwright.config.ts` (this is the default). Playwright creates a baseline PNG for each block on the first run — no separate command needed.
+Run frontend tests once — Playwright creates baseline PNGs automatically on the first run:
 
 ```bash
-cd wp-env-bin/e2e && npx playwright test --project=all-blocks-frontend
+wp-env-bin e2e test --project=all-blocks-frontend
 ```
 
-After the run, commit the generated files in `snapshots/`:
+Then commit the generated baselines:
 
 ```bash
 git add wp-env-bin/e2e/snapshots/
@@ -215,23 +170,11 @@ git commit -m "Add visual regression baselines"
 
 ### Updating baselines after intentional visual changes
 
-When a block's appearance changes intentionally (new styles, markup refactor), update the stored baselines:
-
 ```bash
-cd wp-env-bin/e2e && npx playwright test --project=all-blocks-frontend --update-snapshots
+wp-env-bin e2e test --project=all-blocks-frontend --update-snapshots
 ```
 
-Then commit the updated PNGs. Review the diff in your PR to confirm only the expected blocks changed.
-
-Add this to your `package.json` for convenience:
-
-```json
-{
-  "scripts": {
-    "test:e2e:update-snapshots": "cd wp-env-bin/e2e && playwright test --project=all-blocks-frontend --update-snapshots"
-  }
-}
-```
+Commit the updated PNGs and review the diff in your PR to confirm only expected blocks changed.
 
 ---
 
@@ -292,41 +235,6 @@ Attributes whose `example` value matches their `block.json` default are asserted
 
 ---
 
-## Running tests
-
-```bash
-# All tests
-npx playwright test --config=wp-env-bin/e2e/playwright.config.ts
-
-# Editor tests only
-npx playwright test --config=wp-env-bin/e2e/playwright.config.ts --project=all-blocks-editor
-
-# Frontend tests only
-npx playwright test --config=wp-env-bin/e2e/playwright.config.ts --project=all-blocks-frontend
-
-# Open HTML report
-npx playwright show-report wp-env-bin/e2e/playwright-report
-```
-
----
-
-## Recommended `package.json` scripts
-
-```json
-{
-  "scripts": {
-    "e2e:env:start":         "cd wp-env-bin/e2e && npx wp-env start",
-    "e2e:env:stop":          "cd wp-env-bin/e2e && npx wp-env stop",
-    "test:e2e":              "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --quiet",
-    "test:e2e:editor":       "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-editor --quiet",
-    "test:e2e:frontend":     "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-frontend --quiet",
-    "test:e2e:report":       "cd wp-env-bin/e2e && playwright show-report playwright-report"
-  }
-}
-```
-feel free to add projects to the `./wp-env-bin/e2e/playwright.config.ts` file
----
-
 ## Writing custom tests
 
 The generators cover structural tests automatically. For attribute controls, interactive behaviors, or keyboard navigation, write hand-authored tests in a `*.e2e.ts` file alongside your block source and import the shared helpers:
@@ -354,3 +262,34 @@ test.describe('My Block - Custom Interactions', () => {
 
 Add your custom test files to `playwright.config.ts` projects alongside the generated specs.
 
+---
+
+## Generating static spec files (optional)
+
+The discovery approach above is recommended. If you prefer explicit per-block spec files — for inspection, debugging, or CI snapshot diffs — use the generate commands. Generated specs are written to `wp-env-bin/e2e/specs/editor/` or `wp-env-bin/e2e/specs/frontend/` and must be regenerated when `block.json` changes.
+
+**Generate editor tests for one block:**
+```bash
+wp-env-bin e2e generate editor --file=src/blocks/my-block/block.json
+```
+
+**Generate frontend tests for one block:**
+```bash
+wp-env-bin e2e generate frontend --file=src/blocks/my-block/block.json
+```
+
+**Generate for all blocks at once:**
+```bash
+wp-env-bin e2e generate editor --glob="src/blocks/**/block.json"
+wp-env-bin e2e generate frontend --glob="src/blocks/**/block.json" --screenshots
+```
+
+**Options for `generate frontend`:**
+
+| Flag | Description |
+|---|---|
+| `--screenshots` | Save a dated PNG screenshot of each block during test runs (stored in `wp-env-bin/e2e/test-results/screenshots/frontend/`) |
+| `--visual-regression` | Generate `toHaveScreenshot()` tests — baselines created on first run, compared on subsequent runs |
+| `--output=<dir>` | Override output directory (defaults: `./wp-env-bin/e2e/specs/editor` or `./wp-env-bin/e2e/specs/frontend` relative to project root) |
+
+---

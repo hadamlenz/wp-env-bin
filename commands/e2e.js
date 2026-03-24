@@ -236,16 +236,34 @@ Next steps:
        # Your dev env on port 8889 can run at the same time
 
   5. Run tests:
-       cd wp-env-bin/e2e && npx playwright test --config=playwright.config.ts
-
-Add these scripts to your project package.json:
-  "e2e:env:start":     "cd wp-env-bin/e2e && npx wp-env start",
-  "e2e:env:stop":      "cd wp-env-bin/e2e && npx wp-env stop",
-  "test:e2e":          "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --quiet",
-  "test:e2e:editor":   "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-editor --quiet",
-  "test:e2e:frontend": "cd wp-env-bin/e2e && playwright test --config=playwright.config.ts --project=all-blocks-frontend --quiet",
-  "test:e2e:report":   "cd wp-env-bin/e2e && playwright show-report playwright-report"
+       wp-env-bin e2e test
+       wp-env-bin e2e test --project=all-blocks-editor
+       wp-env-bin e2e test --project=all-blocks-frontend
+       wp-env-bin e2e test --headed
 `);
+}
+
+/**
+ * Run Playwright tests from wp-env-bin/e2e/.
+ *
+ * Equivalent to: cd wp-env-bin/e2e && npx playwright test --config=playwright.config.ts
+ * Any extra args are forwarded directly to Playwright (e.g. --project=, --headed, --debug).
+ *
+ * @param {string[]} args - Passthrough args to playwright test
+ */
+function runE2eTests(args = []) {
+	const result = spawnSync(
+		"npx",
+		["playwright", "test", "--config=playwright.config.ts", ...args],
+		{
+			stdio: "inherit",
+			cwd: path.join(process.cwd(), "wp-env-bin", "e2e"),
+		}
+	);
+
+	if (result.status !== 0) {
+		process.exit(result.status ?? 1);
+	}
 }
 
 /**
@@ -277,4 +295,4 @@ function generateE2eTests(type, args = []) {
 	}
 }
 
-module.exports = { initE2e, generateE2eTests, scaffoldE2eFiles };
+module.exports = { initE2e, generateE2eTests, runE2eTests, scaffoldE2eFiles };
