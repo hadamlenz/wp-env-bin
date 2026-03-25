@@ -1,4 +1,4 @@
-const { existsSync, readdirSync, copyFileSync, writeFileSync, readFileSync } = require("fs");
+const { existsSync, mkdirSync, readdirSync, unlinkSync, copyFileSync, writeFileSync, readFileSync } = require("fs");
 const path = require("path");
 const { logger } = require("../lib/utils/log");
 const { applyProjectType, saveNamedProfile } = require("../lib/config");
@@ -112,4 +112,51 @@ function configSwitch(chosen) {
 	}
 }
 
-module.exports = { configInstall, configUpdate, configSwitch, getProfileList };
+/**
+ * Save a new named profile to site-configs/ without touching the active
+ * wp-env-bin.config.json. All interactive decisions are made by the caller.
+ *
+ * @param {object} config      - Config values to save
+ * @param {string} profileName - Filename prefix (e.g. "example.com")
+ * @returns {string} The profileName that was saved
+ */
+function configCreate(config, profileName) {
+	const dest = path.join(process.cwd(), "wp-env-bin");
+	const siteConfigsDir = path.join(dest, "site-configs");
+
+	mkdirSync(siteConfigsDir, { recursive: true });
+
+	const filePath = path.join(siteConfigsDir, profileName + ".wp-env-bin.config.json");
+	writeFileSync(filePath, JSON.stringify(config, null, "\t"), "utf8");
+	logger("> saved site-configs/" + profileName + ".wp-env-bin.config.json");
+
+	return profileName;
+}
+
+/**
+ * Delete a named profile and any companion composer files from site-configs/.
+ * The caller is responsible for confirming before invoking this function.
+ *
+ * @param {string} profileName - The profile to remove
+ * @returns {void}
+ */
+function configDelete(profileName) {
+	const dest = path.join(process.cwd(), "wp-env-bin");
+	const siteConfigsDir = path.join(dest, "site-configs");
+
+	const companions = [
+		profileName + ".wp-env-bin.config.json",
+		profileName + ".composer.json",
+		profileName + ".composer.lock",
+	];
+
+	for (const file of companions) {
+		const filePath = path.join(siteConfigsDir, file);
+		if (existsSync(filePath)) {
+			unlinkSync(filePath);
+			logger("> deleted site-configs/" + file);
+		}
+	}
+}
+
+module.exports = { configInstall, configUpdate, configSwitch, getProfileList, configCreate, configDelete };

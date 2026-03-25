@@ -9,9 +9,12 @@ Usage:
   wp-env-bin <command> [subcommand]
 
 Commands:
-  config install      Scaffold wp-env-bin/ config folder and configure interactively
+  scaffold            Copy wp-env-bin/ template files into your project (new or existing)
+  config create       Create a named site config profile and optionally activate it
+  config install      [Deprecated] Scaffold + configure in one step (use scaffold + config create)
   config update       Re-run configuration prompts using existing values as defaults
   config switch       Switch the active config + composer.json from a named profile in site-configs/
+  config delete       Remove a named profile from site-configs/
   db get              Export the database from Pantheon via Terminus (requires env in config)
   db use <path>       Validate and use a local SQL file (for non-Pantheon hosts)
   db process          Rename table prefix, import DB, and run URL search-replace
@@ -43,7 +46,8 @@ Config files:
     siteId      WP multisite site ID (multisite only)         e.g. "7"
 
 First-time setup:
-  wp-env-bin config install
+  wp-env-bin scaffold
+  wp-env-bin config create
   wp-env-bin env setup
   wp-env-bin htaccess make
   wp-env-bin env start
@@ -56,15 +60,17 @@ Refresh DB:
 
 function configHelp() {
 	console.log(`
-wp-env-bin config — Scaffold and manage your wp-env-bin configuration
+wp-env-bin config — Manage your wp-env-bin site config profiles
 
 Usage:
   wp-env-bin config <subcommand>
 
 Subcommands:
-  install     Scaffold wp-env-bin/ folder and configure interactively
-  update      Re-run prompts with existing values as defaults
+  create      Prompt for site config values, save to site-configs/, optionally activate
+  delete      Remove a named profile from site-configs/
   switch      Pick a named profile from site-configs/ and activate it
+  update      Re-run prompts with existing values as defaults
+  install     [Deprecated] Use scaffold + config create instead
 
 Config file: wp-env-bin/wp-env-bin.config.json (gitignored)
   siteType    "singlesite" or "multisite"               default: "singlesite"
@@ -72,6 +78,30 @@ Config file: wp-env-bin/wp-env-bin.config.json (gitignored)
   url         Live site domain                          e.g. "example.com"
   oldPrefix   Live DB table prefix (multisite only)     e.g. "wp_7_"
   siteId      WP multisite site ID (multisite only)     e.g. "7"
+`);
+}
+
+function scaffoldHelp() {
+	console.log(`
+wp-env-bin scaffold — Copy wp-env-bin/ template files into your project
+
+Usage:
+  wp-env-bin scaffold
+
+Behavior:
+  New project    Creates wp-env-bin/ and copies all template files
+  Existing       Only copies files that do not yet exist (safe to re-run)
+
+Files scaffolded:
+  .wp-env.json                      Standard wp-env config
+  .gitignore                        Gitignore rules for wp-env-bin/
+  composer.json.example             Composer template (copy and customize)
+  wp-env-bin.config.json.example    Config template (copy and customize)
+  plugins/wp-env-bin-plugin/        Service worker plugin
+
+After scaffolding:
+  wp-env-bin config create      Create and save a site config profile
+  wp-env-bin config switch      Activate an existing profile
 `);
 }
 
@@ -236,4 +266,4 @@ First-time setup after init:
 `);
 }
 
-module.exports = { help, configHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp };
+module.exports = { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp };

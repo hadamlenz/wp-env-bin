@@ -74,9 +74,12 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 
 | Command | Description |
 |---|---|
-| `wp-env-bin config install` | Scaffold `wp-env-bin/` config folder and configure interactively |
-| `wp-env-bin config update` | Re-run configuration prompts using existing values as defaults |
+| `wp-env-bin scaffold` | Copy `wp-env-bin/` template files into your project (skips existing files on re-run) |
+| `wp-env-bin config create` | Prompt for site config values and save as a named profile in `site-configs/` |
 | `wp-env-bin config switch` | Pick a named profile from `site-configs/` and activate it |
+| `wp-env-bin config delete` | Remove a named profile from `site-configs/` |
+| `wp-env-bin config update` | Re-run configuration prompts using existing values as defaults |
+| `wp-env-bin config install` | *(Deprecated)* Scaffold + configure in one step — use `scaffold` + `config create` instead |
 | `wp-env-bin db get` | Export the database from Pantheon via Terminus *(requires `env` in config)* |
 | `wp-env-bin db use <path>` | Validate and use a local SQL file instead of downloading from Pantheon |
 | `wp-env-bin db process` | Rename table prefix, import DB into local env, run URL search-replace |
@@ -99,7 +102,7 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 
 ## Project Structure
 
-Running `wp-env-bin config install` and `wp-env-bin e2e init` creates a `wp-env-bin/` folder in your project root. This folder holds all configuration for the wp-env-bin package — it is **not** part of your plugin or theme source and should be treated like a local tooling config directory. The active `wp-env-bin.config.json` and `composer.json` are gitignored; named profiles in `site-configs/` are tracked so teammates can share them.
+Running `wp-env-bin scaffold` and `wp-env-bin e2e init` creates a `wp-env-bin/` folder in your project root. This folder holds all configuration for the wp-env-bin package — it is **not** part of your plugin or theme source and should be treated like a local tooling config directory. The active `wp-env-bin.config.json` and `composer.json` are gitignored; named profiles in `site-configs/` are tracked so teammates can share them.
 
 ```
 wp-env-bin/
@@ -111,7 +114,7 @@ wp-env-bin/
 ├── site-configs/             # Named config + composer profiles, one per remote site (tracked in git)
 │   ├── site.subsite.com.wp-env-bin.config.json
 │   ├── site.org.composer.json
-│   └── ...                   # Add more profiles with `config install` or `config update`
+│   └── ...                   # Add more profiles with `config create` or `config update`
 ├── assets/
 │   ├── database.sql          # Production DB snapshot downloaded by `db get` (gitignored)
 │   ├── database.modified.sql # Processed DB ready for import by `db process` (gitignored)

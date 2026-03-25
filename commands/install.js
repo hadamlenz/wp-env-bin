@@ -1,7 +1,8 @@
-const { mkdirSync, existsSync, copyFileSync, writeFileSync, readFileSync } = require("fs");
+const { existsSync, writeFileSync, readFileSync } = require("fs");
 const path = require("path");
 const { logger } = require("../lib/utils/log");
 const { applyProjectType } = require("../lib/config");
+const { scaffoldFiles } = require("./scaffold");
 
 /**
  * Return the current install-time filesystem context so the caller (bin) can
@@ -50,32 +51,8 @@ function getInstallContext() {
  */
 function install({ action, config } = {}) {
 	const dest = path.join(process.cwd(), "wp-env-bin");
-	const scaffold = path.join(__dirname, "../scaffold");
 
-	mkdirSync(path.join(dest, "assets"), { recursive: true });
-	mkdirSync(path.join(dest, "plugins/wp-env-bin-plugin/classes"), { recursive: true });
-
-	// Scaffold dotfiles are stored without a leading dot so npm includes them
-	// in the published package. They are copied here with their correct names.
-	const files = [
-		{ src: "wp-env.json",        dest: ".wp-env.json" },
-		{ src: "gitignore",          dest: ".gitignore" },
-		{ src: "assets/gitkeep",     dest: "assets/.gitkeep" },
-		{ src: "plugins/wp-env-bin-plugin/wp-env-bin-plugin.php",         dest: "plugins/wp-env-bin-plugin/wp-env-bin-plugin.php" },
-		{ src: "plugins/wp-env-bin-plugin/classes/class-service-worker.php", dest: "plugins/wp-env-bin-plugin/classes/class-service-worker.php" },
-		{ src: "wp-env-bin.config.json.example", dest: "wp-env-bin.config.json.example" },
-		{ src: "composer.json.example",      dest: "composer.json.example" },
-	];
-
-	for (const file of files) {
-		const destPath = path.join(dest, file.dest);
-		if (!existsSync(destPath)) {
-			copyFileSync(path.join(scaffold, file.src), destPath);
-			logger("> created wp-env-bin/" + file.dest);
-		} else {
-			logger("> skipped wp-env-bin/" + file.dest + " (already exists)");
-		}
-	}
+	scaffoldFiles(dest);
 
 	if (action === "useIt") {
 		logger("> using existing wp-env-bin/wp-env-bin.config.json");

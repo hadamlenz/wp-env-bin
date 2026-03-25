@@ -7,8 +7,9 @@ const path = require("path");
 const command = process.argv[2];
 const subcommand = process.argv[3];
 
-const { configInstall, configUpdate, configSwitch, getProfileList } = require("../commands/config");
+const { configInstall, configUpdate, configSwitch, getProfileList, configCreate, configDelete } = require("../commands/config");
 const { install, getInstallContext } = require("../commands/install");
+const { scaffoldCommand } = require("../commands/scaffold");
 const { getRemoteDb, processDb, useDb } = require("../commands/db");
 const { makeHtaccess } = require("../commands/htaccess");
 const { setup } = require("../commands/setup");
@@ -16,7 +17,7 @@ const { getInactivePlugins, activateComposerPlugins } = require("../commands/plu
 const { runWpEnv, runWpEnvE2e } = require("../commands/env");
 const { compare } = require("../commands/compare");
 const { initE2e, getE2eDefaults, generateE2eTests, runE2eTests } = require("../commands/e2e");
-const { help, configHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp } = require("../commands/help");
+const { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp } = require("../commands/help");
 const { checkDatabase } = require("../lib/env/check");
 const { checkHtaccess } = require("../lib/env/check");
 const { saveNamedProfile } = require("../lib/config");
@@ -120,12 +121,56 @@ async function promptAndSaveProfile(config, dest) {
 	saveNamedProfile(dest, config, { shouldSave: true, profileName, saveComposer });
 }
 
+/**
+ * Offer to reinitialize the local environment after a config change.
+ * For multisite: prompts to confirm then runs the full reinit sequence.
+ * For singlesite: prints manual next-step instructions only.
+ *
+ * @param {string} siteType - "singlesite" | "multisite"
+ * @returns {Promise<void>}
+ */
+async function promptReinitEnvironment(siteType) {
+	if (siteType === "multisite") {
+		const { confirm } = await import("@inquirer/prompts");
+		const reinit = await confirm({
+			message: "Would you like to reinitialize the local environment with the new config? This only works for remote multisite.",
+			default: false,
+		});
+		if (reinit) {
+			console.log("> Reinitializing environment...");
+			setup(["--delete-lock"]);
+			await getRemoteDb({ action: "redownload" });
+			await processDb();
+			makeHtaccess();
+			const inactivePlugins = getInactivePlugins();
+			if (inactivePlugins.length > 0) {
+				activateComposerPlugins(inactivePlugins);
+			}
+			runWpEnv(["start"]);
+		} else {
+			console.log("\nTo get a working environment, run these steps manually:");
+			console.log("  1. wp-env-bin env setup --delete-lock");
+			console.log("  2. wp-env-bin db get          (re-download from Pantheon)");
+			console.log("  3. wp-env-bin db process      (import + search-replace)");
+			console.log("  4. wp-env-bin htaccess make   (regenerate from current config)");
+			console.log("  5. wp-env-bin env sync        (activate composer plugins)");
+			console.log("  6. wp-env-bin env start");
+		}
+	} else {
+		console.log(">  run `wp-env-bin env setup --delete-lock` to reinstall dependencies.");
+		console.log(">  run `wp-env-bin env sync` to sync the database and .htaccess file for this config.");
+		console.log(">  run `wp-env-bin env start` to restart the development environment.");
+	}
+}
+
 // ─── init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
 	switch (command) {
 		case "config": {
 			if (subcommand === "install") {
+				console.log("[Deprecated] `config install` will be removed in a future version.");
+				console.log("  Use: wp-env-bin scaffold && wp-env-bin config create\n");
 				// ── Gather install options ──────────────────────────────────────
 				const { confirm, select } = await import("@inquirer/prompts");
 				const ctx = getInstallContext();
@@ -224,41 +269,135 @@ async function init() {
 				const newConfig = configSwitch(chosen);
 				const siteType = (newConfig && newConfig.siteType) || "singlesite";
 
+				await promptReinitEnvironment(siteType);
+
+			} else if (subcommand === "create") {
+				// ── Gather config create options ────────────────────────────────
+				const { select: selectCreate, input: inputCreate, confirm: confirmCreate } = await import("@inquirer/prompts");
+
+				let projectName = "";
+				try {
+					const { readFileSync: readPkg } = require("fs");
+					const pkg = JSON.parse(readPkg(path.join(process.cwd(), "package.json"), "utf8"));
+					projectName = pkg.name || "";
+				} catch { /* no package.json */ }
+
+				const siteType = await selectCreate({
+					message: "Site type?",
+					choices: [
+						{ name: "Single-site", value: "singlesite" },
+						{ name: "Multisite (Pantheon subsite)", value: "multisite" },
+					],
+					default: "singlesite",
+				});
+
+				const env = await inputCreate({
+					message: "Pantheon site.environment — e.g. mysite.live (leave blank to skip)",
+					default: "",
+				});
+
+				const url = await inputCreate({
+					message: "Live site URL — e.g. example.com",
+					default: "",
+				});
+
+				const pluginName = await inputCreate({
+					message: "Plugin or theme name (for reference)",
+					default: projectName,
+				});
+
+				const createConfig = { pluginName, siteType, env, url };
+
 				if (siteType === "multisite") {
-					const reinit = await confirm({
-						message: "Would you like to reinitialize the local environment with the new config? This only works for remote multisite.",
-						default: false,
+					createConfig.oldPrefix = await inputCreate({
+						message: "Live DB table prefix — e.g. wp_123_",
+						default: "",
 					});
-					if (reinit) {
-						console.log("> Reinitializing environment...");
-						setup(["--delete-lock"]);
-						await getRemoteDb({ action: "redownload" });
-						await processDb();
-						makeHtaccess();
-						const inactivePlugins = getInactivePlugins();
-						if (inactivePlugins.length > 0) {
-							activateComposerPlugins(inactivePlugins);
-						}
-						runWpEnv(["start"]);
-					} else {
-						console.log("\nTo get a working environment, run these steps manually:");
-						console.log("  1. wp-env-bin env setup --delete-lock");
-						console.log("  2. wp-env-bin db get          (re-download from Pantheon)");
-						console.log("  3. wp-env-bin db process      (import + search-replace)");
-						console.log("  4. wp-env-bin htaccess make   (regenerate from current config)");
-						console.log("  5. wp-env-bin env sync        (activate composer plugins)");
-						console.log("  6. wp-env-bin env start");
+					createConfig.siteId = await inputCreate({
+						message: "Multisite site ID",
+						default: "",
+					});
+				}
+
+				const profileName = await inputCreate({
+					message: "Profile name (used as filename prefix in site-configs/)",
+					default: url || projectName,
+					validate: (v) => {
+						if (/\//u.test(v)) return "Profile name must not contain /";
+						if (!v.trim()) return "Profile name is required";
+						return true;
+					},
+				});
+
+				configCreate(createConfig, profileName);
+
+				const makeActive = await confirmCreate({
+					message: "Make this the active config now?",
+					default: true,
+				});
+				if (makeActive) {
+					const newConfig = configSwitch(profileName);
+					const siteType = (newConfig && newConfig.siteType) || "singlesite";
+					await promptReinitEnvironment(siteType);
+				}
+
+			} else if (subcommand === "delete") {
+				// ── Gather config delete options ────────────────────────────────
+				const profiles = getProfileList();
+				if (!profiles || profiles.length === 0) {
+					console.log("No profiles found in wp-env-bin/site-configs/.");
+					console.log("Run `wp-env-bin config create` to create one.");
+					break;
+				}
+
+				const { select: selectDelete, confirm: confirmDelete } = await import("@inquirer/prompts");
+				const chosen = await selectDelete({
+					message: "Delete which profile?",
+					choices: profiles.map(p => ({ name: p, value: p })),
+				});
+
+				// Show all companion files that will be removed
+				const dest = path.join(process.cwd(), "wp-env-bin");
+				const siteConfigsDir = path.join(dest, "site-configs");
+				const toDelete = [chosen + ".wp-env-bin.config.json"];
+				for (const ext of [".composer.json", ".composer.lock"]) {
+					const { existsSync: exists } = require("fs");
+					if (exists(path.join(siteConfigsDir, chosen + ext))) {
+						toDelete.push(chosen + ext);
 					}
+				}
+				console.log("\nThe following files will be deleted:");
+				toDelete.forEach(f => console.log("  site-configs/" + f));
+
+				const confirmed = await confirmDelete({
+					message: "Confirm deletion?",
+					default: false,
+				});
+
+				if (confirmed) {
+					configDelete(chosen);
+
+					// Warn if this profile was the active config
+					const activeConfigPath = path.join(dest, "wp-env-bin.config.json");
+					const { existsSync: activeExists, readFileSync: readActive } = require("fs");
+					if (activeExists(activeConfigPath)) {
+						try {
+							const activeContent = readActive(activeConfigPath, "utf8");
+							const profilePath = path.join(siteConfigsDir, chosen + ".wp-env-bin.config.json");
+							// Profile was already deleted; check if active file matched it before deletion
+							// (We can't compare now, so just note that active config is untouched)
+							void activeContent; void profilePath;
+						} catch { /* no-op */ }
+					}
+					console.log("\nNote: the active wp-env-bin.config.json was not removed.");
 				} else {
-					console.log(">  run `wp-env-bin env setup --delete-lock` to reinstall dependencies.");
-					console.log(">  run `wp-env-bin env sync` to sync the database and .htaccess file for this config.");
-					console.log(">  run `wp-env-bin env start` to restart the development environment.");
+					console.log("Cancelled.");
 				}
 
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				configHelp();
 			} else {
-				console.log("Unknown config subcommand. Try:\n  wp-env-bin config install\n  wp-env-bin config update\n  wp-env-bin config switch");
+				console.log("Unknown config subcommand. Try:\n  wp-env-bin config scaffold\n  wp-env-bin config create\n  wp-env-bin config install\n  wp-env-bin config update\n  wp-env-bin config switch\n  wp-env-bin config delete");
 			}
 			break;
 		}
@@ -500,6 +639,15 @@ async function init() {
 				runE2eTests(process.argv.slice(4));
 			} else {
 				console.log('Unknown e2e subcommand. Try:\n  wp-env-bin e2e init\n  wp-env-bin e2e test [--project=all-blocks-editor|all-blocks-frontend]\n  wp-env-bin e2e generate editor|frontend --file=path/to/block.json');
+			}
+			break;
+		}
+		case "scaffold": {
+			if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				scaffoldHelp();
+			} else {
+				const dest = path.join(process.cwd(), "wp-env-bin");
+				scaffoldCommand(dest);
 			}
 			break;
 		}

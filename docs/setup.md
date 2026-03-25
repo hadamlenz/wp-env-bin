@@ -2,21 +2,30 @@
 
 ## First-Time Setup
 
-### 1. Run the installer
+### 1. Scaffold the `wp-env-bin/` folder
 
 ```bash
-wp-env-bin config install
+wp-env-bin scaffold
 ```
 
+Copies the template files into `wp-env-bin/` in your project root. Safe to re-run — existing files are never overwritten, only missing ones are added.
 
-This scaffolds the `wp-env-bin/` config folder and walks you through creating `wp-env-bin.config.json` interactively. The installer will ask for:
+### 2. Create a site config profile
+
+```bash
+wp-env-bin config create
+```
+
+Prompts for your site's details and saves them as a named profile in `wp-env-bin/site-configs/`. You'll be asked for:
 - **Site type** — `singlesite` (default) or `multisite`
-- **Pantheon site.environment** — e.g. `mysite.live` *(skip if not using Pantheon)*
+- **Pantheon site.environment** — e.g. `mysite.live` *(leave blank to skip if not using Pantheon)*
 - **Live site URL** — e.g. `example.com`
 - **Plugin or theme name** — pre-filled from your `package.json`
 - **Live DB table prefix** and **multisite site ID** — multisite only
 
-### 2. Configure `.wp-env.json`
+After saving, you'll be prompted to make this the active config. Answering yes runs `config switch` automatically.
+
+### 3. Configure `.wp-env.json`
 
 Edit `wp-env-bin/.wp-env.json` to point to your plugin or theme and set your preferred ports:
 
@@ -32,7 +41,7 @@ Edit `wp-env-bin/.wp-env.json` to point to your plugin or theme and set your pre
 }
 ```
 
-### 3. Configure `composer.json`
+### 4. Configure `composer.json`
 
 ```bash
 cp wp-env-bin/composer.json.example wp-env-bin/composer.json
@@ -50,7 +59,7 @@ If you add new packages to `composer.json` after an initial install and get a lo
 wp-env-bin env setup --delete-lock
 ```
 
-### 4. Start the environment and sync the database
+### 5. Start the environment and sync the database
 
 ```bash
 wp-env-bin env start
@@ -115,15 +124,19 @@ This runs the full pipeline: exports from Pantheon, renames table prefixes, impo
 
 When you work against multiple remote sites, you can store a named profile for each one in `wp-env-bin/site-configs/`. The active `wp-env-bin.config.json` and `composer.json` are always plain copies of whichever profile is active.
 
-### Saving a profile
+### Creating a profile
 
-After running `wp-env-bin config install` or `wp-env-bin config update`, you are prompted to save the current config as a named profile. The default profile name is the `url` value (e.g., `site.subsite.com`), which produces:
+```bash
+wp-env-bin config create
+```
+
+Prompts for site config values and saves them as a named profile. The default profile name is the `url` you enter (e.g. `site.subsite.com`), which produces:
 
 ```
 wp-env-bin/site-configs/site.subsite.com.wp-env-bin.config.json
-wp-env-bin/site-configs/site.subsite.com.composer.json      (optional)
-wp-env-bin/site-configs/site.subsite.com.composer.lock      (optional)
 ```
+
+After saving you'll be asked "Make this the active config now?" — answering yes runs `config switch` automatically, including the reinitialize prompt for multisite environments.
 
 Profile files in `site-configs/` are tracked in git so teammates can share them.
 
@@ -153,6 +166,14 @@ wp-env-bin htaccess make                 # regenerate from current config
 wp-env-bin env sync                      # activate composer plugins
 wp-env-bin env start
 ```
+
+### Deleting a profile
+
+```bash
+wp-env-bin config delete
+```
+
+Displays a list of all profiles in `site-configs/`. Select one to remove it — you'll be shown which companion files (`.composer.json`, `.composer.lock`) will also be deleted and asked to confirm before anything is removed. The active `wp-env-bin.config.json` is never touched by this command.
 
 ### Updating an existing config
 
@@ -185,7 +206,8 @@ For a simple single-site install with no shared tables, `wp db export database.s
 Then use `wp-env-bin db use` to validate and load it locally:
 
 ```bash
-wp-env-bin config install
+wp-env-bin scaffold
+wp-env-bin config create
 wp-env-bin env start
 wp-env-bin db use /path/to/database.sql
 wp-env-bin db process
