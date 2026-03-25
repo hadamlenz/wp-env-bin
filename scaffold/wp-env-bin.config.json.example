@@ -1,5 +1,5 @@
 {
-	"$schema": "../../schemas/wp-env-bin.config.schema.json",
+	"$schema": "https://raw.githubusercontent.com/hadamlenz/wp-env-bin/refs/heads/main/schemas/wp-env-bin.config.schema.json",
 	"pluginName": "",
 	"siteType": "singlesite",
 	"composerPath":"/path/to/composer.json",
