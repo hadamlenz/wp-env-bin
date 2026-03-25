@@ -1,4 +1,5 @@
 const { writeFileSync, mkdirSync } = require("fs");
+const { execSync } = require("child_process");
 const path = require("path");
 const { logger } = require("../lib/utils/log");
 const { readLocalConfig, readWpEnvJson } = require("../lib/env/config");
@@ -76,6 +77,24 @@ async function fetchSitemap(liveDomain) {
  */
 async function takeScreenshot(page, url) {
 	await page.goto(url, { waitUntil: "load", timeout: 30000 });
+	// Hide common consent/cookie banners before screenshotting
+	await page.addStyleTag({
+		content: `
+			/* OneTrust */
+			#onetrust-banner-sdk, #onetrust-consent-sdk,
+			/* Cookiebot */
+			#CybotCookiebotDialog, #CybotCookiebotDialogBodyUnderlay,
+			/* Generic patterns */
+			[id*="cookie-banner"], [id*="cookie-consent"], [id*="cookie-notice"],
+			[class*="cookie-banner"], [class*="cookie-consent"], [class*="cookie-notice"],
+			[id*="gdpr"], [class*="gdpr"],
+			[id*="consent-banner"], [class*="consent-banner"],
+			/* Popup overlays */
+			.pum-overlay, .pum-container
+			{ display: none !important; }
+			body { overflow: auto !important; }
+		`,
+	});
 	await page.waitForTimeout(500); // let animations/lazy rendering settle
 	return page.screenshot({ fullPage: true });
 }
@@ -94,26 +113,27 @@ async function takeScreenshot(page, url) {
 async function compare(argv) {
 	const { url: urlFlag, limit, threshold, testPaths } = parseArgs(argv);
 
+	// Read local config for the live domain, and the local wp-env port from .wp-env.json
 	const config = readLocalConfig();
 	const liveDomain = config.url;
 	const port = readPort();
 
+	// Build a timestamped folder name for this run's report (e.g. example.com-20260325-14:30)
 	const now = new Date();
 	const pad = (n) => String(n).padStart(2, "0");
-	const timestamp =
-		now.getFullYear() +
-		pad(now.getMonth() + 1) +
-		pad(now.getDate()) +
-		"-" +
-		pad(now.getHours()) +
-		":" +
-		pad(now.getMinutes());
+	// Build a timestamp string in YYYYMMDD-HH:MM format (e.g. 20260325-14:30)
+	const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}:${pad(now.getMinutes())}`;
+	//the folder is names after the domain and the timestamp, e.g. example.com-20260325-14:30
 	const reportFolderName = liveDomain + "-" + timestamp;
 	const reportDir = path.join(process.cwd(), "wp-env-bin/compare-reports", reportFolderName);
 
 	logger("wp-env-bin visual compare — live: " + liveDomain + " → local: localhost:" + port + "\n");
 
-	// Discover URLs
+	// ── Discover URLs ─────────────────────────────────────────────────────────
+	// Three sources in priority order:
+	//   1. --test-paths  → read the "test-paths" array from config
+	//   2. --url <path>  → single page (path or full URL)
+	//   3. (default)     → fetch the live sitemap and use the first <limit> URLs
 	let urls;
 	if (testPaths) {
 		const paths = config["test-paths"];
@@ -126,6 +146,7 @@ async function compare(argv) {
 		urls = paths.map((p) => "https://" + liveDomain + (p.startsWith("/") ? p : "/" + p));
 		process.stdout.write("Using " + urls.length + " path" + (urls.length !== 1 ? "s" : "") + " from test-paths config.\n\n");
 	} else if (urlFlag) {
+		// Accept either a bare path (/about/) or a full URL; normalize to full URL
 		let fullUrl;
 		try {
 			new URL(urlFlag);
@@ -142,8 +163,9 @@ async function compare(argv) {
 		urls = urlsToTest;
 	}
 
-	// Launch Playwright — resolve from the project's local node_modules so this
-	// works whether wp-env-bin is installed globally or as a dev dependency.
+	// ── Launch Playwright ─────────────────────────────────────────────────────
+	// Resolve from the project's local node_modules so this works whether
+	// wp-env-bin is installed globally or as a dev dependency.
 	let chromium;
 	try {
 		const playwrightPath = require.resolve("playwright", { paths: [process.cwd()] });
@@ -164,6 +186,7 @@ async function compare(argv) {
 		);
 	}
 
+	// ── Screenshot + diff each URL ────────────────────────────────────────────
 	const results = [];
 
 	for (const liveUrl of urls) {
@@ -173,16 +196,20 @@ async function compare(argv) {
 
 		process.stdout.write("  " + urlPath.padEnd(40));
 
+		// Each page gets its own subdirectory: pages/<slug>/live.png, local.png, diff.png
 		const pageDir = path.join(reportDir, "pages", slug);
 		mkdirSync(pageDir, { recursive: true });
 
 		let livePng, localPng;
 		const page = await browser.newPage({ viewport: { width: 1980, height: 900 } });
 		try {
+			//take live screen shot first
 			livePng = await takeScreenshot(page, liveUrl);
-			await page.goto("about:blank");
+			await page.goto("about:blank"); // clear state between screenshots
+			//take the local screen shot
 			localPng = await takeScreenshot(page, localUrl);
 		} catch (err) {
+			// Screenshot failed (timeout, DNS error, etc.) — record as error and move on
 			const msg = err.message.split("\n")[0];
 			process.stdout.write("E  " + msg + "\n");
 			results.push({ path: urlPath, slug, diffPercent: null, status: "error", error: msg });
@@ -191,6 +218,7 @@ async function compare(argv) {
 			await page.close();
 		}
 
+		// Pixel-diff the two screenshots and classify the result
 		const { diffPercent, diffPng } = diffScreenshots(livePng, localPng, threshold);
 		const status = classify(diffPercent, threshold);
 
@@ -206,12 +234,17 @@ async function compare(argv) {
 
 	await browser.close();
 
+	// ── Write report and print summary ────────────────────────────────────────
 	mkdirSync(reportDir, { recursive: true });
 	writeReport(reportDir, results);
 
+	// Pages where the pixel diff is below the threshold — visually identical
 	const passCount = results.filter((r) => r.status === "pass").length;
+	// Pages where the diff is between 1× and 5× the threshold — minor visual differences worth reviewing
 	const warnCount = results.filter((r) => r.status === "warn").length;
+	// Pages where the diff is at or above 5× the threshold — significant visual regression
 	const failCount = results.filter((r) => r.status === "fail").length;
+	// Pages that could not be screenshotted (timeout, DNS failure, etc.)
 	const errorCount = results.filter((r) => r.status === "error").length;
 
 	logger(
@@ -222,45 +255,19 @@ async function compare(argv) {
 	);
 	logger("Report:  wp-env-bin/compare-reports/" + reportFolderName + "/index.html");
 
+	// Ask if the user wants to open the report in a browser
+	const reportPath = path.join(reportDir, "index.html");
+	const { confirm } = await import("@inquirer/prompts");
+	const openReport = await confirm({ message: "Open report in browser?", default: true });
+	if (openReport) {
+		const opener = process.platform === "win32" ? "start" : process.platform === "darwin" ? "open" : "xdg-open";
+		execSync(opener + " \"" + reportPath + "\"");
+	}
+
+	// Exit with a non-zero code so CI catches failures
 	if (failCount > 0 || errorCount > 0) {
 		process.exit(1);
 	}
 }
 
-/**
- * Print compare-specific usage to stdout.
- */
-function compareHelp() {
-	console.log(`
-wp-env-bin visual compare — Visual A/B regression: screenshot live vs local and diff
-
-Usage:
-  wp-env-bin visual compare [flags]
-
-Flags:
-  --url <path|url>    Compare a single page. Accepts a path (/about/) or a full URL.
-                      Omit to pull all URLs from the live site's sitemap.xml instead.
-  --test-paths        Read paths from the "test-paths" array in wp-env-bin.config.json
-                      and compare each one. Takes precedence over --url and sitemap.
-  --limit <n>         Max number of sitemap URLs to test (default: 10)
-  --threshold <n>     Pixel diff % used to classify results (default: 1)
-
-Result classification:
-  pass  diff% is below --threshold
-  warn  diff% is between --threshold and 5× --threshold
-  fail  diff% is at or above 5× --threshold
-
-Output:
-  Screenshots and an HTML report are written to:
-  wp-env-bin/compare-report/index.html
-
-Examples:
-  wp-env-bin visual compare                          Test first 10 sitemap URLs
-  wp-env-bin visual compare --limit 50               Test first 50 sitemap URLs
-  wp-env-bin visual compare --url /                  Compare the homepage only
-  wp-env-bin visual compare --url /about/ --threshold 0.5
-  wp-env-bin visual compare --test-paths             Compare paths listed in wp-env-bin.config.json
-`);
-}
-
-module.exports = { compare, compareHelp };
+module.exports = { compare };

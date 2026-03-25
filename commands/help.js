@@ -54,4 +54,186 @@ Refresh DB:
 `);
 }
 
-module.exports = { help };
+function configHelp() {
+	console.log(`
+wp-env-bin config — Scaffold and manage your wp-env-bin configuration
+
+Usage:
+  wp-env-bin config <subcommand>
+
+Subcommands:
+  install     Scaffold wp-env-bin/ folder and configure interactively
+  update      Re-run prompts with existing values as defaults
+  switch      Pick a named profile from site-configs/ and activate it
+
+Config file: wp-env-bin/wp-env-bin.config.json (gitignored)
+  siteType    "singlesite" or "multisite"               default: "singlesite"
+  env         Terminus site.environment (db get only)   e.g. "mysite.live"
+  url         Live site domain                          e.g. "example.com"
+  oldPrefix   Live DB table prefix (multisite only)     e.g. "wp_7_"
+  siteId      WP multisite site ID (multisite only)     e.g. "7"
+`);
+}
+
+function dbHelp() {
+	console.log(`
+wp-env-bin db — Database export, import, and processing
+
+Usage:
+  wp-env-bin db <subcommand>
+
+Subcommands:
+  get           Export the database from Pantheon via Terminus
+                  Requires 'env' field in wp-env-bin.config.json
+  use <path>    Validate and copy a local SQL file as the database source
+  process       Rename table prefix, import DB, and run URL search-replace
+`);
+}
+
+function htaccessHelp() {
+	console.log(`
+wp-env-bin htaccess — Manage the .htaccess file for the local environment
+
+Usage:
+  wp-env-bin htaccess <subcommand>
+
+Subcommands:
+  make    Generate .htaccess with a reverse proxy for /wp-content/uploads/
+          Proxies media requests to the live site so assets load locally
+          without downloading the full uploads directory
+`);
+}
+
+function envHelp() {
+	console.log(`
+wp-env-bin env — Pass wp-env commands to the dev environment (wp-env-bin/)
+
+Usage:
+  wp-env-bin env <command> [args]
+
+Any <command> and [args] are forwarded directly to npx wp-env.
+
+Common commands:
+  start                   Start the environment
+  stop                    Stop the environment
+  destroy                 Remove the environment (deletes volumes)
+  logs                    Stream environment logs
+  run <container> <cmd>   Run a command inside the environment
+
+Examples:
+  wp-env-bin env start
+  wp-env-bin env stop
+  wp-env-bin env start --update
+  wp-env-bin env run tests "wp --info"
+
+See also:
+  wp-env-bin e2e env    Manage the e2e test environment
+`);
+}
+
+function e2eEnvHelp() {
+	console.log(`
+wp-env-bin e2e env — Pass wp-env commands to the e2e environment (wp-env-bin/e2e/)
+
+Usage:
+  wp-env-bin e2e env <command> [args]
+
+Any <command> and [args] are forwarded directly to npx wp-env.
+
+Common commands:
+  start                   Start the environment
+  stop                    Stop the environment
+  destroy                 Remove the environment (deletes volumes)
+  logs                    Stream environment logs
+  run <container> <cmd>   Run a command inside the environment
+
+Examples:
+  wp-env-bin e2e env start
+  wp-env-bin e2e env stop
+  wp-env-bin e2e env destroy
+  wp-env-bin e2e env start --update
+
+See also:
+  wp-env-bin env    Manage the dev environment
+`);
+}
+
+function compareHelp() {
+	console.log(`
+wp-env-bin visual compare — Visual A/B regression: screenshot live vs local and diff
+
+Usage:
+  wp-env-bin visual compare [flags]
+
+Flags:
+  --url <path|url>    Compare a single page. Accepts a path (/about/) or a full URL.
+                      Omit to pull all URLs from the live site's sitemap.xml instead.
+  --test-paths        Read paths from the "test-paths" array in wp-env-bin.config.json
+                      and compare each one. Takes precedence over --url and sitemap.
+  --limit <n>         Max number of sitemap URLs to test (default: 10)
+  --threshold <n>     Pixel diff % used to classify results (default: 1)
+
+Result classification:
+  pass  diff% is below --threshold
+  warn  diff% is between --threshold and 5× --threshold
+  fail  diff% is at or above 5× --threshold
+
+Output:
+  Screenshots and an HTML report are written to:
+  wp-env-bin/compare-reports/ts/{url}-{yyyymmdd-hh:mm}/index.html
+
+Examples:
+  wp-env-bin visual compare                          Test first 10 sitemap URLs
+  wp-env-bin visual compare --limit 50               Test first 50 sitemap URLs
+  wp-env-bin visual compare --url /                  Compare the homepage only
+  wp-env-bin visual compare --url /about/ --threshold 0.5
+  wp-env-bin visual compare --test-paths             Compare paths listed in wp-env-bin.config.json
+`);
+}
+
+function e2eHelp() {
+	console.log(`
+wp-env-bin e2e — Scaffold and run Playwright block tests for WordPress plugins and themes
+
+Usage:
+  wp-env-bin e2e <subcommand> [flags]
+
+Subcommands:
+  init                          Scaffold the e2e/ test environment (interactive prompts)
+  generate editor  --file=<path>   Generate editor Playwright tests from a block.json file
+  generate frontend --file=<path>  Generate frontend Playwright tests from a block.json file
+  test [flags]                  Run Playwright tests from wp-env-bin/e2e/
+
+Generate flags:
+  --file=<path>         Path to a single block.json file
+  --glob=<pattern>      Match multiple block.json files (e.g. --glob="blocks/*/block.json")
+  --output=<dir>        Override the output directory
+                          default for editor:   e2e/specs/editor
+                          default for frontend: e2e/specs/frontend
+  --screenshots         Save a dated PNG screenshot of each block during frontend test runs
+  --visual-regression   Generate toHaveScreenshot() visual regression assertions
+
+Test flags (forwarded directly to Playwright):
+  --project=all-blocks-editor    Run only editor tests
+  --project=all-blocks-frontend  Run only frontend tests
+  --headed                       Run with browser UI visible
+  --debug                        Open Playwright inspector
+
+Examples:
+  wp-env-bin e2e init
+  wp-env-bin e2e generate editor --file=blocks/my-block/block.json
+  wp-env-bin e2e generate frontend --glob="blocks/*/block.json" --screenshots
+  wp-env-bin e2e test
+  wp-env-bin e2e test --project=all-blocks-editor --headed
+
+First-time setup after init:
+  cp wp-env-bin/e2e/composer.json.example wp-env-bin/e2e/composer.json
+  cp wp-env-bin/e2e/wp-env-bin.e2e.config.json.example wp-env-bin/e2e/wp-env-bin.e2e.config.json
+  cd wp-env-bin/e2e && composer install
+  npx playwright install chromium
+  cd wp-env-bin e2e env start
+  wp-env-bin e2e test
+`);
+}
+
+module.exports = { help, configHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp };

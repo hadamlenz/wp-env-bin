@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("assert/strict");
-const { applyProjectType } = require("../commands/install");
+const { applyProjectType } = require("../lib/config");
 
 // --- applyProjectType ---
 

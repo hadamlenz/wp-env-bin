@@ -9,10 +9,10 @@ const { getRemoteDb, processDb, useDb } = require("../commands/db");
 const { makeHtaccess } = require("../commands/htaccess");
 const { setup } = require("../commands/setup");
 const { activateComposerPlugins } = require("../commands/plugins");
-const { envHelp, runWpEnv, e2eEnvHelp, runWpEnvE2e } = require("../commands/env");
-const { compareHelp, compare } = require("../commands/compare");
-const { e2eHelp, initE2e, generateE2eTests, runE2eTests } = require("../commands/e2e");
-const { help } = require("../commands/help");
+const { runWpEnv, runWpEnvE2e } = require("../commands/env");
+const { compare } = require("../commands/compare");
+const { initE2e, generateE2eTests, runE2eTests } = require("../commands/e2e");
+const { help, configHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp } = require("../commands/help");
 
 async function init() {
 	switch (command) {
@@ -23,6 +23,8 @@ async function init() {
 				await configUpdate();
 			} else if (subcommand === "switch") {
 				await configSwitch();
+			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				configHelp();
 			} else {
 				console.log("Unknown config subcommand. Try:\n  wp-env-bin config install\n  wp-env-bin config update\n  wp-env-bin config switch");
 			}
@@ -39,6 +41,8 @@ async function init() {
 				await processDb();
 			} else if (subcommand === "use") {
 				await useDb(process.argv[4]);
+			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				dbHelp();
 			} else {
 				console.log('Unknown subcommand. Try:\n  wp-env-bin db get\n  wp-env-bin db process\n  wp-env-bin db use <path/to/file.sql>');
 			}
@@ -47,6 +51,8 @@ async function init() {
 		case "htaccess": {
 			if (subcommand === "make") {
 				await makeHtaccess();
+			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				htaccessHelp();
 			} else {
 				console.log('Unknown subcommand. Try: wp-env-bin htaccess make');
 			}
@@ -78,6 +84,8 @@ async function init() {
 				} else {
 					await compare(argv);
 				}
+			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				compareHelp();
 			} else {
 				console.log('Unknown subcommand. Try: wp-env-bin visual compare');
 			}
