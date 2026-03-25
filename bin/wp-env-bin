@@ -3,17 +3,25 @@
 const command = process.argv[2];
 const subcommand = process.argv[3];
 
+const { configInstall, configUpdate, configSwitch } = require("../commands/config");
+const { install } = require("../commands/install");
+const { getRemoteDb, processDb, useDb } = require("../commands/db");
+const { makeHtaccess } = require("../commands/htaccess");
+const { setup } = require("../commands/setup");
+const { activateComposerPlugins } = require("../commands/plugins");
+const { envHelp, runWpEnv, e2eEnvHelp, runWpEnvE2e } = require("../commands/env");
+const { compareHelp, compare } = require("../commands/compare");
+const { e2eHelp, initE2e, generateE2eTests, runE2eTests } = require("../commands/e2e");
+const { help } = require("../commands/help");
+
 async function init() {
 	switch (command) {
 		case "config": {
 			if (subcommand === "install") {
-				const { configInstall } = require("../commands/config");
 				await configInstall();
 			} else if (subcommand === "update") {
-				const { configUpdate } = require("../commands/config");
 				await configUpdate();
 			} else if (subcommand === "switch") {
-				const { configSwitch } = require("../commands/config");
 				await configSwitch();
 			} else {
 				console.log("Unknown config subcommand. Try:\n  wp-env-bin config install\n  wp-env-bin config update\n  wp-env-bin config switch");
@@ -21,106 +29,76 @@ async function init() {
 			break;
 		}
 		case "install": {
-			const { install } = require("../commands/install");
 			await install();
 			break;
 		}
-		case "setup": {
-			const { setup } = require("../commands/setup");
-			setup(process.argv.slice(3));
-			break;
-		}
-		case "get": {
-			if (subcommand === "db") {
-				const { getRemoteDb } = require("../commands/get");
+		case "db": {
+			if (subcommand === "get") {
 				await getRemoteDb();
-			} else {
-				console.log('Unknown subcommand. Try: wp-env-bin get db');
-			}
-			break;
-		}
-		case "process": {
-			if (subcommand === "db") {
-				const { processDb } = require("../commands/process");
+			} else if (subcommand === "process") {
 				await processDb();
-			} else {
-				console.log('Unknown subcommand. Try: wp-env-bin process db');
-			}
-			break;
-		}
-		case "make": {
-			if (subcommand === "htaccess") {
-				const { makeHtaccess } = require("../commands/make");
-				await makeHtaccess();
-			} else {
-				console.log('Unknown subcommand. Try: wp-env-bin make htaccess');
-			}
-			break;
-		}
-		case "use": {
-			if (subcommand === "db") {
-				const { useDb } = require("../commands/use");
+			} else if (subcommand === "use") {
 				await useDb(process.argv[4]);
 			} else {
-				console.log("Unknown subcommand. Try: wp-env-bin use db <path/to/file.sql>");
+				console.log('Unknown subcommand. Try:\n  wp-env-bin db get\n  wp-env-bin db process\n  wp-env-bin db use <path/to/file.sql>');
 			}
 			break;
 		}
-		case "sync": {
-			const { getRemoteDb } = require("../commands/get");
-			const { processDb } = require("../commands/process");
-			const { makeHtaccess } = require("../commands/make");
-			const { activateComposerPlugins } = require("../commands/plugins");
-			await getRemoteDb();
-			await processDb();
-			await makeHtaccess();
-			await activateComposerPlugins();
+		case "htaccess": {
+			if (subcommand === "make") {
+				await makeHtaccess();
+			} else {
+				console.log('Unknown subcommand. Try: wp-env-bin htaccess make');
+			}
 			break;
 		}
 		case "env": {
-			const argv = process.argv.slice(3);
-			if (!argv.length || argv[0] === "help" || argv[0] === "--help" || argv[0] === "-h") {
-				const { envHelp } = require("../commands/env");
-				envHelp();
+			if (subcommand === "setup") {
+				setup(process.argv.slice(4));
+			} else if (subcommand === "sync") {
+				await getRemoteDb();
+				await processDb();
+				await makeHtaccess();
+				await activateComposerPlugins();
 			} else {
-				const { runWpEnv } = require("../commands/env");
-				runWpEnv(argv);
+				const argv = process.argv.slice(3);
+				if (!argv.length || argv[0] === "help" || argv[0] === "--help" || argv[0] === "-h") {
+					envHelp();
+				} else {
+					runWpEnv(argv);
+				}
 			}
 			break;
 		}
-		case "compare": {
-			const argv = process.argv.slice(3);
-			if (argv[0] === "help" || argv[0] === "--help" || argv[0] === "-h") {
-				const { compareHelp } = require("../commands/compare");
-				compareHelp();
+		case "visual": {
+			if (subcommand === "compare") {
+				const argv = process.argv.slice(4);
+				if (argv[0] === "help" || argv[0] === "--help" || argv[0] === "-h") {
+					compareHelp();
+				} else {
+					await compare(argv);
+				}
 			} else {
-				const { compare } = require("../commands/compare");
-				await compare(argv);
+				console.log('Unknown subcommand. Try: wp-env-bin visual compare');
 			}
 			break;
 		}
 		case "e2e": {
 			if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
-				const { e2eHelp } = require("../commands/e2e");
 				e2eHelp();
 			} else if (subcommand === "env") {
 				const envArgs = process.argv.slice(4);
 				if (!envArgs.length || envArgs[0] === "help" || envArgs[0] === "--help" || envArgs[0] === "-h") {
-					const { e2eEnvHelp } = require("../commands/env");
 					e2eEnvHelp();
 				} else {
-					const { runWpEnvE2e } = require("../commands/env");
 					runWpEnvE2e(envArgs);
 				}
 			} else if (subcommand === "init") {
-				const { initE2e } = require("../commands/e2e");
 				await initE2e();
 			} else if (subcommand === "generate") {
 				const type = process.argv[4]; // "editor" or "frontend"
-				const { generateE2eTests } = require("../commands/e2e");
 				generateE2eTests(type, process.argv.slice(5));
 			} else if (subcommand === "test") {
-				const { runE2eTests } = require("../commands/e2e");
 				runE2eTests(process.argv.slice(4));
 			} else {
 				console.log('Unknown e2e subcommand. Try:\n  wp-env-bin e2e init\n  wp-env-bin e2e test [--project=all-blocks-editor|all-blocks-frontend]\n  wp-env-bin e2e generate editor|frontend --file=path/to/block.json');
@@ -129,7 +107,6 @@ async function init() {
 		}
 		case "help":
 		default: {
-			const { help } = require("../commands/help");
 			help();
 			break;
 		}

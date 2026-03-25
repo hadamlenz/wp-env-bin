@@ -88,7 +88,7 @@ async function takeScreenshot(page, url) {
  * runs pixel diffs, saves PNGs, and writes an HTML report.
  * Exits with code 1 if any pages fail.
  *
- * @param {string[]} argv - Raw CLI arguments after `wp-env-bin compare`
+ * @param {string[]} argv - Raw CLI arguments after `wp-env-bin visual compare`
  * @returns {Promise<void>}
  */
 async function compare(argv) {
@@ -111,7 +111,7 @@ async function compare(argv) {
 	const reportFolderName = liveDomain + "-" + timestamp;
 	const reportDir = path.join(process.cwd(), "wp-env-bin/compare-reports", reportFolderName);
 
-	logger("wp-env-bin compare — live: " + liveDomain + " → local: localhost:" + port + "\n");
+	logger("wp-env-bin visual compare — live: " + liveDomain + " → local: localhost:" + port + "\n");
 
 	// Discover URLs
 	let urls;
@@ -232,10 +232,10 @@ async function compare(argv) {
  */
 function compareHelp() {
 	console.log(`
-wp-env-bin compare — Visual A/B regression: screenshot live vs local and diff
+wp-env-bin visual compare — Visual A/B regression: screenshot live vs local and diff
 
 Usage:
-  wp-env-bin compare [flags]
+  wp-env-bin visual compare [flags]
 
 Flags:
   --url <path|url>    Compare a single page. Accepts a path (/about/) or a full URL.
@@ -255,11 +255,11 @@ Output:
   wp-env-bin/compare-report/index.html
 
 Examples:
-  wp-env-bin compare                          Test first 10 sitemap URLs
-  wp-env-bin compare --limit 50               Test first 50 sitemap URLs
-  wp-env-bin compare --url /                  Compare the homepage only
-  wp-env-bin compare --url /about/ --threshold 0.5
-  wp-env-bin compare --test-paths             Compare paths listed in wp-env-bin.config.json
+  wp-env-bin visual compare                          Test first 10 sitemap URLs
+  wp-env-bin visual compare --limit 50               Test first 50 sitemap URLs
+  wp-env-bin visual compare --url /                  Compare the homepage only
+  wp-env-bin visual compare --url /about/ --threshold 0.5
+  wp-env-bin visual compare --test-paths             Compare paths listed in wp-env-bin.config.json
 `);
 }
 

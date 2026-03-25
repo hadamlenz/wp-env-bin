@@ -53,7 +53,7 @@ If you prefer not to install globally, add one script to your project's `package
 Then invoke any command via `npm run wp-env-bin --` followed by the command (the `--` is required to forward arguments):
 
 ```bash
-npm run wp-env-bin -- sync
+npm run wp-env-bin -- env sync
 npm run wp-env-bin -- e2e test --project=all-blocks-editor
 ```
 
@@ -62,7 +62,7 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 ## Documentation
 
 - [**Setup & Configuration**](docs/setup.md) — First-time setup, config reference, day-to-day workflow, non-Pantheon workflow, how it works, project structure
-- [**Visual Regression Testing**](docs/compare.md) — `compare` command usage, options, report output
+- [**Visual Regression Testing**](docs/compare.md) — `visual compare` command usage, options, report output
 - [**E2E Block Testing**](docs/e2e.md) — Playwright block tests, environment isolation, generating tests, writing custom tests
 - [**Testing wp-env-bin**](docs/testing.md) — Running the unit test suite, test file index, fixtures, and patterns for adding new tests
 
@@ -76,16 +76,16 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 | `wp-env-bin config update` | Re-run configuration prompts using existing values as defaults |
 | `wp-env-bin config switch` | Pick a named profile from `site-configs/` and activate it |
 | `wp-env-bin install` | Alias for `config install` *(backward compatible)* |
-| `wp-env-bin setup` | Run `composer install` in `wp-env-bin/` to install plugins and themes |
-| `wp-env-bin get db` | Export the database from Pantheon via Terminus *(requires `env` in config)* |
-| `wp-env-bin use db <path>` | Validate and use a local SQL file instead of downloading from Pantheon |
-| `wp-env-bin process db` | Rename table prefix, import DB into local env, run URL search-replace |
-| `wp-env-bin make htaccess` | Generate `.htaccess` to reverse-proxy media uploads from the live site |
-| `wp-env-bin sync` | Run `get db` + `process db` + `make htaccess` in sequence |
+| `wp-env-bin db get` | Export the database from Pantheon via Terminus *(requires `env` in config)* |
+| `wp-env-bin db use <path>` | Validate and use a local SQL file instead of downloading from Pantheon |
+| `wp-env-bin db process` | Rename table prefix, import DB into local env, run URL search-replace |
+| `wp-env-bin htaccess make` | Generate `.htaccess` to reverse-proxy media uploads from the live site |
+| `wp-env-bin env setup` | Run `composer install` in `wp-env-bin/` to install plugins and themes |
+| `wp-env-bin env sync` | Run `db get` + `db process` + `htaccess make` in sequence |
 | `wp-env-bin env <command>` | Pass any wp-env command to the dev environment in `wp-env-bin/` |
 | `wp-env-bin e2e env <command>` | Pass any wp-env command to the e2e environment in `wp-env-bin/e2e/` |
-| `wp-env-bin compare --url /` | Visual A/B regression test — screenshot live vs local and diff |
-| `wp-env-bin compare --url /your-page/` | Compare a specific page path |
+| `wp-env-bin visual compare --url /` | Visual A/B regression test — screenshot live vs local and diff |
+| `wp-env-bin visual compare --url /your-page/` | Compare a specific page path |
 | `wp-env-bin e2e init` | Scaffold `wp-env-bin/e2e/` block test environment with its own `.wp-env.json` |
 | `wp-env-bin e2e test` | Run all Playwright tests from `wp-env-bin/e2e/` |
 | `wp-env-bin e2e test --project=all-blocks-editor` | Run editor tests only |
@@ -112,8 +112,8 @@ wp-env-bin/
 │   ├── cci.unc.edu.composer.json
 │   └── ...                   # Add more profiles with `config install` or `config update`
 ├── assets/
-│   ├── database.sql          # Production DB snapshot downloaded by `get db` (gitignored)
-│   ├── database.modified.sql # Processed DB ready for import by `process db` (gitignored)
+│   ├── database.sql          # Production DB snapshot downloaded by `db get` (gitignored)
+│   ├── database.modified.sql # Processed DB ready for import by `db process` (gitignored)
 │   └── .htaccess             # Reverse-proxy rules for media assets (gitignored)
 ├── plugins/                  # Composer-installed dev plugins — not source-controlled (gitignored)
 ├── themes/                   # Composer-installed dev themes — not source-controlled (gitignored)

@@ -1,6 +1,6 @@
-# Visual Regression Testing (`compare`)
+# Visual Regression Testing (`visual compare`)
 
-The `compare` command takes a screenshot of the same URL on both the live site and your local environment, runs a pixel-level diff, and generates an HTML report so you can visually confirm that your local copy matches production.
+The `visual compare` command takes a screenshot of the same URL on both the live site and your local environment, runs a pixel-level diff, and generates an HTML report so you can visually confirm that your local copy matches production.
 
 ## One-time browser install
 
@@ -14,28 +14,28 @@ npx playwright install chromium
 
 **Compare the home page:**
 ```bash
-wp-env-bin compare --url /
+wp-env-bin visual compare --url /
 ```
 
 **Compare a specific page:**
 ```bash
-wp-env-bin compare --url /your-page-path/
+wp-env-bin visual compare --url /your-page-path/
 ```
 
 **Compare directly with any path:**
 ```bash
-wp-env-bin compare --url /about/
-wp-env-bin compare --url /research/labs/
+wp-env-bin visual compare --url /about/
+wp-env-bin visual compare --url /research/labs/
 ```
 
 **Compare multiple pages from the sitemap:**
 ```bash
-wp-env-bin compare --limit 10
+wp-env-bin visual compare --limit 10
 ```
 
 **Compare a curated list of paths from config:**
 ```bash
-wp-env-bin compare --test-paths
+wp-env-bin visual compare --test-paths
 ```
 
 ## Options

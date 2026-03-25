@@ -73,7 +73,7 @@ async function install() {
 				logger("  cp wp-env-bin/composer.json.example wp-env-bin/composer.json");
 				logger("  # Edit composer.json to add your plugin and theme dependencies");
 			}
-			logger("  wp-env-bin setup");
+			logger("  wp-env-bin env setup");
 			return;
 		}
 		shouldConfigure = true;
@@ -95,7 +95,7 @@ async function install() {
 			logger("  cp wp-env-bin/composer.json.example wp-env-bin/composer.json");
 			logger("  # Edit composer.json to add your plugin and theme dependencies");
 		}
-		logger("  wp-env-bin setup");
+		logger("  wp-env-bin env setup");
 		return;
 	}
 
@@ -171,7 +171,7 @@ async function install() {
 		logger("  cp wp-env-bin/composer.json.example wp-env-bin/composer.json");
 		logger("  # Edit composer.json to add your plugin and theme dependencies");
 	}
-	logger("  wp-env-bin setup");
+	logger("  wp-env-bin env setup");
 }
 
 module.exports = { install };
