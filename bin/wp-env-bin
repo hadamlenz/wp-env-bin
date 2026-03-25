@@ -195,12 +195,44 @@ async function init() {
 					console.log("Run `wp-env-bin config install` or `wp-env-bin config update` and save a profile to get started.");
 					break;
 				}
-				const { select } = await import("@inquirer/prompts");
+				const { select, confirm } = await import("@inquirer/prompts");
 				const chosen = await select({
 					message: "Switch to which site config?",
 					choices: profiles.map(p => ({ name: p, value: p })),
 				});
-				configSwitch(chosen);
+				const newConfig = configSwitch(chosen);
+				const siteType = (newConfig && newConfig.siteType) || "singlesite";
+
+				if (siteType === "multisite") {
+					const reinit = await confirm({
+						message: "Would you like to reinitialize the local environment with the new config? This only works for remote multisite.",
+						default: false,
+					});
+					if (reinit) {
+						console.log("> Reinitializing environment...");
+						setup(["--delete-lock"]);
+						await getRemoteDb({ action: "redownload" });
+						await processDb();
+						makeHtaccess();
+						const inactivePlugins = getInactivePlugins();
+						if (inactivePlugins.length > 0) {
+							activateComposerPlugins(inactivePlugins);
+						}
+						runWpEnv(["start"]);
+					} else {
+						console.log("\nTo get a working environment, run these steps manually:");
+						console.log("  1. wp-env-bin env setup --delete-lock");
+						console.log("  2. wp-env-bin db get          (re-download from Pantheon)");
+						console.log("  3. wp-env-bin db process      (import + search-replace)");
+						console.log("  4. wp-env-bin htaccess make   (regenerate from current config)");
+						console.log("  5. wp-env-bin env sync        (activate composer plugins)");
+						console.log("  6. wp-env-bin env start");
+					}
+				} else {
+					console.log(">  run `wp-env-bin env setup --delete-lock` to reinstall dependencies.");
+					console.log(">  run `wp-env-bin env sync` to sync the database and .htaccess file for this config.");
+					console.log(">  run `wp-env-bin env start` to restart the development environment.");
+				}
 
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				configHelp();
