@@ -169,7 +169,10 @@ async function configSwitch() {
 		logger("> copied site-configs/" + chosen + ".composer.lock → composer.lock");
 	}
 
-	logger("\nSwitched to " + chosen + ". Run `wp-env-bin env setup` to install dependencies.");
+	logger("\nSwitched to " + chosen);
+	logger(">  run `wp-env-bin env setup --delete-lock` to reinstall dependencies.");
+	logger(">  run `wp-env-bin env sync` to sync the database and .htaccess file for this config.");
+	logger('>  run ` wp-env-bin env start` to restart the development environment.');
 }
 
 module.exports = { configInstall, configUpdate, configSwitch };

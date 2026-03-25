@@ -3,6 +3,11 @@ const fs = require("fs");
 const { run } = require("../lib/utils/run");
 const { logger } = require("../lib/utils/log");
 
+const PLUGIN_FILES = [
+	"wp-env-bin-plugin.php",
+	"classes/class-service-worker.php",
+];
+
 /**
  * Run `composer install` inside the wp-env-bin/ directory to install
  * the PHP plugin and theme dependencies declared in composer.json.
@@ -25,6 +30,16 @@ function setup(argv = []) {
 	logger("> running composer install in " + composerDir + "...");
 	run("composer install", { cwd: composerDir, stdio: "inherit" });
 	logger("> composer install complete.");
+
+	// Ensure wp-env-bin-plugin is present — Composer may remove it on a fresh install
+	// because the plugins/ directory is gitignored and managed by composer/installers.
+	const pluginSrc = path.join(__dirname, "../scaffold/plugins/wp-env-bin-plugin");
+	const pluginDest = path.join(composerDir, "plugins/wp-env-bin-plugin");
+	fs.mkdirSync(path.join(pluginDest, "classes"), { recursive: true });
+	for (const file of PLUGIN_FILES) {
+		fs.copyFileSync(path.join(pluginSrc, file), path.join(pluginDest, file));
+	}
+	logger("> ensured wp-env-bin-plugin is present.");
 }
 
 module.exports = { setup };
