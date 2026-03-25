@@ -1,0 +1,85 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "wp-env-bin.config.schema.json",
+	"title": "wp-env-bin Config",
+	"description": "Site configuration for the wp-env-bin local WordPress development tool.",
+	"type": "object",
+	"required": ["url"],
+	"properties": {
+		"$schema": {
+			"type": "string",
+			"description": "Path to the JSON Schema file for this config."
+		},
+		"pluginName": {
+			"type": "string",
+			"description": "Plugin or theme name displayed in CLI output."
+		},
+		"projectType": {
+			"type": "string",
+			"enum": ["plugin", "theme"],
+			"description": "Whether this project is a plugin or theme. Determines how .wp-env.json is generated."
+		},
+		"siteType": {
+			"type": "string",
+			"enum": ["singlesite", "multisite"],
+			"default": "singlesite",
+			"description": "WordPress site type. Use 'multisite' when syncing from a Multisite network. Defaults to 'singlesite'."
+		},
+		"env": {
+			"type": "string",
+			"description": "Pantheon site.environment identifier (e.g. 'mysite.live'). Required when using the 'db get' command with Terminus."
+		},
+		"url": {
+			"type": "string",
+			"description": "Live site domain (e.g. 'example.com'). Used for URL replacement during DB sync and .htaccess media proxy rules."
+		},
+		"oldPrefix": {
+			"type": "string",
+			"description": "Database table prefix on the live site (e.g. 'wpsites_1440_'). Required for multisite — tables are renamed to 'wp_' locally."
+		},
+		"siteId": {
+			"type": ["string", "number"],
+			"description": "WordPress multisite site/blog ID (e.g. '1440'). Required for multisite .htaccess media proxy path generation."
+		},
+		"adminUsername": {
+			"type": "string",
+			"default": "admin",
+			"description": "Local WordPress admin username to create or reset after a DB sync. Defaults to 'admin'."
+		},
+		"adminEmail": {
+			"type": "string",
+			"format": "email",
+			"default": "admin@localhost.com",
+			"description": "Local WordPress admin email address. Defaults to 'admin@localhost.com'."
+		},
+		"adminPassword": {
+			"type": "string",
+			"default": "password",
+			"description": "Local WordPress admin password. Defaults to 'password'."
+		},
+		"composerPath": {
+			"type": "string",
+			"description": "Path to the remote server's composer.json (e.g. '/code/composer.json'). Used by the 'config composer' command to map installed plugins."
+		},
+		"test-paths": {
+			"type": "array",
+			"items": {
+				"type": "string",
+				"description": "A URL path to test (e.g. '/', '/about/', '/contact/')."
+			},
+			"description": "URL paths used for visual regression testing with the 'compare' command."
+		}
+	},
+	"if": {
+		"properties": {
+			"siteType": { "const": "multisite" }
+		},
+		"required": ["siteType"]
+	},
+	"then": {
+		"required": ["url", "oldPrefix", "siteId"]
+	},
+	"else": {
+		"required": ["url"]
+	}
+}

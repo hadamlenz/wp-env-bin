@@ -1,0 +1,96 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "wp-env-bin.e2e.config.schema.json",
+	"title": "wp-env-bin E2E Config",
+	"description": "E2E test environment configuration for the wp-env-bin local WordPress development tool.",
+	"type": "object",
+	"properties": {
+		"$schema": {
+			"type": "string",
+			"description": "Path to the JSON Schema file for this config."
+		},
+		"editor": {
+			"type": "array",
+			"items": {
+				"type": "string",
+				"description": "Path to a block directory containing editor E2E tests."
+			},
+			"default": [],
+			"description": "Block directories to include in editor (block editor) E2E test runs. Defaults to []."
+		},
+		"frontend": {
+			"type": "array",
+			"items": {
+				"type": "string",
+				"description": "Path to a block directory containing frontend E2E tests."
+			},
+			"default": [],
+			"description": "Block directories to include in frontend E2E test runs. Defaults to []."
+		},
+		"wpVersion": {
+			"type": "string",
+			"default": "6.9.4",
+			"description": "WordPress version to use in the test environment. Defaults to '6.9.4'."
+		},
+		"phpVersion": {
+			"type": "string",
+			"default": "8.3",
+			"description": "PHP version to use in the test environment. Defaults to '8.3'."
+		},
+		"testTheme": {
+			"type": "string",
+			"default": "twentytwentyfive",
+			"description": "WordPress theme slug to activate in the test environment. Defaults to 'twentytwentyfive'."
+		},
+		"port": {
+			"type": ["string", "number"],
+			"default": "8886",
+			"description": "HTTP port for the test environment. Defaults to '8886'."
+		},
+		"mysqlPort": {
+			"type": "number",
+			"default": 51606,
+			"description": "MySQL port for the test environment. Defaults to 51606."
+		},
+		"testMysqlPort": {
+			"type": "number",
+			"default": 51607,
+			"description": "Secondary MySQL port for the test environment. Defaults to 51607."
+		},
+		"wpConstants": {
+			"type": "object",
+			"description": "WordPress configuration constants to define in the test environment (wp-config.php).",
+			"properties": {
+				"WP_DEBUG": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enable WordPress debug mode. Defaults to false."
+				},
+				"WP_DEBUG_LOG": {
+					"type": "boolean",
+					"default": false,
+					"description": "Save debug messages to a log file. Defaults to false."
+				},
+				"WP_DEBUG_DISPLAY": {
+					"type": "boolean",
+					"default": false,
+					"description": "Display debug messages on screen. Defaults to false."
+				},
+				"SCRIPT_DEBUG": {
+					"type": "boolean",
+					"default": false,
+					"description": "Force WordPress to use unminified JS and CSS. Defaults to false."
+				},
+				"DISABLE_WP_CRON": {
+					"type": "boolean",
+					"default": true,
+					"description": "Disable the WordPress pseudo-cron scheduler. Defaults to true."
+				}
+			},
+			"additionalProperties": {
+				"type": ["boolean", "string", "number"],
+				"description": "Additional WordPress constant value."
+			}
+		}
+	}
+}

@@ -1,6 +1,8 @@
 {
+	"$schema": "../../schemas/wp-env-bin.config.schema.json",
 	"pluginName": "",
 	"siteType": "singlesite",
+	"composerPath":"/path/to/composer.json",
 	"env": "",
 	"url": "",
 	"oldPrefix": "",

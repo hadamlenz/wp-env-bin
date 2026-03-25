@@ -1,4 +1,5 @@
 {
+  "$schema": "../../../schemas/wp-env-bin.e2e.config.schema.json",
   "editor": [],
   "frontend": [],
   "wpVersion": "6.9.4",
