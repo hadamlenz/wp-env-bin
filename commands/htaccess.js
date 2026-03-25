@@ -29,12 +29,17 @@ function clearIfDirectory(filePath) {
  * Generate the .htaccess file for the local environment and write it to
  * wp-env-bin/assets/.htaccess. The file sets up a reverse proxy that redirects
  * media upload requests to the live site so assets load without a full download.
- * Prompts to reuse an existing file if one is present, then attempts to copy
- * the file into the running Docker container immediately.
+ * Attempts to copy the file into the running Docker container immediately.
+ * The caller is responsible for checking whether a file already exists and
+ * prompting the user before calling this function.
  *
- * @returns {Promise<void>}
+ * @param {object} [options]
+ * @param {"useIt"|"regenerate"} [options.action="regenerate"]
+ *   - "useIt"      — keep the existing .htaccess and return early
+ *   - "regenerate" — write a fresh .htaccess from current config (default)
+ * @returns {void}
  */
-async function makeHtaccess() {
+function makeHtaccess({ action = "regenerate" } = {}) {
 	const config = readLocalConfig();
 	const { url, siteId, siteType } = config;
 	const resolvedSiteType = siteType || "singlesite";
@@ -46,19 +51,9 @@ async function makeHtaccess() {
 		throw new Error("wp-env-bin.config.json must have 'siteId' set for multisite.");
 	}
 
-	if (checkHtaccess()) {
-		const { select } = await import("@inquirer/prompts");
-		const action = await select({
-			message: "wp-env-bin/assets/.htaccess already exists. What would you like to do?",
-			choices: [
-				{ name: "Use the existing .htaccess", value: "useIt" },
-				{ name: "Regenerate from current config", value: "regenerate" },
-			],
-		});
-		if (action === "useIt") {
-			logger("> using existing wp-env-bin/assets/.htaccess");
-			return;
-		}
+	if (action === "useIt") {
+		logger("> using existing wp-env-bin/assets/.htaccess");
+		return;
 	}
 
 	const content = htaccessTemplate(url, siteId, resolvedSiteType);
@@ -74,7 +69,7 @@ async function makeHtaccess() {
 	}
 
 	try {
-		wpcli("bash -c 'cp " + containerAssetsPath + "/.htaccess /var/www/html/.htaccess'");
+		wpcli("bash -c 'cp " + CONTAINER_ASSETS_PATH + "/.htaccess /var/www/html/.htaccess'");
 		logger("> htaccess applied to running container.");
 	} catch {
 		logger("> note: run `wp-env-bin env start` to apply htaccess to the container.");

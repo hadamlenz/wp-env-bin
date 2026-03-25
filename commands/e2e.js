@@ -111,25 +111,13 @@ function scaffoldE2eFiles(dest, scaffold, {
 }
 
 /**
- * Scaffold an e2e/ test environment in the consuming project.
+ * Return default values for the e2e init prompts by reading the existing
+ * e2e config, wp-env-bin.config.json, and package.json. Used by the bin
+ * to populate prompt defaults.
  *
- * Asks whether the project is a plugin or theme, then auto-generates the
- * afterStart lifecycle script and .wp-env.json accordingly. Creates an
- * isolated wp-env configuration with separate ports so the test environment
- * can coexist with the development environment.
- *
- * @returns {Promise<void>}
+ * @returns {{ projectType: string, pluginName: string, e2eConfig: object }}
  */
-async function initE2e() {
-	const dest = path.join(process.cwd(), "wp-env-bin", "e2e");
-	const scaffold = path.join(__dirname, "../scaffold/e2e");
-
-	const { select, input } = await import("@inquirer/prompts");
-
-	// ------------------------------------------------------------------
-	// Read existing config for defaults
-	// ------------------------------------------------------------------
-
+function getE2eDefaults() {
 	const e2eConfig = readE2eConfig();
 
 	let existingPluginName = "";
@@ -150,52 +138,34 @@ async function initE2e() {
 		}
 	}
 
-	// ------------------------------------------------------------------
-	// Prompt for configuration
-	// ------------------------------------------------------------------
+	return { projectType: existingProjectType, pluginName: existingPluginName, e2eConfig };
+}
 
-	const projectType = await select({
-		message: "Is this project a plugin or a theme?",
-		choices: [
-			{ name: "Plugin", value: "plugin" },
-			{ name: "Theme", value: "theme" },
-		],
-		default: existingProjectType,
-	});
+/**
+ * Scaffold an e2e/ test environment in the consuming project using the
+ * supplied configuration values. All interactive decisions must be gathered
+ * by the caller before invoking this function.
+ *
+ * @param {object} options
+ * @param {string} options.projectType - "plugin" or "theme"
+ * @param {string} options.slug        - Plugin or theme slug
+ * @param {string} options.testTheme   - Theme to activate during tests (plugin projects only)
+ * @param {string} options.wpVersion   - WordPress version string
+ * @param {string} options.phpVersion  - PHP version string
+ * @param {string} options.port        - wp-env development port for the e2e environment
+ * @returns {void}
+ */
+function initE2e({ projectType, slug, testTheme, wpVersion, phpVersion, port }) {
+	const dest = path.join(process.cwd(), "wp-env-bin", "e2e");
+	const scaffold = path.join(__dirname, "../scaffold/e2e");
 
-	const slug = await input({
-		message: projectType === "plugin" ? "Plugin slug (used in wp plugin activate)" : "Theme slug (used in wp theme activate)",
-		default: existingPluginName,
-	});
-
-	let testTheme = e2eConfig.testTheme;
-	if (projectType === "plugin") {
-		testTheme = await input({
-			message: "Theme to activate during tests",
-			default: e2eConfig.testTheme,
-		});
-	}
-
-	const wpVersion = await input({
-		message: "WordPress version",
-		default: e2eConfig.wpVersion,
-	});
-
-	const phpVersion = await input({
-		message: "PHP version",
-		default: e2eConfig.phpVersion,
-	});
-
-	const port = await input({
-		message: "wp-env development port for e2e environment (must differ from your dev env, default 8889)",
-		default: e2eConfig.port,
-	});
+	const e2eConfig = readE2eConfig();
 
 	// ------------------------------------------------------------------
 	// Build afterStart script and scaffold files
 	// ------------------------------------------------------------------
 
-	await scaffoldE2eFiles(dest, scaffold, {
+	scaffoldE2eFiles(dest, scaffold, {
 		projectType,
 		slug,
 		testTheme,
@@ -231,7 +201,7 @@ Next steps:
   3. Install Playwright browser:
        npx playwright install chromium
 
-  4. Start the e2e environment (uses wp-env-bin/e2e/.wp-env.json, port ${devPort}):
+  4. Start the e2e environment (uses wp-env-bin/e2e/.wp-env.json, port ${parseInt(port, 10)}):
        cd wp-env-bin e2e env start
        # Your dev env on port 8889 can run at the same time
 
@@ -295,4 +265,4 @@ function generateE2eTests(type, args = []) {
 	}
 }
 
-module.exports = { initE2e, generateE2eTests, runE2eTests, scaffoldE2eFiles };
+module.exports = { initE2e, getE2eDefaults, generateE2eTests, runE2eTests, scaffoldE2eFiles };

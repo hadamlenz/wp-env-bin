@@ -3,35 +3,30 @@ const { logger } = require("../lib/utils/log");
 const { readComposerPlugins, getInactiveComposerPlugins } = require("../lib/plugins");
 
 /**
- * Check for inactive composer plugins in the local WordPress environment and
- * prompt the user to activate them.
+ * Return the list of composer-managed plugins that are currently inactive in
+ * the local WordPress environment. Returns an empty array when all plugins are
+ * active or there are no composer-managed plugins. Used by the bin to build
+ * the activation prompt.
  *
- * @returns {Promise<void>}
+ * @returns {string[]}
  */
-async function activateComposerPlugins() {
+function getInactivePlugins() {
 	const composerSlugs = readComposerPlugins();
-	if (composerSlugs.length === 0) return;
-
-	const inactivePlugins = getInactiveComposerPlugins(composerSlugs);
-
-	if (inactivePlugins.length === 0) {
-		logger("> all composer plugins are already active.");
-		return;
-	}
-
-	const { select } = await import("@inquirer/prompts");
-	const action = await select({
-		message: `These composer plugins are inactive: ${inactivePlugins.join(", ")}. Activate them now?`,
-		choices: [
-			{ name: "Yes, activate all", value: "yes" },
-			{ name: "No, skip", value: "no" },
-		],
-	});
-
-	if (action === "yes") {
-		wpcli("wp plugin activate " + inactivePlugins.join(" "));
-		logger("> activated: " + inactivePlugins.join(", "));
-	}
+	if (composerSlugs.length === 0) return [];
+	return getInactiveComposerPlugins(composerSlugs);
 }
 
-module.exports = { activateComposerPlugins };
+/**
+ * Activate the given list of plugins in the local WordPress environment via
+ * WP-CLI. No interactive prompts — the caller decides which plugins to activate.
+ *
+ * @param {string[]} pluginsToActivate - List of plugin slugs to activate
+ * @returns {void}
+ */
+function activateComposerPlugins(pluginsToActivate) {
+	if (!pluginsToActivate || pluginsToActivate.length === 0) return;
+	wpcli("wp plugin activate " + pluginsToActivate.join(" "));
+	logger("> activated: " + pluginsToActivate.join(", "));
+}
+
+module.exports = { getInactivePlugins, activateComposerPlugins };

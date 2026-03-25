@@ -4,23 +4,53 @@ const { logger } = require("../lib/utils/log");
 const { applyProjectType } = require("../lib/config");
 
 /**
- * Scaffold the wp-env-bin/ config folder in the consuming project and walk the user
- * through creating wp-env-bin.config.json interactively. Copies template files, updates
- * .wp-env.json for the correct project type (plugin or theme), and prints next steps.
+ * Return the current install-time filesystem context so the caller (bin) can
+ * decide which prompts to show before calling install().
  *
- * @returns {Promise<void>}
+ * @returns {{ dest: string, configPath: string, configExists: boolean, existingConfig: object|null, projectName: string }}
  */
-async function install() {
+function getInstallContext() {
 	const dest = path.join(process.cwd(), "wp-env-bin");
-	const scaffold = path.join(__dirname, "../scaffold");
+	const configPath = path.join(dest, "wp-env-bin.config.json");
+	const configExists = existsSync(configPath);
+
+	let existingConfig = null;
+	if (configExists) {
+		try {
+			existingConfig = JSON.parse(readFileSync(configPath, "utf8"));
+		} catch {
+			// malformed config, treat as missing
+		}
+	}
 
 	let projectName = "";
 	try {
 		const pkg = JSON.parse(readFileSync(path.join(process.cwd(), "package.json"), "utf8"));
 		projectName = pkg.name || "";
 	} catch {
-		// no package.json in consuming project, leave blank
+		// no package.json in consuming project
 	}
+
+	return { dest, configPath, configExists, existingConfig, projectName };
+}
+
+/**
+ * Scaffold the wp-env-bin/ config folder in the consuming project and,
+ * when action is "configure", write wp-env-bin.config.json using the
+ * supplied config values. All interactive decisions must be made by the
+ * caller before invoking this function.
+ *
+ * @param {object} options
+ * @param {"useIt"|"configure"|"skip"} options.action
+ *   - "useIt"     — keep the existing config, just print next steps
+ *   - "configure" — write a fresh config from options.config
+ *   - "skip"      — scaffold files but skip config; print manual steps
+ * @param {object} [options.config] - Config values (required when action === "configure")
+ * @returns {void}
+ */
+function install({ action, config } = {}) {
+	const dest = path.join(process.cwd(), "wp-env-bin");
+	const scaffold = path.join(__dirname, "../scaffold");
 
 	mkdirSync(path.join(dest, "assets"), { recursive: true });
 	mkdirSync(path.join(dest, "plugins/wp-env-bin-plugin/classes"), { recursive: true });
@@ -47,47 +77,18 @@ async function install() {
 		}
 	}
 
-	const { confirm, select, input } = await import("@inquirer/prompts");
-	const configPath = path.join(dest, "wp-env-bin.config.json");
-	let existingConfig = null;
-	let shouldConfigure = false;
-
-	if (existsSync(configPath)) {
-		try {
-			existingConfig = JSON.parse(readFileSync(configPath, "utf8"));
-		} catch {
-			// malformed config, treat as missing
+	if (action === "useIt") {
+		logger("> using existing wp-env-bin/wp-env-bin.config.json");
+		logger("\nNext steps:");
+		if (!existsSync(path.join(dest, "composer.json"))) {
+			logger("  cp wp-env-bin/composer.json.example wp-env-bin/composer.json");
+			logger("  # Edit composer.json to add your plugin and theme dependencies");
 		}
-		const action = await select({
-			message: "wp-env-bin.config.json already exists. What would you like to do?",
-			choices: [
-				{ name: "Use the existing config", value: "useIt" },
-				{ name: "Reconfigure using existing values as defaults", value: "editIt" },
-				{ name: "Start over with a fresh config", value: "destroyIt" },
-			],
-		});
-		if (action === "useIt") {
-			logger("> using existing wp-env-bin/wp-env-bin.config.json");
-			logger("\nNext steps:");
-			if (!existsSync(path.join(dest, "composer.json"))) {
-				logger("  cp wp-env-bin/composer.json.example wp-env-bin/composer.json");
-				logger("  # Edit composer.json to add your plugin and theme dependencies");
-			}
-			logger("  wp-env-bin env setup");
-			return;
-		}
-		shouldConfigure = true;
-		if (action === "destroyIt") {
-			existingConfig = null;
-		}
-	} else {
-		shouldConfigure = await confirm({
-			message: "Configure wp-env-bin.config.json now?",
-			default: true,
-		});
+		logger("  wp-env-bin env setup");
+		return;
 	}
 
-	if (!shouldConfigure) {
+	if (action === "skip") {
 		logger("\nNext steps:");
 		logger("  cp wp-env-bin/wp-env-bin.config.json.example wp-env-bin/wp-env-bin.config.json");
 		logger("  # Edit wp-env-bin.config.json with your env, url, oldPrefix, siteId");
@@ -99,69 +100,17 @@ async function install() {
 		return;
 	}
 
-	const defaults = existingConfig || {};
-
-	const projectType = await select({
-		message: "Is this a plugin or a theme?",
-		choices: [
-			{ name: "Plugin", value: "plugin" },
-			{ name: "Theme", value: "theme" },
-		],
-		default: defaults.projectType || "plugin",
-	});
-
-	const siteType = await select({
-		message: "Site type?",
-		choices: [
-			{ name: "Single-site", value: "singlesite" },
-			{ name: "Multisite (Pantheon subsite)", value: "multisite" },
-		],
-		default: defaults.siteType || "singlesite",
-	});
-
-	const env = await input({
-		message: "Pantheon site.environment (e.g. my-site.live)",
-		default: defaults.env || "",
-	});
-
-	const url = await input({
-		message: "Live site URL (e.g. mysite.org)",
-		default: defaults.url || "",
-	});
-
-	const pluginName = await input({
-		message: "Plugin or theme name (for reference)",
-		default: defaults.pluginName || projectName,
-	});
-
-	const config = {
-		pluginName,
-		projectType,
-		siteType,
-		env,
-		url,
-	};
-
-	if (siteType === "multisite") {
-		config.oldPrefix = await input({
-			message: "Live DB table prefix (e.g. wp_123_)",
-			default: defaults.oldPrefix || "",
-		});
-		config.siteId = await input({
-			message: "Multisite site ID",
-			default: defaults.siteId || "",
-		});
-	}
-
+	// action === "configure"
+	const configPath = path.join(dest, "wp-env-bin.config.json");
 	writeFileSync(configPath, JSON.stringify(config, null, "\t"), "utf8");
 	logger("> created wp-env-bin/wp-env-bin.config.json");
 
 	const wpEnvPath = path.join(dest, ".wp-env.json");
 	try {
 		const wpEnv = JSON.parse(readFileSync(wpEnvPath, "utf8"));
-		const updatedWpEnv = applyProjectType(wpEnv, projectType);
+		const updatedWpEnv = applyProjectType(wpEnv, config.projectType);
 		writeFileSync(wpEnvPath, JSON.stringify(updatedWpEnv, null, 4), "utf8");
-		logger("> updated wp-env-bin/.wp-env.json (" + projectType + ")");
+		logger("> updated wp-env-bin/.wp-env.json (" + config.projectType + ")");
 	} catch {
 		// .wp-env.json missing or malformed — leave it as-is
 	}
@@ -174,4 +123,4 @@ async function install() {
 	logger("  wp-env-bin env setup");
 }
 
-module.exports = { install };
+module.exports = { install, getInstallContext };

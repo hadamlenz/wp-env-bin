@@ -28,12 +28,17 @@ async function getRemoteTables(env, url) {
 
 /**
  * Export the site database from Pantheon via Terminus and save it to
- * wp-env-bin/assets/database.sql. Prompts to reuse an existing export if present.
- * Requires the `env` field to be set in wp-env-bin.config.json.
+ * wp-env-bin/assets/database.sql. The caller is responsible for checking
+ * whether a database already exists and prompting the user before calling
+ * this function.
  *
+ * @param {object} [options]
+ * @param {"useIt"|"redownload"} [options.action="redownload"]
+ *   - "useIt"      — skip the download and reuse the existing file
+ *   - "redownload" — always fetch from Pantheon (default)
  * @returns {Promise<void>}
  */
-async function getRemoteDb() {
+async function getRemoteDb({ action = "redownload" } = {}) {
 	const config = readLocalConfig();
 	const { env, url } = config;
 
@@ -44,19 +49,9 @@ async function getRemoteDb() {
 		);
 	}
 
-	if (checkDatabase()) {
-		const { select } = await import("@inquirer/prompts");
-		const action = await select({
-			message: "wp-env-bin/assets/database.sql already exists. What would you like to do?",
-			choices: [
-				{ name: "Use the existing database", value: "useIt" },
-				{ name: "Re-download from Pantheon", value: "destroyIt" },
-			],
-		});
-		if (action === "useIt") {
-			logger("> using existing wp-env-bin/assets/database.sql");
-			return;
-		}
+	if (action === "useIt") {
+		logger("> using existing wp-env-bin/assets/database.sql");
+		return;
 	}
 
 	const tables = await getRemoteTables(env, url);
@@ -82,12 +77,18 @@ async function getRemoteDb() {
 
 /**
  * Validate a local SQL file and copy it to wp-env-bin/assets/database.sql
- * for use as the local database source. Prompts before overwriting an existing file.
+ * for use as the local database source. The caller is responsible for
+ * checking whether a database already exists and prompting the user before
+ * calling this function.
  *
  * @param {string} filePath - Path to the SQL file provided by the user
- * @returns {Promise<void>}
+ * @param {object} [options]
+ * @param {"replace"|"keep"} [options.action="replace"]
+ *   - "replace" — overwrite the existing file (default)
+ *   - "keep"    — leave the existing file in place and return early
+ * @returns {void}
  */
-async function useDb(filePath) {
+function useDb(filePath, { action = "replace" } = {}) {
 	if (!filePath) {
 		throw new Error("Please provide a path: wp-env-bin db use <path/to/file.sql>");
 	}
@@ -99,19 +100,9 @@ async function useDb(filePath) {
 
 	const dest = path.join(process.cwd(), "wp-env-bin/assets/database.sql");
 
-	if (checkDatabase()) {
-		const { select } = await import("@inquirer/prompts");
-		const action = await select({
-			message: "wp-env-bin/assets/database.sql already exists. What would you like to do?",
-			choices: [
-				{ name: "Replace it with the new file", value: "replace" },
-				{ name: "Keep the existing file", value: "keep" },
-			],
-		});
-		if (action === "keep") {
-			logger("> keeping existing wp-env-bin/assets/database.sql");
-			return;
-		}
+	if (action === "keep") {
+		logger("> keeping existing wp-env-bin/assets/database.sql");
+		return;
 	}
 
 	copyFileSync(resolved, dest);
@@ -200,17 +191,19 @@ async function createAdminUser(username, email, password) {
 /**
  * Full database processing pipeline: rename table prefix (multisite only),
  * import the SQL file into the local environment, run URL search-replace,
- * and optionally create a local admin user.
+ * and optionally create a local admin user. The caller is responsible for
+ * prompting the user before passing createAdmin.
  *
+ * @param {object} [options]
+ * @param {boolean} [options.createAdmin=false] - Whether to create/reset the local admin user
  * @returns {Promise<void>}
  */
-async function processDb() {
+async function processDb({ createAdmin = false } = {}) {
 	const config = readLocalConfig();
-	const { oldPrefix, url, siteType, adminUsername, adminEmail, adminPassword } = config;
+	const { oldPrefix, url, adminUsername, adminEmail, adminPassword } = config;
 	const username = adminUsername || "admin";
 	const email = adminEmail || "admin@localhost.com";
 	const password = adminPassword || "password";
-	const resolvedSiteType = siteType || "singlesite";
 
 	if (oldPrefix) {
 		prefixRenameFile(oldPrefix);
@@ -220,18 +213,7 @@ async function processDb() {
 	}
 	searchReplace(url);
 
-	const { select } = await import("@inquirer/prompts");
-	const multisiteNote = resolvedSiteType === "multisite"
-		? "\n  Note: user tables are not downloaded in multisite mode — a new user must be created."
-		: "";
-	const action = await select({
-		message: `Would you like to create or reset a local admin user (${username} / ${password})?` + multisiteNote,
-		choices: [
-			{ name: "Yes, create or reset admin user", value: "yes" },
-			{ name: "No, skip", value: "no" },
-		],
-	});
-	if (action === "yes") {
+	if (createAdmin) {
 		await createAdminUser(username, email, password);
 	}
 }

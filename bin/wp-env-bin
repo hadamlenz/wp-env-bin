@@ -1,28 +1,207 @@
 #!/usr/bin/env node
 
+const { existsSync } = require("fs");
+const { execSync } = require("child_process");
+const path = require("path");
+
 const command = process.argv[2];
 const subcommand = process.argv[3];
 
-const { configInstall, configUpdate, configSwitch } = require("../commands/config");
-const { install } = require("../commands/install");
+const { configInstall, configUpdate, configSwitch, getProfileList } = require("../commands/config");
+const { install, getInstallContext } = require("../commands/install");
 const { getRemoteDb, processDb, useDb } = require("../commands/db");
 const { makeHtaccess } = require("../commands/htaccess");
 const { setup } = require("../commands/setup");
-const { activateComposerPlugins } = require("../commands/plugins");
+const { getInactivePlugins, activateComposerPlugins } = require("../commands/plugins");
 const { runWpEnv, runWpEnvE2e } = require("../commands/env");
 const { compare } = require("../commands/compare");
-const { initE2e, generateE2eTests, runE2eTests } = require("../commands/e2e");
+const { initE2e, getE2eDefaults, generateE2eTests, runE2eTests } = require("../commands/e2e");
 const { help, configHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp } = require("../commands/help");
+const { checkDatabase } = require("../lib/env/check");
+const { checkHtaccess } = require("../lib/env/check");
+const { saveNamedProfile } = require("../lib/config");
+
+// ─── Shared prompt helpers ────────────────────────────────────────────────────
+
+/**
+ * Prompt for all wp-env-bin.config.json fields and return a config object.
+ *
+ * @param {object} [defaults={}] - Existing config values to use as defaults
+ * @param {string} [projectName=""] - Project name from package.json (used as pluginName default)
+ * @returns {Promise<object>}
+ */
+async function promptForConfig(defaults = {}, projectName = "") {
+	const { select, input } = await import("@inquirer/prompts");
+
+	const projectType = await select({
+		message: "Is this a plugin or a theme?",
+		choices: [
+			{ name: "Plugin", value: "plugin" },
+			{ name: "Theme", value: "theme" },
+		],
+		default: defaults.projectType || "plugin",
+	});
+
+	const siteType = await select({
+		message: "Site type?",
+		choices: [
+			{ name: "Single-site", value: "singlesite" },
+			{ name: "Multisite (Pantheon subsite)", value: "multisite" },
+		],
+		default: defaults.siteType || "singlesite",
+	});
+
+	const env = await input({
+		message: "Pantheon site.environment (e.g. my-site.live)",
+		default: defaults.env || "",
+	});
+
+	const url = await input({
+		message: "Live site URL (e.g. mysite.org)",
+		default: defaults.url || "",
+	});
+
+	const pluginName = await input({
+		message: "Plugin or theme name (for reference)",
+		default: defaults.pluginName || projectName,
+	});
+
+	const config = { pluginName, projectType, siteType, env, url };
+
+	if (siteType === "multisite") {
+		config.oldPrefix = await input({
+			message: "Live DB table prefix (e.g. wp_123_)",
+			default: defaults.oldPrefix || "",
+		});
+		config.siteId = await input({
+			message: "Multisite site ID",
+			default: defaults.siteId || "",
+		});
+	}
+
+	return config;
+}
+
+/**
+ * Prompt to save the current config as a named profile.
+ * Returns an options object suitable for saveNamedProfile().
+ *
+ * @param {object} config - The config that was just written
+ * @param {string} dest   - Absolute path to wp-env-bin/
+ * @returns {Promise<void>}
+ */
+async function promptAndSaveProfile(config, dest) {
+	const { confirm, input } = await import("@inquirer/prompts");
+
+	const shouldSave = await confirm({
+		message: "Save this as a named profile in site-configs/?",
+		default: true,
+	});
+
+	if (!shouldSave) {
+		saveNamedProfile(dest, config, { shouldSave: false });
+		return;
+	}
+
+	const profileName = await input({
+		message: "Profile name (used as filename prefix)",
+		default: config.url || "",
+	});
+
+	let saveComposer = false;
+	const composerSrc = path.join(dest, "composer.json");
+	if (existsSync(composerSrc)) {
+		saveComposer = await confirm({
+			message: "Also save composer.json as site-configs/" + profileName + ".composer.json?",
+			default: true,
+		});
+	}
+
+	saveNamedProfile(dest, config, { shouldSave: true, profileName, saveComposer });
+}
+
+// ─── init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
 	switch (command) {
 		case "config": {
 			if (subcommand === "install") {
-				await configInstall();
+				// ── Gather install options ──────────────────────────────────────
+				const { confirm, select } = await import("@inquirer/prompts");
+				const ctx = getInstallContext();
+				let action;
+				if (ctx.configExists) {
+					action = await select({
+						message: "wp-env-bin.config.json already exists. What would you like to do?",
+						choices: [
+							{ name: "Use the existing config", value: "useIt" },
+							{ name: "Reconfigure using existing values as defaults", value: "editIt" },
+							{ name: "Start over with a fresh config", value: "destroyIt" },
+						],
+					});
+					if (action === "editIt") action = "configure";
+					if (action === "destroyIt") { ctx.existingConfig = null; action = "configure"; }
+				} else {
+					const shouldConfigure = await confirm({
+						message: "Configure wp-env-bin.config.json now?",
+						default: true,
+					});
+					action = shouldConfigure ? "configure" : "skip";
+				}
+
+				let config = null;
+				if (action === "configure") {
+					config = await promptForConfig(ctx.existingConfig || {}, ctx.projectName);
+				}
+
+				configInstall({ action, config }, { shouldSave: false }); // profile save below
+				if (action === "configure" && config) {
+					await promptAndSaveProfile(config, ctx.dest);
+				}
+
 			} else if (subcommand === "update") {
-				await configUpdate();
+				// ── Gather update options ───────────────────────────────────────
+				const { readFileSync } = require("fs");
+				const dest = path.join(process.cwd(), "wp-env-bin");
+				const configPath = path.join(dest, "wp-env-bin.config.json");
+				if (!existsSync(configPath)) {
+					console.log("No wp-env-bin.config.json found. Run `wp-env-bin config install` first.");
+					process.exit(1);
+				}
+				let existingConfig = {};
+				try {
+					existingConfig = JSON.parse(readFileSync(configPath, "utf8"));
+				} catch {
+					console.log("wp-env-bin.config.json is malformed. Run `wp-env-bin config install` to start fresh.");
+					process.exit(1);
+				}
+				const config = await promptForConfig(existingConfig);
+				await (async () => {
+					// configUpdate handles the file write; profile save happens after
+					configUpdate(config, { shouldSave: false });
+					await promptAndSaveProfile(config, dest);
+				})();
+
 			} else if (subcommand === "switch") {
-				await configSwitch();
+				// ── Gather switch options ───────────────────────────────────────
+				const profiles = getProfileList();
+				if (!profiles) {
+					console.log("No site-configs/ directory found.");
+					console.log("Run `wp-env-bin config install` and save a named profile to get started.");
+					break;
+				}
+				if (profiles.length === 0) {
+					console.log("No named profiles found in wp-env-bin/site-configs/.");
+					console.log("Run `wp-env-bin config install` or `wp-env-bin config update` and save a profile to get started.");
+					break;
+				}
+				const { select } = await import("@inquirer/prompts");
+				const chosen = await select({
+					message: "Switch to which site config?",
+					choices: profiles.map(p => ({ name: p, value: p })),
+				});
+				configSwitch(chosen);
+
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				configHelp();
 			} else {
@@ -31,16 +210,86 @@ async function init() {
 			break;
 		}
 		case "install": {
-			await install();
+			const { confirm, select } = await import("@inquirer/prompts");
+			const ctx = getInstallContext();
+			let action;
+			if (ctx.configExists) {
+				action = await select({
+					message: "wp-env-bin.config.json already exists. What would you like to do?",
+					choices: [
+						{ name: "Use the existing config", value: "useIt" },
+						{ name: "Reconfigure using existing values as defaults", value: "editIt" },
+						{ name: "Start over with a fresh config", value: "destroyIt" },
+					],
+				});
+				if (action === "editIt") action = "configure";
+				if (action === "destroyIt") { ctx.existingConfig = null; action = "configure"; }
+			} else {
+				const shouldConfigure = await confirm({
+					message: "Configure wp-env-bin.config.json now?",
+					default: true,
+				});
+				action = shouldConfigure ? "configure" : "skip";
+			}
+
+			let config = null;
+			if (action === "configure") {
+				config = await promptForConfig(ctx.existingConfig || {}, ctx.projectName);
+			}
+
+			install({ action, config });
 			break;
 		}
 		case "db": {
 			if (subcommand === "get") {
-				await getRemoteDb();
+				let action = "redownload";
+				if (checkDatabase()) {
+					const { select } = await import("@inquirer/prompts");
+					action = await select({
+						message: "wp-env-bin/assets/database.sql already exists. What would you like to do?",
+						choices: [
+							{ name: "Use the existing database", value: "useIt" },
+							{ name: "Re-download from Pantheon", value: "redownload" },
+						],
+					});
+				}
+				await getRemoteDb({ action });
+
 			} else if (subcommand === "process") {
-				await processDb();
+				const { select } = await import("@inquirer/prompts");
+				// Read config to build the prompt message
+				const { readLocalConfig } = require("../lib/env/config");
+				const config = readLocalConfig();
+				const username = config.adminUsername || "admin";
+				const password = config.adminPassword || "password";
+				const siteType = config.siteType || "singlesite";
+				const multisiteNote = siteType === "multisite"
+					? "\n  Note: user tables are not downloaded in multisite mode — a new user must be created."
+					: "";
+				const answer = await select({
+					message: `Would you like to create or reset a local admin user (${username} / ${password})?` + multisiteNote,
+					choices: [
+						{ name: "Yes, create or reset admin user", value: "yes" },
+						{ name: "No, skip", value: "no" },
+					],
+				});
+				await processDb({ createAdmin: answer === "yes" });
+
 			} else if (subcommand === "use") {
-				await useDb(process.argv[4]);
+				const filePath = process.argv[4];
+				let action = "replace";
+				if (checkDatabase()) {
+					const { select } = await import("@inquirer/prompts");
+					action = await select({
+						message: "wp-env-bin/assets/database.sql already exists. What would you like to do?",
+						choices: [
+							{ name: "Replace it with the new file", value: "replace" },
+							{ name: "Keep the existing file", value: "keep" },
+						],
+					});
+				}
+				useDb(filePath, { action });
+
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				dbHelp();
 			} else {
@@ -50,7 +299,18 @@ async function init() {
 		}
 		case "htaccess": {
 			if (subcommand === "make") {
-				await makeHtaccess();
+				let action = "regenerate";
+				if (checkHtaccess()) {
+					const { select } = await import("@inquirer/prompts");
+					action = await select({
+						message: "wp-env-bin/assets/.htaccess already exists. What would you like to do?",
+						choices: [
+							{ name: "Use the existing .htaccess", value: "useIt" },
+							{ name: "Regenerate from current config", value: "regenerate" },
+						],
+					});
+				}
+				makeHtaccess({ action });
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				htaccessHelp();
 			} else {
@@ -62,10 +322,68 @@ async function init() {
 			if (subcommand === "setup") {
 				setup(process.argv.slice(4));
 			} else if (subcommand === "sync") {
-				await getRemoteDb();
-				await processDb();
-				await makeHtaccess();
-				await activateComposerPlugins();
+				// db get
+				let dbAction = "redownload";
+				if (checkDatabase()) {
+					const { select } = await import("@inquirer/prompts");
+					dbAction = await select({
+						message: "wp-env-bin/assets/database.sql already exists. What would you like to do?",
+						choices: [
+							{ name: "Use the existing database", value: "useIt" },
+							{ name: "Re-download from Pantheon", value: "redownload" },
+						],
+					});
+				}
+				await getRemoteDb({ action: dbAction });
+
+				// db process
+				const { select: selectProcess } = await import("@inquirer/prompts");
+				const { readLocalConfig } = require("../lib/env/config");
+				const config = readLocalConfig();
+				const username = config.adminUsername || "admin";
+				const password = config.adminPassword || "password";
+				const siteType = config.siteType || "singlesite";
+				const multisiteNote = siteType === "multisite"
+					? "\n  Note: user tables are not downloaded in multisite mode — a new user must be created."
+					: "";
+				const processAnswer = await selectProcess({
+					message: `Would you like to create or reset a local admin user (${username} / ${password})?` + multisiteNote,
+					choices: [
+						{ name: "Yes, create or reset admin user", value: "yes" },
+						{ name: "No, skip", value: "no" },
+					],
+				});
+				await processDb({ createAdmin: processAnswer === "yes" });
+
+				// htaccess make
+				let htaccessAction = "regenerate";
+				if (checkHtaccess()) {
+					const { select: selectHtaccess } = await import("@inquirer/prompts");
+					htaccessAction = await selectHtaccess({
+						message: "wp-env-bin/assets/.htaccess already exists. What would you like to do?",
+						choices: [
+							{ name: "Use the existing .htaccess", value: "useIt" },
+							{ name: "Regenerate from current config", value: "regenerate" },
+						],
+					});
+				}
+				makeHtaccess({ action: htaccessAction });
+
+				// plugins
+				const inactivePlugins = getInactivePlugins();
+				if (inactivePlugins.length > 0) {
+					const { select: selectPlugins } = await import("@inquirer/prompts");
+					const pluginAnswer = await selectPlugins({
+						message: `These composer plugins are inactive: ${inactivePlugins.join(", ")}. Activate them now?`,
+						choices: [
+							{ name: "Yes, activate all", value: "yes" },
+							{ name: "No, skip", value: "no" },
+						],
+					});
+					if (pluginAnswer === "yes") {
+						activateComposerPlugins(inactivePlugins);
+					}
+				}
 			} else {
 				const argv = process.argv.slice(3);
 				if (!argv.length || argv[0] === "help" || argv[0] === "--help" || argv[0] === "-h") {
@@ -82,7 +400,16 @@ async function init() {
 				if (argv[0] === "help" || argv[0] === "--help" || argv[0] === "-h") {
 					compareHelp();
 				} else {
-					await compare(argv);
+					const { confirm } = await import("@inquirer/prompts");
+					const { reportPath, failCount, errorCount } = await compare(argv);
+					const openReport = await confirm({ message: "Open report in browser?", default: true });
+					if (openReport) {
+						const opener = process.platform === "win32" ? "start" : process.platform === "darwin" ? "open" : "xdg-open";
+						execSync(opener + " \"" + reportPath + "\"");
+					}
+					if (failCount > 0 || errorCount > 0) {
+						process.exit(1);
+					}
 				}
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				compareHelp();
@@ -102,7 +429,48 @@ async function init() {
 					runWpEnvE2e(envArgs);
 				}
 			} else if (subcommand === "init") {
-				await initE2e();
+				const { select, input } = await import("@inquirer/prompts");
+				const { projectType: defaultType, pluginName: defaultSlug, e2eConfig } = getE2eDefaults();
+
+				const projectType = await select({
+					message: "Is this project a plugin or a theme?",
+					choices: [
+						{ name: "Plugin", value: "plugin" },
+						{ name: "Theme", value: "theme" },
+					],
+					default: defaultType,
+				});
+
+				const slug = await input({
+					message: projectType === "plugin" ? "Plugin slug (used in wp plugin activate)" : "Theme slug (used in wp theme activate)",
+					default: defaultSlug,
+				});
+
+				let testTheme = e2eConfig.testTheme;
+				if (projectType === "plugin") {
+					testTheme = await input({
+						message: "Theme to activate during tests",
+						default: e2eConfig.testTheme,
+					});
+				}
+
+				const wpVersion = await input({
+					message: "WordPress version",
+					default: e2eConfig.wpVersion,
+				});
+
+				const phpVersion = await input({
+					message: "PHP version",
+					default: e2eConfig.phpVersion,
+				});
+
+				const port = await input({
+					message: "wp-env development port for e2e environment (must differ from your dev env, default 8889)",
+					default: e2eConfig.port,
+				});
+
+				initE2e({ projectType, slug, testTheme, wpVersion, phpVersion, port });
+
 			} else if (subcommand === "generate") {
 				const type = process.argv[4]; // "editor" or "frontend"
 				generateE2eTests(type, process.argv.slice(5));

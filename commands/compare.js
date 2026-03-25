@@ -105,10 +105,10 @@ async function takeScreenshot(page, url) {
  * Main entry point for the compare command.
  * Discovers URLs (from --url flag or sitemap), screenshots each on live and local,
  * runs pixel diffs, saves PNGs, and writes an HTML report.
- * Exits with code 1 if any pages fail.
+ * Returns result metadata so the caller can prompt and handle process.exit.
  *
  * @param {string[]} argv - Raw CLI arguments after `wp-env-bin visual compare`
- * @returns {Promise<void>}
+ * @returns {Promise<{ reportPath: string, failCount: number, errorCount: number }>}
  */
 async function compare(argv) {
 	const { url: urlFlag, limit, threshold, testPaths } = parseArgs(argv);
@@ -255,19 +255,8 @@ async function compare(argv) {
 	);
 	logger("Report:  wp-env-bin/compare-reports/" + reportFolderName + "/index.html");
 
-	// Ask if the user wants to open the report in a browser
 	const reportPath = path.join(reportDir, "index.html");
-	const { confirm } = await import("@inquirer/prompts");
-	const openReport = await confirm({ message: "Open report in browser?", default: true });
-	if (openReport) {
-		const opener = process.platform === "win32" ? "start" : process.platform === "darwin" ? "open" : "xdg-open";
-		execSync(opener + " \"" + reportPath + "\"");
-	}
-
-	// Exit with a non-zero code so CI catches failures
-	if (failCount > 0 || errorCount > 0) {
-		process.exit(1);
-	}
+	return { reportPath, failCount, errorCount };
 }
 
 module.exports = { compare };
