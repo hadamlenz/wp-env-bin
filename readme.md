@@ -108,8 +108,8 @@ wp-env-bin/
 ├── composer.json             # Active PHP deps — copied from site-configs/ by `config switch` (gitignored)
 ├── composer.json.example     # Starter template — copy to composer.json, then delete
 ├── site-configs/             # Named config + composer profiles, one per remote site (tracked in git)
-│   ├── cci.unc.edu.wp-env-bin.config.json
-│   ├── cci.unc.edu.composer.json
+│   ├── site.subsite.com.wp-env-bin.config.json
+│   ├── site.org.composer.json
 │   └── ...                   # Add more profiles with `config install` or `config update`
 ├── assets/
 │   ├── database.sql          # Production DB snapshot downloaded by `db get` (gitignored)

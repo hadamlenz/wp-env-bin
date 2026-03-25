@@ -155,12 +155,12 @@ When you work against multiple remote sites, you can store a named profile for e
 
 ### Saving a profile
 
-After running `wp-env-bin config install` or `wp-env-bin config update`, you are prompted to save the current config as a named profile. The default profile name is the `url` value (e.g., `cci.unc.edu`), which produces:
+After running `wp-env-bin config install` or `wp-env-bin config update`, you are prompted to save the current config as a named profile. The default profile name is the `url` value (e.g., `site.subsite.com`), which produces:
 
 ```
-wp-env-bin/site-configs/cci.unc.edu.wp-env-bin.config.json
-wp-env-bin/site-configs/cci.unc.edu.composer.json      (optional)
-wp-env-bin/site-configs/cci.unc.edu.composer.lock      (optional)
+wp-env-bin/site-configs/site.subsite.com.wp-env-bin.config.json
+wp-env-bin/site-configs/site.subsite.com.composer.json      (optional)
+wp-env-bin/site-configs/site.subsite.com.composer.lock      (optional)
 ```
 
 Profile files in `site-configs/` are tracked in git so teammates can share them.

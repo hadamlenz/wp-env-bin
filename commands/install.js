@@ -125,7 +125,7 @@ async function install() {
 	});
 
 	const url = await input({
-		message: "Live site URL (e.g. mysite.unc.edu)",
+		message: "Live site URL (e.g. mysite.org)",
 		default: defaults.url || "",
 	});
 
