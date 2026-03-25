@@ -95,12 +95,36 @@ function configSwitch(chosen) {
 	if (existsSync(composerSrc)) {
 		copyFileSync(composerSrc, path.join(dest, "composer.json"));
 		logger("> copied site-configs/" + chosen + ".composer.json → composer.json");
+	} else {
+		const emptyComposer = {
+			name: "hadamlenz/wp-env-bin",
+			"require-dev": {},
+			repositories: [],
+			extra: {
+				"installer-paths": {
+					"./themes/{$name}/": ["type:wordpress-theme"],
+					"./plugins/{$name}": ["type:wordpress-plugin"],
+				},
+			},
+			config: {
+				platform: { php: "8.3" },
+				"allow-plugins": { "composer/installers": true },
+			},
+		};
+		writeFileSync(path.join(dest, "composer.json"), JSON.stringify(emptyComposer, null, 4), "utf8");
+		logger("> wrote empty composer.json (no companion found for " + chosen + ")");
 	}
 
 	const lockSrc = path.join(siteConfigsDir, chosen + ".composer.lock");
 	if (existsSync(lockSrc)) {
 		copyFileSync(lockSrc, path.join(dest, "composer.lock"));
 		logger("> copied site-configs/" + chosen + ".composer.lock → composer.lock");
+	} else {
+		const lockDest = path.join(dest, "composer.lock");
+		if (existsSync(lockDest)) {
+			unlinkSync(lockDest);
+			logger("> removed stale composer.lock (no companion found for " + chosen + ")");
+		}
 	}
 
 	logger("\nSwitched to " + chosen);

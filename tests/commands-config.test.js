@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 const { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync } = require("fs");
 const path = require("path");
 const os = require("os");
-const { configCreate, configDelete } = require("../commands/config");
+const { configCreate, configDelete, configSwitch } = require("../commands/config");
 
 let tmpDir;
 let savedCwd;
@@ -99,4 +99,48 @@ test("configDelete: does NOT remove the active wp-env-bin.config.json", () => {
 	configDelete("active-profile");
 
 	assert.ok(existsSync(path.join(dest(), "wp-env-bin.config.json")), "active config must remain untouched");
+});
+
+// ── configSwitch ───────────────────────────────────────────────────────────────
+
+test("configSwitch: copies config file to active wp-env-bin.config.json", () => {
+	createProfile("switch-basic");
+	mkdirSync(dest(), { recursive: true });
+	configSwitch("switch-basic");
+	assert.ok(existsSync(path.join(dest(), "wp-env-bin.config.json")));
+	const active = JSON.parse(readFileSync(path.join(dest(), "wp-env-bin.config.json"), "utf8"));
+	assert.equal(active.url, "switch-basic");
+});
+
+test("configSwitch: copies companion composer.json when present", () => {
+	createProfile("switch-with-composer", [".composer.json"]);
+	mkdirSync(dest(), { recursive: true });
+	configSwitch("switch-with-composer");
+	assert.ok(existsSync(path.join(dest(), "composer.json")));
+});
+
+test("configSwitch: writes empty composer.json when no companion exists", () => {
+	createProfile("switch-no-composer");
+	mkdirSync(dest(), { recursive: true });
+	configSwitch("switch-no-composer");
+	const composerPath = path.join(dest(), "composer.json");
+	assert.ok(existsSync(composerPath), "composer.json must be written");
+	const composer = JSON.parse(readFileSync(composerPath, "utf8"));
+	assert.ok(composer["require-dev"] !== undefined, "must be a valid composer.json");
+	assert.deepEqual(composer["require-dev"], {});
+});
+
+test("configSwitch: removes stale composer.lock when no companion lock exists", () => {
+	createProfile("switch-stale-lock");
+	mkdirSync(dest(), { recursive: true });
+	writeFileSync(path.join(dest(), "composer.lock"), "{}", "utf8");
+	configSwitch("switch-stale-lock");
+	assert.equal(existsSync(path.join(dest(), "composer.lock")), false, "stale lock must be removed");
+});
+
+test("configSwitch: copies companion composer.lock when present", () => {
+	createProfile("switch-with-lock", [".composer.json", ".composer.lock"]);
+	mkdirSync(dest(), { recursive: true });
+	configSwitch("switch-with-lock");
+	assert.ok(existsSync(path.join(dest(), "composer.lock")));
 });
