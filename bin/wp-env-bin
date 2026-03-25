@@ -195,10 +195,31 @@ async function init() {
 					console.log("Run `wp-env-bin config install` or `wp-env-bin config update` and save a profile to get started.");
 					break;
 				}
+				// Detect currently loaded profile by comparing file contents
+				let currentProfile = null;
+				{
+					const { readFileSync } = require("fs");
+					const dest = path.join(process.cwd(), "wp-env-bin");
+					const activeConfigPath = path.join(dest, "wp-env-bin.config.json");
+					const siteConfigsDir = path.join(dest, "site-configs");
+					try {
+						const activeContent = readFileSync(activeConfigPath, "utf8");
+						for (const p of profiles) {
+							const profileContent = readFileSync(path.join(siteConfigsDir, p + ".wp-env-bin.config.json"), "utf8");
+							if (activeContent === profileContent) {
+								currentProfile = p;
+								break;
+							}
+						}
+					} catch {}
+				}
 				const { select, confirm } = await import("@inquirer/prompts");
 				const chosen = await select({
 					message: "Switch to which site config?",
-					choices: profiles.map(p => ({ name: p, value: p })),
+					choices: profiles.map(p => ({
+						name: p === currentProfile ? `${p} (currently loaded)` : p,
+						value: p,
+					})),
 				});
 				const newConfig = configSwitch(chosen);
 				const siteType = (newConfig && newConfig.siteType) || "singlesite";
