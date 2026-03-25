@@ -21,6 +21,8 @@ const { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHel
 const { checkDatabase } = require("../lib/env/check");
 const { checkHtaccess } = require("../lib/env/check");
 const { saveNamedProfile } = require("../lib/config");
+const { matchActivePlugins, buildComposerJson, fetchRemoteData } = require("../lib/remote-composer");
+const { terminus_wp } = require("../lib/utils/run");
 
 // ─── Shared prompt helpers ────────────────────────────────────────────────────
 
@@ -319,6 +321,12 @@ async function init() {
 					});
 				}
 
+				const composerPathInput = await inputCreate({
+					message: "Path to composer.json on the server (e.g. /code/composer.json) — leave blank to skip",
+					default: "",
+				});
+				if (composerPathInput.trim()) createConfig.composerPath = composerPathInput.trim();
+
 				const profileName = await inputCreate({
 					message: "Profile name (used as filename prefix in site-configs/)",
 					default: url || projectName,
@@ -394,10 +402,105 @@ async function init() {
 					console.log("Cancelled.");
 				}
 
+			} else if (subcommand === "composer") {
+				// ── Build composer.json from remote active plugins ──────────────
+				const composerProfiles = getProfileList();
+				if (!composerProfiles || composerProfiles.length === 0) {
+					console.log("No profiles found in wp-env-bin/site-configs/.");
+					console.log("Run `wp-env-bin config create` to create one.");
+					break;
+				}
+				const { select: selComp, confirm: confComp } = await import("@inquirer/prompts");
+				const chosenComp = await selComp({
+					message: "Build composer.json for which profile?",
+					choices: composerProfiles.map(p => ({ name: p, value: p })),
+				});
+
+				const { readFileSync: readProfile, writeFileSync: writeComposer } = require("fs");
+				const profileFilePath = path.join(process.cwd(), "wp-env-bin", "site-configs", chosenComp + ".wp-env-bin.config.json");
+				const profileConfig = JSON.parse(readProfile(profileFilePath, "utf8"));
+				const { env: compEnv, url: compUrl, composerPath: compPath } = profileConfig;
+
+				if (!compEnv) {
+					console.log("This profile has no 'env' set — cannot connect to a remote site.");
+					console.log("Add it with `wp-env-bin config update`.");
+					break;
+				}
+				if (!compPath) {
+					console.log("This profile has no 'composerPath' set — add the path to composer.json on the server.");
+					console.log("Add it with `wp-env-bin config update`.");
+					break;
+				}
+
+				console.log("> fetching active plugins from " + compEnv + "...");
+				console.log("> reading " + compPath + " from " + compEnv + "...");
+
+				let remoteData;
+				try {
+					remoteData = fetchRemoteData(compEnv, compUrl, compPath);
+				} catch (err) {
+					console.error("Failed to fetch remote data: " + (err.message || err));
+					break;
+				}
+
+				const { activePaths, themeSlug, serverComposer } = remoteData;
+				const { matched, unmatched } = matchActivePlugins(activePaths, serverComposer);
+
+				// Theme match
+				const allServerPkgs = {
+					...((serverComposer && serverComposer.require) || {}),
+					...((serverComposer && serverComposer["require-dev"]) || {}),
+				};
+				const themePkg = themeSlug
+					? Object.keys(allServerPkgs).find(p => p.split("/")[1] === themeSlug) || null
+					: null;
+
+				// Report
+				const matchCount = Object.keys(matched).length + (themePkg ? 1 : 0);
+				console.log("\n> Matched packages (" + matchCount + "):");
+				for (const [pkg, ver] of Object.entries(matched)) {
+					console.log("    " + pkg + ": " + ver);
+				}
+				if (themePkg) console.log("    " + themePkg + ": * (active theme)");
+
+				if (unmatched.length > 0) {
+					console.log("\n> Unmatched active plugins (not found in server composer.json — likely manually uploaded):");
+					for (const f of unmatched) console.log("    " + f);
+				}
+
+				const composerJson = buildComposerJson(
+					matched,
+					serverComposer.repositories || [],
+					themePkg ? { [themePkg]: "*" } : null
+				);
+
+				const saveComp = await confComp({
+					message: "Save as site-configs/" + chosenComp + ".composer.json?",
+					default: true,
+				});
+				if (saveComp) {
+					const outPath = path.join(process.cwd(), "wp-env-bin", "site-configs", chosenComp + ".composer.json");
+					writeComposer(outPath, JSON.stringify(composerJson, null, 4), "utf8");
+					console.log("> saved site-configs/" + chosenComp + ".composer.json");
+
+					const copyActive = await confComp({
+						message: "Also copy to active wp-env-bin/composer.json?",
+						default: false,
+					});
+					if (copyActive) {
+						writeComposer(
+							path.join(process.cwd(), "wp-env-bin", "composer.json"),
+							JSON.stringify(composerJson, null, 4),
+							"utf8"
+						);
+						console.log("> copied to wp-env-bin/composer.json");
+					}
+				}
+
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				configHelp();
 			} else {
-				console.log("Unknown config subcommand. Try:\n  wp-env-bin config scaffold\n  wp-env-bin config create\n  wp-env-bin config install\n  wp-env-bin config update\n  wp-env-bin config switch\n  wp-env-bin config delete");
+				console.log("Unknown config subcommand. Try:\n  wp-env-bin config scaffold\n  wp-env-bin config create\n  wp-env-bin config install\n  wp-env-bin config update\n  wp-env-bin config switch\n  wp-env-bin config delete\n  wp-env-bin config composer");
 			}
 			break;
 		}

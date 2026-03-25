@@ -105,6 +105,7 @@ wp-env-bin env sync
 | `adminUsername` | Username for the local admin account created by `db process` (default: `"admin"`) |
 | `adminEmail` | Email for the local admin account (default: `"admin@localhost.com"`) |
 | `adminPassword` | Password for the local admin account (default: `"password"`) |
+| `composerPath` | Absolute path to `composer.json` on the remote server — used by `config composer` (e.g. `"/code/composer.json"` for Pantheon) |
 
 ---
 
@@ -182,6 +183,18 @@ wp-env-bin config update
 ```
 
 Re-runs the configuration prompts with all existing values pre-filled as defaults. Useful when a site's Pantheon environment, URL, or multisite prefix changes. Offers to save the result as a new or updated named profile.
+
+### Building a composer.json from the remote site
+
+```bash
+wp-env-bin config composer
+```
+
+Connects to the remote site via Terminus, reads the active plugins (and network-activated plugins for multisite) and the server's own `composer.json`, then cross-references them to generate a companion `{profileName}.composer.json` for the profile. Requires `env` and `composerPath` to be set in the profile config.
+
+The mapping works by matching the plugin's folder name (from `active_plugins`) to the second segment of each Composer package name — for example, `gravityforms/gravityforms.php` → folder `gravityforms` → matches `gravity/gravityforms`. Repositories are carried over from the server's composer.json verbatim.
+
+Plugins not managed by Composer (manually uploaded) appear in an "unmatched" list in the CLI output but are not written to the generated file. After saving, you can add any missing packages manually.
 
 ---
 
