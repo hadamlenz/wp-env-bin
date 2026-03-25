@@ -8,7 +8,6 @@
 wp-env-bin config install
 ```
 
-(`wp-env-bin install` also works as an alias.)
 
 This scaffolds the `wp-env-bin/` config folder and walks you through creating `wp-env-bin.config.json` interactively. The installer will ask for:
 - **Site type** — `singlesite` (default) or `multisite`
@@ -112,43 +111,6 @@ This runs the full pipeline: exports from Pantheon, renames table prefixes, impo
 
 ---
 
-## Non-Pantheon / Local SQL File Workflow
-
-If your site is not hosted on Pantheon, export your database using WP-CLI on the server. Use the two-step approach below — it matches what `db get` does internally and ensures only the correct prefixed tables are exported:
-
-**Step 1 — Get the table list:**
-```bash
-wp db tables --format=csv --url=example.com --all-tables-with-prefix
-```
-
-**Step 2 — Export only those tables:**
-```bash
-wp db export - --url=example.com --tables=$(wp db tables --format=csv --url=example.com --all-tables-with-prefix) > database.sql
-```
-
-Replace `example.com` with your live site's URL. The `--url` flag is required for multisite to target the correct subsite. The `--all-tables-with-prefix` flag limits the export to tables matching the site's prefix, which is important on shared or multisite installs.
-
-For a simple single-site install with no shared tables, `wp db export database.sql` also works.
-
-Then use `wp-env-bin db use` to validate and load it locally:
-
-```bash
-wp-env-bin config install
-cd wp-env-bin && wp-env start
-wp-env-bin db use /path/to/database.sql
-wp-env-bin db process
-wp-env-bin htaccess make
-```
-
-The `env` field in `wp-env-bin.config.json` is not required for this workflow — only `url` is needed.
-
-`db use` validates the file before copying it by checking for:
-- A mysqldump header (`-- MySQL dump` or `-- MariaDB dump`)
-- A `CREATE TABLE` statement
-- A WordPress `_options` table
-
----
-
 ## Managing Multiple Site Configs
 
 When you work against multiple remote sites, you can store a named profile for each one in `wp-env-bin/site-configs/`. The active `wp-env-bin.config.json` and `composer.json` are always plain copies of whichever profile is active.
@@ -171,11 +133,25 @@ Profile files in `site-configs/` are tracked in git so teammates can share them.
 wp-env-bin config switch
 ```
 
-Displays a list of all profiles in `site-configs/`. Selecting one copies its files to the active `wp-env-bin.config.json`, `composer.json`, and `composer.lock`. Then run:
+Displays a list of all profiles in `site-configs/`. The currently active profile is marked **(currently loaded)**. Selecting one copies its files to the active `wp-env-bin.config.json`, `composer.json`, and `composer.lock`.
+
+**Single-site** — after switching, run:
 
 ```bash
-wp-env-bin env setup
+wp-env-bin env setup --delete-lock
 wp-env-bin env sync
+wp-env-bin env start
+```
+
+**Multisite** — after switching, you'll be asked whether to reinitialize the environment automatically. If you decline (or need to run steps manually):
+
+```bash
+wp-env-bin env setup --delete-lock       # reinstall dependencies
+wp-env-bin db get                        # re-download from Pantheon
+wp-env-bin db process                    # import + search-replace
+wp-env-bin htaccess make                 # regenerate from current config
+wp-env-bin env sync                      # activate composer plugins
+wp-env-bin env start
 ```
 
 ### Updating an existing config
@@ -185,6 +161,43 @@ wp-env-bin config update
 ```
 
 Re-runs the configuration prompts with all existing values pre-filled as defaults. Useful when a site's Pantheon environment, URL, or multisite prefix changes. Offers to save the result as a new or updated named profile.
+
+---
+
+## Non-Pantheon / Local SQL File Workflow
+
+If your site is not hosted on Pantheon, export your database using WP-CLI on the server. Use the two-step approach below — it matches what `db get` does internally and ensures only the correct prefixed tables are exported:
+
+**Step 1 — Get the table list:**
+```bash
+wp db tables --format=csv --url=example.com --all-tables-with-prefix
+```
+
+**Step 2 — Export only those tables:**
+```bash
+wp db export - --url=example.com --tables=$(wp db tables --format=csv --url=example.com --all-tables-with-prefix) > database.sql
+```
+
+Replace `example.com` with your live site's URL. The `--url` flag is required for multisite to target the correct subsite. The `--all-tables-with-prefix` flag limits the export to tables matching the site's prefix, which is important on shared or multisite installs.
+
+For a simple single-site install with no shared tables, `wp db export database.sql` also works.
+
+Then use `wp-env-bin db use` to validate and load it locally:
+
+```bash
+wp-env-bin config install
+wp-env-bin env start
+wp-env-bin db use /path/to/database.sql
+wp-env-bin db process
+wp-env-bin htaccess make
+```
+
+The `env` field in `wp-env-bin.config.json` is not required for this workflow — only `url` is needed.
+
+`db use` validates the file before copying it by checking for:
+- A mysqldump header (`-- MySQL dump` or `-- MariaDB dump`)
+- A `CREATE TABLE` statement
+- A WordPress `_options` table
 
 ---
 

@@ -262,37 +262,6 @@ async function init() {
 			}
 			break;
 		}
-		case "install": {
-			const { confirm, select } = await import("@inquirer/prompts");
-			const ctx = getInstallContext();
-			let action;
-			if (ctx.configExists) {
-				action = await select({
-					message: "wp-env-bin.config.json already exists. What would you like to do?",
-					choices: [
-						{ name: "Use the existing config", value: "useIt" },
-						{ name: "Reconfigure using existing values as defaults", value: "editIt" },
-						{ name: "Start over with a fresh config", value: "destroyIt" },
-					],
-				});
-				if (action === "editIt") action = "configure";
-				if (action === "destroyIt") { ctx.existingConfig = null; action = "configure"; }
-			} else {
-				const shouldConfigure = await confirm({
-					message: "Configure wp-env-bin.config.json now?",
-					default: true,
-				});
-				action = shouldConfigure ? "configure" : "skip";
-			}
-
-			let config = null;
-			if (action === "configure") {
-				config = await promptForConfig(ctx.existingConfig || {}, ctx.projectName);
-			}
-
-			install({ action, config });
-			break;
-		}
 		case "db": {
 			if (subcommand === "get") {
 				let action = "redownload";

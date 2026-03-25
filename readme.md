@@ -77,7 +77,6 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 | `wp-env-bin config install` | Scaffold `wp-env-bin/` config folder and configure interactively |
 | `wp-env-bin config update` | Re-run configuration prompts using existing values as defaults |
 | `wp-env-bin config switch` | Pick a named profile from `site-configs/` and activate it |
-| `wp-env-bin install` | Alias for `config install` *(backward compatible)* |
 | `wp-env-bin db get` | Export the database from Pantheon via Terminus *(requires `env` in config)* |
 | `wp-env-bin db use <path>` | Validate and use a local SQL file instead of downloading from Pantheon |
 | `wp-env-bin db process` | Rename table prefix, import DB into local env, run URL search-replace |
