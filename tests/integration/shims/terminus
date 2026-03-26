@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Terminus shim for wp-env-bin integration tests.
+# Intercepts `terminus wp <site.env> -- <wp-cli-cmd>` and routes it to the
+# wp-env tests container instead of Pantheon.
+#
+# Called from process.cwd() (ENV_DIR = tests/integration/env/).
+# Runs npx wp-env from wp-env-bin/ subdirectory where .wp-env.json lives.
+
+SUBCOMMAND="$1"
+
+if [ "$SUBCOMMAND" = "wp" ]; then
+  shift          # remove "wp"
+  shift          # remove "site.env" (e.g. integration-test.tests — ignored here)
+  shift          # remove "--"
+  # Remaining args: <wp-cli-cmd> [options...]
+  # e.g.: db tables --format=csv --url=localhost:8898 --all-tables-with-prefix
+  # e.g.: db export - --url=localhost:8898 --tables=wp_posts,...
+  cd wp-env-bin
+  exec npx wp-env run tests-cli -- wp "$@"
+fi
+
+echo "terminus shim: unhandled command '$SUBCOMMAND'" >&2
+exit 1
