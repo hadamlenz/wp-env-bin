@@ -115,6 +115,15 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 - **`visual compare --url /`** — Visual A/B regression test — screenshot live vs local and diff
 - **`visual compare --url /your-page/`** — Compare a specific page path
 
+### clean
+
+- **`clean all`** — Delete `wp-env-bin/themes/`, `plugins/`, and `assets/`
+- **`clean themes`** — Delete `wp-env-bin/themes/`
+- **`clean plugins`** — Delete `wp-env-bin/plugins/`
+- **`clean assets`** — Delete `wp-env-bin/assets/`
+
+All three directories are disposable — they are recreated by `composer install` (themes/plugins) and `db get`/`db process` (assets).
+
 ### e2e
 
 - **`e2e init`** — Scaffold `wp-env-bin/e2e/` block test environment with its own `.wp-env.json`

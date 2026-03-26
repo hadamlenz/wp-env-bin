@@ -254,6 +254,26 @@ The `env` field in `wp-env-bin.config.json` is not required for this workflow �
 
 ---
 
+## Cleaning Up
+
+The `wp-env-bin/themes/`, `plugins/`, and `assets/` directories are fully disposable — they are gitignored and rebuilt on demand. Use the `clean` command to delete them:
+
+```bash
+wp-env-bin clean all        # delete themes/, plugins/, and assets/
+wp-env-bin clean themes     # delete themes/ only
+wp-env-bin clean plugins    # delete plugins/ only
+wp-env-bin clean assets     # delete assets/ only
+```
+
+**Restore after cleaning:**
+
+```bash
+wp-env-bin composer install   # rebuilds themes/ and plugins/
+wp-env-bin env sync           # re-downloads DB and regenerates assets/
+```
+
+---
+
 ## How It Works
 
 1. **`db get`** — Uses Terminus to export the site's database from Pantheon to `wp-env-bin/assets/database.sql`
