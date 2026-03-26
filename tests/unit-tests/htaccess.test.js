@@ -2,7 +2,9 @@
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const htaccessTemplate = require("../templates/htaccess.tpl");
+const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
+const htaccessTemplate = require(path.join(ROOT, "templates/htaccess.tpl"));
 
 // --- singlesite ---
 

@@ -2,7 +2,9 @@
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { renamePrefix } = require("../lib/db");
+const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
+const { renamePrefix } = require(path.join(ROOT, "lib/db"));
 
 // --- replacement ---
 

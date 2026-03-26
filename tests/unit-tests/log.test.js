@@ -2,7 +2,9 @@
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { logger } = require("../lib/utils/log");
+const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
+const { logger } = require(path.join(ROOT, "lib/utils/log"));
 
 test("logger returns the string when log is false", () => {
 	const result = logger("hello world", false);

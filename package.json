@@ -14,8 +14,8 @@
 	],
 	"scripts": {
 		"build": "tsc",
-		"test": "npm-run-all test:*",
-		"test:unti": "node --test 'tests/unit-tests/*.test.js'",
+		"test": "node --test 'tests/unit-tests/*.test.js' && node tests/integration/run.js",
+		"test:unit": "node --test 'tests/unit-tests/*.test.js'",
 		"test:integration": "node tests/integration/run.js"
 	},
 	"engines": {

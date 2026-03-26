@@ -4,10 +4,11 @@ const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const { mkdtempSync, rmSync, existsSync, readFileSync } = require("fs");
 const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
 const os = require("os");
-const { scaffoldE2eFiles } = require("../commands/e2e");
+const { scaffoldE2eFiles } = require(path.join(ROOT, "commands/e2e"));
 
-const SCAFFOLD_DIR = path.join(__dirname, "../scaffold/e2e");
+const SCAFFOLD_DIR = path.join(ROOT, "scaffold/e2e");
 
 let tmpDir;
 

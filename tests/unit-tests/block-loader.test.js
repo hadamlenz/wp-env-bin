@@ -3,14 +3,15 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
 const {
 	sanitizeAttributesForApi,
 	buildContentAssertions,
 	analyseRenderPhp,
 	resolveBlockCss,
-} = require("../lib/e2e/block-loader");
+} = require(path.join(ROOT, "lib/e2e/block-loader"));
 
-const FIXTURES = path.join(__dirname, "fixtures");
+const FIXTURES = path.join(ROOT, "tests/fixtures");
 const FULL_BLOCK_JSON = path.join(FIXTURES, "full.block.json");
 const DYNAMIC_BLOCK_JSON = path.join(FIXTURES, "dynamic/block.json");
 

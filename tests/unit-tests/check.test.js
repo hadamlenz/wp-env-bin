@@ -4,8 +4,9 @@ const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = require("fs");
 const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
 const os = require("os");
-const { checkDatabase, checkModifiedDatabase, checkHtaccess } = require("../lib/env/check");
+const { checkDatabase, checkModifiedDatabase, checkHtaccess } = require(path.join(ROOT, "lib/env/check"));
 
 let tmpDir;
 let savedCwd;

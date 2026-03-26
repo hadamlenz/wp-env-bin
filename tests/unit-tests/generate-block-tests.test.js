@@ -2,7 +2,9 @@
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { parseArgs, generateTestFile } = require("../lib/e2e/generate-block-tests");
+const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
+const { parseArgs, generateTestFile } = require(path.join(ROOT, "lib/e2e/generate-block-tests"));
 
 // --- parseArgs ---
 

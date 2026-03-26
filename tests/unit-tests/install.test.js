@@ -1,6 +1,8 @@
 const { test } = require("node:test");
 const assert = require("assert/strict");
-const { applyProjectType } = require("../lib/config");
+const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
+const { applyProjectType } = require(path.join(ROOT, "lib/config"));
 
 // --- applyProjectType ---
 

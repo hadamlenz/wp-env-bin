@@ -2,7 +2,9 @@
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { diffScreenshots } = require("../lib/compare");
+const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
+const { diffScreenshots } = require(path.join(ROOT, "lib/compare"));
 
 /**
  * Build a solid-colour PNG buffer using pngjs.

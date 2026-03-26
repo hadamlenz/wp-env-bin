@@ -1,6 +1,7 @@
-const { readFileSync, existsSync } = require("fs");
+const { existsSync, readFileSync } = require("fs");
 const path = require("path");
 const chalk = require("chalk");
+const { readRawConfig } = require("../lib/env/config");
 
 // Maps each user-facing source name to its relative file path (from project root)
 // and an optional schema path (relative to this package's root, resolved via __dirname).
@@ -12,21 +13,6 @@ const SOURCES = {
 	"e2e composer": { file: "wp-env-bin/e2e/composer.json",              schema: null },
 };
 
-/**
- * Read and parse a config source file from the user's project.
- *
- * @param {string} source - A key from SOURCES (e.g. "config", "e2e composer")
- * @returns {object|null} Parsed JSON object, or null if the file is missing or unparseable
- */
-function readSource(source) {
-	const abs = path.join(process.cwd(), SOURCES[source].file);
-	if (!existsSync(abs)) return null;
-	try {
-		return JSON.parse(readFileSync(abs, "utf8"));
-	} catch {
-		return null;
-	}
-}
 
 /**
  * Validate a parsed config object against its JSON Schema, if one is defined for the source.
@@ -109,7 +95,8 @@ function infoCommand(argv) {
 		process.exit(1);
 	}
 
-	const data = readSource(source);
+	// SOURCES uses space-separated display keys ("e2e config"); RAW_SOURCES uses dots ("e2e.config")
+	const data = readRawConfig(source.replace(" ", "."));
 	const absFile = path.join(process.cwd(), SOURCES[source].file);
 
 	if (!data) {

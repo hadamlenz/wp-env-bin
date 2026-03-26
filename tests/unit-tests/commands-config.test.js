@@ -4,8 +4,9 @@ const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync } = require("fs");
 const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
 const os = require("os");
-const { configCreate, configDelete, configSwitch } = require("../commands/config");
+const { configCreate, configDelete, configSwitch } = require(path.join(ROOT, "commands/config"));
 
 let tmpDir;
 let savedCwd;

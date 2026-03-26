@@ -2,7 +2,9 @@
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { matchActivePlugins, buildComposerJson } = require("../lib/remote-composer");
+const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
+const { matchActivePlugins, buildComposerJson } = require(path.join(ROOT, "lib/remote-composer"));
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 

@@ -4,8 +4,9 @@ const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const { mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync } = require("fs");
 const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
 const os = require("os");
-const { scaffoldFiles, scaffoldCommand } = require("../commands/scaffold");
+const { scaffoldFiles, scaffoldCommand } = require(path.join(ROOT, "commands/scaffold"));
 
 let tmpDir;
 let savedCwd;

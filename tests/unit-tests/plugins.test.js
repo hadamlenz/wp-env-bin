@@ -4,8 +4,9 @@ const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = require("fs");
 const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
 const os = require("os");
-const { readComposerPlugins } = require("../lib/plugins");
+const { readComposerPlugins } = require(path.join(ROOT, "lib/plugins"));
 
 let tmpDir;
 let savedCwd;

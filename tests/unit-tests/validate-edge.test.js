@@ -4,8 +4,9 @@ const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const { writeFileSync, mkdtempSync, rmSync } = require("fs");
 const path = require("path");
+const ROOT  = path.join(__dirname, "../..");
 const os = require("os");
-const { validateSqlFile } = require("../lib/db");
+const { validateSqlFile } = require(path.join(ROOT, "lib/db"));
 
 // Minimal valid WordPress mysqldump shared across tests
 const VALID_DUMP = [
