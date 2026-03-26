@@ -21,6 +21,7 @@ const { initE2e, getE2eDefaults, generateE2eTests, runE2eTests } = require("../c
 const { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp, cleanHelp } = require("../commands/help");
 const { composerGet, composerMake, composerUpdate, composerE2eInstall, composerE2eUpdate } = require("../commands/composer");
 const { cleanThemes, cleanPlugins, cleanAssets, cleanAll } = require("../commands/clean");
+const { infoCommand } = require("../commands/info");
 //all of these files are from libs
 const { checkDatabase, checkHtaccess, requireDir, isWpEnvRunning } = require("../lib/env/check");
 const { saveNamedProfile } = require("../lib/config");
@@ -912,6 +913,10 @@ async function init() {
 			} else {
 				console.log(chalk.yellow('Unknown subcommand. Try: wp-env-bin visual compare'));
 			}
+			break;
+		}
+		case "info": {
+			infoCommand(process.argv.slice(3));
 			break;
 		}
 		case "help":

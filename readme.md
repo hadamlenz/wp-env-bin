@@ -84,6 +84,8 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 - **`config delete`** — Remove a named profile from `site-configs/`
 - **`config update`** — Re-run configuration prompts using existing values as defaults
 
+To inspect the currently active config, use [`info`](#info).
+
 ### db
 
 - **`db get`** — Export the database from Pantheon via Terminus *(requires `env` in config)*
@@ -123,6 +125,31 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 - **`clean assets`** — Delete `wp-env-bin/assets/`
 
 All three directories are disposable — they are recreated by `composer install` (themes/plugins) and `db get`/`db process` (assets).
+
+### info
+
+Inspect the active config files from the command line. Useful for debugging, scripting, and quick reference without opening files.
+
+- **`info`** — List all four config sources with their file paths (flags any that are missing)
+- **`info config`** — Show all key-value pairs from `wp-env-bin/wp-env-bin.config.json`, validated against its schema
+- **`info composer`** — Show all key-value pairs from `wp-env-bin/composer.json`
+- **`info e2e config`** — Show all key-value pairs from `wp-env-bin/e2e/wp-env-bin.e2e.config.json`, validated against its schema
+- **`info e2e composer`** — Show all key-value pairs from `wp-env-bin/e2e/composer.json`
+- **`info <source> <key>`** — Print just the value of a single key (suitable for scripting)
+
+```bash
+# Check what config is active and where all files live
+wp-env-bin info
+
+# Inspect the full active site config
+wp-env-bin info config
+
+# Pull a single value — useful in scripts
+wp-env-bin info config url          # → example.com
+wp-env-bin info config siteType     # → multisite
+wp-env-bin info e2e config wpVersion
+wp-env-bin info composer name
+```
 
 ### e2e
 

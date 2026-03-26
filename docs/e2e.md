@@ -98,6 +98,15 @@ cp wp-env-bin/e2e/wp-env-bin.e2e.config.json.example wp-env-bin/e2e/wp-env-bin.e
 
 These fields are all optional. When present they set the defaults shown during `wp-env-bin e2e scaffold` prompts, and `mysqlPort`, `testMysqlPort`, and `wpConstants` are written directly to the generated `.wp-env.json`.
 
+To check the current e2e config and see which blocks are opted in:
+
+```bash
+wp-env-bin info e2e config             # show full e2e config
+wp-env-bin info e2e config editor      # list blocks opted in to editor tests
+wp-env-bin info e2e config frontend    # list blocks opted in to frontend tests
+wp-env-bin info e2e config wpVersion   # print the WordPress version in use
+```
+
 - A block in `editor` but not `frontend` skips frontend tests (e.g. static blocks or blocks in development).
 - `block.json` is always expected at `{dir}/block.json` — this is the WordPress convention.
 - Block CSS and `render.php` are read at test startup, so tests always reflect the current state of the source without any regeneration step.

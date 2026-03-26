@@ -46,6 +46,12 @@ Commands:
     --screenshots     Save dated PNG of each block during frontend test runs
     --visual-regression  Generate toHaveScreenshot() visual regression tests
   clean all|themes|plugins|assets  Delete disposable wp-env-bin directories
+  info                    List config sources and their file paths
+  info config             Show all key-value pairs from wp-env-bin.config.json (validated)
+  info composer           Show all key-value pairs from composer.json
+  info e2e config         Show all key-value pairs from e2e/wp-env-bin.e2e.config.json (validated)
+  info e2e composer       Show all key-value pairs from e2e/composer.json
+  info <source> <key>     Print just the value of a single key
   help                Show this help message
 
 Config files:

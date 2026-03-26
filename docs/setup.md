@@ -107,6 +107,14 @@ wp-env-bin env sync
 | `adminPassword` | Password for the local admin account (default: `"password"`) |
 | `composerPath` | Absolute path to `composer.json` on the remote server — used by `composer get` (e.g. `"/code/composer.json"` for Pantheon) |
 
+To inspect the active config at any time without opening the file:
+
+```bash
+wp-env-bin info config          # show all key-value pairs
+wp-env-bin info config url      # print just the URL
+wp-env-bin info config siteType # print just the site type
+```
+
 ---
 
 ## Day-to-Day Workflow
@@ -148,6 +156,13 @@ wp-env-bin config switch
 ```
 
 Displays a list of all profiles in `site-configs/`. The currently active profile is marked **(currently loaded)**. Selecting one copies its files to the active `wp-env-bin.config.json`, `composer.json`, and `composer.lock`.
+
+To confirm what is now active after switching:
+
+```bash
+wp-env-bin info          # lists all sources and flags any that are missing
+wp-env-bin info config   # shows the full active config
+```
 
 **Single-site** — after switching, run:
 
