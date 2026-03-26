@@ -19,6 +19,16 @@ Commands:
   db use <path>       Validate and use a local SQL file (for non-Pantheon hosts)
   db process          Rename table prefix, import DB, and run URL search-replace
   htaccess make       Generate .htaccess with reverse proxy for /wp-content/uploads/
+  htaccess put        Copy the existing .htaccess into the running wp-env container
+  composer install    Run composer install in wp-env-bin/ to install plugins and themes (same as env setup)
+    --delete-lock     Delete composer.lock before installing
+  composer update     Run composer update in wp-env-bin/
+  composer get        Build composer.json from a remote site's active plugins
+    --path <path>     Override composerPath at runtime (e.g. /code/composer.json)
+    --url <url>       Fetch a composer.json from a URL and save it directly (no active-plugin matching)
+  composer make       Create a blank companion composer.json for a named profile
+  e2e composer install  Run composer install in wp-env-bin/e2e/
+  e2e composer update   Run composer update in wp-env-bin/e2e/
   env setup           Install required themes and plugins via composer (runs in wp-env-bin/)
     --delete-lock     Delete composer.lock before installing (use when new packages are added)
   env sync            Run db get + db process + htaccess make in sequence
@@ -131,6 +141,8 @@ Subcommands:
   make    Generate .htaccess with a reverse proxy for /wp-content/uploads/
           Proxies media requests to the live site so assets load locally
           without downloading the full uploads directory
+  put     Copy wp-env-bin/assets/.htaccess into the running container
+          Useful after env restart when the file already exists locally
 `);
 }
 
@@ -266,4 +278,46 @@ First-time setup after init:
 `);
 }
 
-module.exports = { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp };
+function composerHelp() {
+	console.log(`
+wp-env-bin composer — Run Composer and manage composer.json for site profiles
+
+Usage:
+  wp-env-bin composer <subcommand> [flags]
+
+Subcommands:
+  install     Run composer install in wp-env-bin/ (same as env setup)
+    --delete-lock   Delete composer.lock before installing
+  update      Run composer update in wp-env-bin/
+  get         Build a composer.json from a remote site's active plugins
+  make        Create a blank companion composer.json for a profile
+
+get flags:
+  --path <path>   Override the composerPath for this run (e.g. /code/composer.json)
+                  Takes precedence over the composerPath stored in the profile config
+  --url <url>     Fetch a composer.json from a URL and save it directly
+                  No active-plugin matching is performed — the file is saved as-is
+
+E2E equivalents:
+  wp-env-bin e2e composer install    Run composer install in wp-env-bin/e2e/
+  wp-env-bin e2e composer update     Run composer update in wp-env-bin/e2e/
+`);
+}
+
+function composerE2eHelp() {
+	console.log(`
+wp-env-bin e2e composer — Run Composer in the e2e test environment (wp-env-bin/e2e/)
+
+Usage:
+  wp-env-bin e2e composer <subcommand>
+
+Subcommands:
+  install    Run composer install in wp-env-bin/e2e/
+  update     Run composer update in wp-env-bin/e2e/
+
+Requires wp-env-bin/e2e/composer.json to exist.
+Run \`wp-env-bin e2e init\` first, then copy composer.json.example to composer.json.
+`);
+}
+
+module.exports = { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp };

@@ -50,13 +50,13 @@ cp wp-env-bin/composer.json.example wp-env-bin/composer.json
 Add your plugin and theme dependencies to the composer.json, then install them:
 
 ```bash
-wp-env-bin env setup
+wp-env-bin composer install
 ```
 
 If you add new packages to `composer.json` after an initial install and get a lock file error (`not present in the lock file`), delete the lock file and reinstall:
 
 ```bash
-wp-env-bin env setup --delete-lock
+wp-env-bin composer install --delete-lock
 ```
 
 ### 5. Start the environment and sync the database
@@ -105,7 +105,7 @@ wp-env-bin env sync
 | `adminUsername` | Username for the local admin account created by `db process` (default: `"admin"`) |
 | `adminEmail` | Email for the local admin account (default: `"admin@localhost.com"`) |
 | `adminPassword` | Password for the local admin account (default: `"password"`) |
-| `composerPath` | Absolute path to `composer.json` on the remote server — used by `config composer` (e.g. `"/code/composer.json"` for Pantheon) |
+| `composerPath` | Absolute path to `composer.json` on the remote server — used by `composer get` (e.g. `"/code/composer.json"` for Pantheon) |
 
 ---
 
@@ -152,7 +152,7 @@ Displays a list of all profiles in `site-configs/`. The currently active profile
 **Single-site** — after switching, run:
 
 ```bash
-wp-env-bin env setup --delete-lock
+wp-env-bin composer install --delete-lock
 wp-env-bin env sync
 wp-env-bin env start
 ```
@@ -160,7 +160,7 @@ wp-env-bin env start
 **Multisite** — after switching, you'll be asked whether to reinitialize the environment automatically. If you decline (or need to run steps manually):
 
 ```bash
-wp-env-bin env setup --delete-lock       # reinstall dependencies
+wp-env-bin composer install --delete-lock       # reinstall dependencies
 wp-env-bin db get                        # re-download from Pantheon
 wp-env-bin db process                    # import + search-replace
 wp-env-bin htaccess make                 # regenerate from current config
@@ -187,7 +187,7 @@ Re-runs the configuration prompts with all existing values pre-filled as default
 ### Building a composer.json from the remote site
 
 ```bash
-wp-env-bin config composer
+wp-env-bin composer get
 ```
 
 Connects to the remote site via Terminus, reads the active plugins (and network-activated plugins for multisite) and the server's own `composer.json`, then cross-references them to generate a companion `{profileName}.composer.json` for the profile. Requires `env` and `composerPath` to be set in the profile config.
@@ -195,6 +195,24 @@ Connects to the remote site via Terminus, reads the active plugins (and network-
 The mapping works by matching the plugin's folder name (from `active_plugins`) to the second segment of each Composer package name — for example, `gravityforms/gravityforms.php` → folder `gravityforms` → matches `gravity/gravityforms`. Repositories are carried over from the server's composer.json verbatim.
 
 Plugins not managed by Composer (manually uploaded) appear in an "unmatched" list in the CLI output but are not written to the generated file. After saving, you can add any missing packages manually.
+
+**With a runtime path override** (no `composerPath` required in the profile config):
+
+```bash
+wp-env-bin composer get --path /code/composer.json
+```
+
+**From a URL** (no Terminus required — fetches the file directly and saves it as-is):
+
+```bash
+wp-env-bin composer get --url https://example.com/composer.json
+```
+
+**Create a blank companion file** for a profile without fetching anything:
+
+```bash
+wp-env-bin composer make
+```
 
 ---
 
@@ -240,5 +258,5 @@ The `env` field in `wp-env-bin.config.json` is not required for this workflow �
 
 1. **`db get`** — Uses Terminus to export the site's database from Pantheon to `wp-env-bin/assets/database.sql`
 2. **`db process`** — For multisite: renames the subsite's table prefix (e.g. `wpsites_7_`) to `wp_` then imports. For single-site: imports the database directly. Then runs search-replace to swap the live URL for `localhost`
-3. **`htaccess make`** — Generates an `.htaccess` file that reverse-proxies media upload requests to the live site, so media appears locally without downloading the full uploads directory. For multisite, proxies from `/wp-content/uploads/sites/{siteId}/`; for single-site, proxies from `/wp-content/uploads/`
+3. **`htaccess make`** — Generates an `.htaccess` file that reverse-proxies media upload requests to the live site, so media appears locally without downloading the full uploads directory. For multisite, proxies from `/wp-content/uploads/sites/{siteId}/`; for single-site, proxies from `/wp-content/uploads/`. Run `wp-env-bin htaccess put` to re-push the file to the container after an env restart without regenerating it.
 

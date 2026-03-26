@@ -25,8 +25,21 @@ function getInactivePlugins() {
  */
 function activateComposerPlugins(pluginsToActivate) {
 	if (!pluginsToActivate || pluginsToActivate.length === 0) return;
-	wpcli("wp plugin activate " + pluginsToActivate.join(" "));
-	logger("> activated: " + pluginsToActivate.join(", "));
+	try {
+		wpcli("wp plugin activate " + pluginsToActivate.join(" "));
+		logger("> activated: " + pluginsToActivate.join(", "));
+	} catch {
+		// Bulk failed (likely a multisite-only plugin). Try one at a time.
+		logger("> bulk activation failed — trying plugins individually...");
+		for (const slug of pluginsToActivate) {
+			try {
+				wpcli("wp plugin activate " + slug);
+				logger("> activated: " + slug);
+			} catch {
+				logger("> warning: could not activate " + slug + " (skipped — may require multisite)");
+			}
+		}
+	}
 }
 
 module.exports = { getInactivePlugins, activateComposerPlugins };

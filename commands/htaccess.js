@@ -76,4 +76,19 @@ function makeHtaccess({ action = "regenerate" } = {}) {
 	}
 }
 
-module.exports = { makeHtaccess };
+/**
+ * Copy wp-env-bin/assets/.htaccess into the running wp-env container.
+ * Errors if the file does not exist locally.
+ *
+ * @returns {void}
+ */
+function putHtaccess() {
+	const localPath = path.join(process.cwd(), "wp-env-bin/assets/.htaccess");
+	if (!require("fs").existsSync(localPath)) {
+		throw new Error("wp-env-bin/assets/.htaccess does not exist. Run `wp-env-bin htaccess make` first.");
+	}
+	wpcli("bash -c 'cp " + CONTAINER_ASSETS_PATH + "/.htaccess /var/www/html/.htaccess'");
+	logger("> htaccess applied to running container.");
+}
+
+module.exports = { makeHtaccess, putHtaccess };
