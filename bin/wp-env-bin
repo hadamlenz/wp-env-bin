@@ -7,7 +7,7 @@ const chalk = require("chalk");
 
 const command = process.argv[2];
 const subcommand = process.argv[3];
-
+//all of these files are from commands
 const { configInstall, configUpdate, configSwitch, getProfileList, configCreate, configDelete } = require("../commands/config");
 const { install, getInstallContext } = require("../commands/install");
 const { scaffoldCommand } = require("../commands/scaffold");
@@ -18,8 +18,10 @@ const { getInactivePlugins, activateComposerPlugins } = require("../commands/plu
 const { runWpEnv, runWpEnvE2e } = require("../commands/env");
 const { compare } = require("../commands/compare");
 const { initE2e, getE2eDefaults, generateE2eTests, runE2eTests } = require("../commands/e2e");
-const { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp } = require("../commands/help");
+const { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp, cleanHelp } = require("../commands/help");
 const { composerGet, composerMake, composerUpdate, composerE2eInstall, composerE2eUpdate } = require("../commands/composer");
+const { cleanThemes, cleanPlugins, cleanAssets, cleanAll } = require("../commands/clean");
+//all of these files are from libs
 const { checkDatabase, checkHtaccess, requireDir } = require("../lib/env/check");
 const { saveNamedProfile } = require("../lib/config");
 const { matchActivePlugins, buildComposerJson, fetchRemoteData } = require("../lib/remote-composer");
@@ -880,6 +882,22 @@ async function init() {
 			} else {
 				const dest = path.join(process.cwd(), "wp-env-bin");
 				scaffoldCommand(dest);
+			}
+			break;
+		}
+		case "clean": {
+			if (subcommand === "all") {
+				cleanAll();
+			} else if (subcommand === "themes") {
+				cleanThemes();
+			} else if (subcommand === "plugins") {
+				cleanPlugins();
+			} else if (subcommand === "assets") {
+				cleanAssets();
+			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				cleanHelp();
+			} else {
+				console.log(chalk.yellow("Unknown clean subcommand. Try:\n  wp-env-bin clean all\n  wp-env-bin clean themes\n  wp-env-bin clean plugins\n  wp-env-bin clean assets"));
 			}
 			break;
 		}
