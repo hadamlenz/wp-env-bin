@@ -172,6 +172,232 @@ async function promptReinitEnvironment(siteType) {
 
 async function init() {
 	switch (command) {
+		case "clean": {
+			if (subcommand === "all") {
+				cleanAll();
+			} else if (subcommand === "themes") {
+				cleanThemes();
+			} else if (subcommand === "plugins") {
+				cleanPlugins();
+			} else if (subcommand === "assets") {
+				cleanAssets();
+			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				cleanHelp();
+			} else {
+				console.log(chalk.yellow("Unknown clean subcommand. Try:\n  wp-env-bin clean all\n  wp-env-bin clean themes\n  wp-env-bin clean plugins\n  wp-env-bin clean assets"));
+			}
+			break;
+		}
+		case "composer": {
+			// ── install ──────────────────────────────────────────────────────────
+			if (subcommand === "install") {
+				setup(process.argv.slice(4));
+
+			// ── update ───────────────────────────────────────────────────────────
+			} else if (subcommand === "update") {
+				composerUpdate();
+
+			// ── get ──────────────────────────────────────────────────────────────
+			} else if (subcommand === "get") {
+				const pathIdx = process.argv.indexOf("--path");
+				const runtimePath = pathIdx !== -1 ? process.argv[pathIdx + 1] : null;
+				const urlIdx = process.argv.indexOf("--url");
+				const runtimeUrl = urlIdx !== -1 ? process.argv[urlIdx + 1] : null;
+
+				const profiles = getProfileList();
+				if (!profiles || profiles.length === 0) {
+					console.log(chalk.red("No profiles found in wp-env-bin/site-configs/."));
+					console.log("Run `wp-env-bin config create` to create one.");
+					break;
+				}
+				const { select: selComp, confirm: confComp, checkbox: checkboxComp } = await import("@inquirer/prompts");
+				const chosenComp = await selComp({
+					message: runtimeUrl
+						? "Save fetched composer.json to which profile?"
+						: "Build composer.json for which profile?",
+					choices: profiles.map(p => ({ name: p, value: p })),
+				});
+
+				if (runtimeUrl) {
+					console.log(chalk.cyan("> fetching " + runtimeUrl + "..."));
+					let fetchedComposer;
+					try {
+						const https = require("https");
+						const http = require("http");
+						const client = runtimeUrl.startsWith("https") ? https : http;
+						const raw = await new Promise((resolve, reject) => {
+							let body = "";
+							client.get(runtimeUrl, res => {
+								res.on("data", chunk => { body += chunk; });
+								res.on("end", () => resolve(body));
+							}).on("error", reject);
+						});
+						fetchedComposer = JSON.parse(raw);
+					} catch (err) {
+						console.error(chalk.red("Failed to fetch composer.json: " + (err.message || err)));
+						break;
+					}
+
+					const saveUrl = await confComp({
+						message: "Save as site-configs/" + chosenComp + ".composer.json?",
+						default: true,
+					});
+					if (saveUrl) {
+						const { mkdirSync, writeFileSync } = require("fs");
+						const dest = path.join(process.cwd(), "wp-env-bin");
+						mkdirSync(path.join(dest, "site-configs"), { recursive: true });
+						const outPath = path.join(dest, "site-configs", chosenComp + ".composer.json");
+						writeFileSync(outPath, JSON.stringify(fetchedComposer, null, 4), "utf8");
+						console.log(chalk.green("> saved site-configs/" + chosenComp + ".composer.json"));
+
+						const copyActive = await confComp({ message: "Also copy to active wp-env-bin/composer.json?", default: false });
+						if (copyActive) {
+							writeFileSync(path.join(dest, "composer.json"), JSON.stringify(fetchedComposer, null, 4), "utf8");
+							console.log(chalk.green("> copied to wp-env-bin/composer.json"));
+						}
+					}
+					break;
+				}
+
+				// Terminus path: active-plugin matching
+				const profileFilePath = path.join(process.cwd(), "wp-env-bin", "site-configs", chosenComp + ".wp-env-bin.config.json");
+				const profileConfig = JSON.parse(require("fs").readFileSync(profileFilePath, "utf8"));
+				const { env: compEnv, url: compUrl, composerPath: savedPath } = profileConfig;
+				const composerPath = runtimePath || savedPath || null;
+
+				if (!compEnv) {
+					console.log(chalk.red("This profile has no 'env' set — cannot connect to a remote site."));
+					console.log("Add it with `wp-env-bin config update`.");
+					break;
+				}
+				if (!composerPath) {
+					console.log(chalk.red("No composerPath set. Use --path /code/composer.json or add it to the profile with `wp-env-bin config update`."));
+					break;
+				}
+
+				console.log(chalk.cyan("> fetching active plugins from " + compEnv + "..."));
+				console.log(chalk.cyan("> reading " + composerPath + " from " + compEnv + "..."));
+				let remoteData;
+				try {
+					remoteData = fetchRemoteData(compEnv, compUrl, composerPath);
+				} catch (err) {
+					console.error(chalk.red("Failed to fetch remote data: " + (err.message || err)));
+					break;
+				}
+
+				const { activePaths, themeSlug, serverComposer } = remoteData;
+
+				const { matched: preMatched, unmatched: preUnmatched } = matchActivePlugins(activePaths, serverComposer);
+				const allServerPkgs = {
+					...((serverComposer && serverComposer.require) || {}),
+					...((serverComposer && serverComposer["require-dev"]) || {}),
+				};
+				const themePkg = themeSlug
+					? Object.keys(allServerPkgs).find(p => p.split("/")[1] === themeSlug) || null
+					: null;
+
+				console.log(chalk.cyan("\n> Matched packages (" + (Object.keys(preMatched).length + (themePkg ? 1 : 0)) + "):"));
+				for (const [pkg, ver] of Object.entries(preMatched)) console.log(chalk.gray("    " + pkg + ": " + ver));
+				if (themePkg) console.log(chalk.gray("    " + themePkg + ": * (active theme)"));
+				if (preUnmatched.length > 0) {
+					console.log(chalk.yellow("\n> Unmatched active plugins (not found in server composer.json — likely manually uploaded):"));
+					for (const f of preUnmatched) console.log(chalk.gray("    " + f));
+				}
+
+				// Checkbox — let user deselect unwanted packages before saving
+				// Exclude the project's own slug — it should be loaded via ".." in .wp-env.json, not composer
+				const projectSlug = path.basename(process.cwd());
+				const pluginChoices = Object.entries(preMatched)
+					.filter(([pkg]) => !pkg.endsWith("/" + projectSlug))
+					.map(([pkg, ver]) => ({
+						name: pkg + " (" + ver + ")",
+						value: pkg,
+						checked: true,
+					}));
+				if (Object.keys(preMatched).some(pkg => pkg.endsWith("/" + projectSlug))) {
+					console.log(chalk.yellow(`> Excluded ${projectSlug} from package list — load it via ".." in .wp-env.json instead.`));
+				}
+				if (themePkg && !themePkg.endsWith("/" + projectSlug)) {
+					pluginChoices.push({ name: themePkg + ": * (active theme)", value: "__theme__", checked: true });
+				}
+
+				if (pluginChoices.length > 0) process.stdout.write("\x1Bc");
+				const selected = pluginChoices.length > 0
+					? await checkboxComp({
+						message: "Select packages to include in composer.json (deselect to exclude):",
+						choices: pluginChoices,
+						pageSize: (process.stdout.rows || 24) - 4,
+						loop: false,
+					})
+					: [];
+
+				const filteredMatched = {};
+				for (const pkg of selected) {
+					if (pkg !== "__theme__" && preMatched[pkg] !== undefined) {
+						filteredMatched[pkg] = preMatched[pkg];
+					}
+				}
+				const filteredThemePkg = selected.includes("__theme__") ? themePkg : null;
+
+				const saveComp = await confComp({ message: "Save as site-configs/" + chosenComp + ".composer.json?", default: true });
+				if (saveComp) {
+					const composerJson = buildComposerJson(filteredMatched, serverComposer.repositories || [], filteredThemePkg ? { [filteredThemePkg]: "*" } : null);
+					const compDest = path.join(process.cwd(), "wp-env-bin");
+					require("fs").mkdirSync(path.join(compDest, "site-configs"), { recursive: true });
+					require("fs").writeFileSync(path.join(compDest, "site-configs", chosenComp + ".composer.json"), JSON.stringify(composerJson, null, 4), "utf8");
+					console.log(chalk.green("> saved site-configs/" + chosenComp + ".composer.json"));
+
+					const copyActive = await confComp({ message: "Also copy to active wp-env-bin/composer.json?", default: false });
+					if (copyActive) {
+						require("fs").writeFileSync(
+							path.join(process.cwd(), "wp-env-bin", "composer.json"),
+							JSON.stringify(composerJson, null, 4),
+							"utf8"
+						);
+						console.log(chalk.green("> copied to wp-env-bin/composer.json"));
+					}
+				}
+
+			// ── make ─────────────────────────────────────────────────────────────
+			} else if (subcommand === "make") {
+				const profiles = getProfileList();
+				if (!profiles || profiles.length === 0) {
+					console.log(chalk.red("No profiles found in wp-env-bin/site-configs/."));
+					console.log("Run `wp-env-bin config create` to create one.");
+					break;
+				}
+				const { select: selMake, confirm: confMake } = await import("@inquirer/prompts");
+				const chosenMake = await selMake({
+					message: "Create blank composer.json for which profile?",
+					choices: profiles.map(p => ({ name: p, value: p })),
+				});
+				composerMake(chosenMake);
+
+				const copyActiveMake = await confMake({ message: "Also copy to active wp-env-bin/composer.json?", default: false });
+				if (copyActiveMake) {
+					const { readFileSync: readMake, writeFileSync: writeMake } = require("fs");
+					const srcPath = path.join(process.cwd(), "wp-env-bin", "site-configs", chosenMake + ".composer.json");
+					writeMake(path.join(process.cwd(), "wp-env-bin", "composer.json"), readMake(srcPath, "utf8"), "utf8");
+					console.log(chalk.green("> copied to wp-env-bin/composer.json"));
+				}
+
+			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				composerHelp();
+			} else if (subcommand === "--") {
+				const composerArgs = process.argv.slice(4);
+				if (!composerArgs.length) {
+					console.log("Usage: wp-env-bin composer -- <composer command> [args...]");
+					console.log("Example: wp-env-bin composer -- remove wpackagist-plugin/akismet");
+				} else {
+					const composerDir = path.join(process.cwd(), "wp-env-bin");
+					requireDir(composerDir, "Run this command from your project root (the directory containing wp-env-bin/).");
+					run(`composer ${composerArgs.join(" ")}`, { cwd: composerDir, stdio: "inherit" });
+				}
+			} else {
+				console.log(chalk.yellow("Unknown composer subcommand. Try:\n  wp-env-bin composer install\n  wp-env-bin composer update\n  wp-env-bin composer get\n  wp-env-bin composer make\n  wp-env-bin composer -- <any composer command>"));
+			}
+			break;
+		}
 		case "config": {
 			if (subcommand === "install") {
 				console.log(chalk.yellow("[Deprecated] `config install` will be removed in a future version."));
@@ -469,26 +695,77 @@ async function init() {
 			}
 			break;
 		}
-		case "htaccess": {
-			if (subcommand === "make") {
-				let action = "regenerate";
-				if (checkHtaccess()) {
-					const { select } = await import("@inquirer/prompts");
-					action = await select({
-						message: "wp-env-bin/assets/.htaccess already exists. What would you like to do?",
-						choices: [
-							{ name: "Use the existing .htaccess", value: "useIt" },
-							{ name: "Regenerate from current config", value: "regenerate" },
-						],
+		case "e2e": {
+			if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				e2eHelp();
+			} else if (subcommand === "env") {
+				const envArgs = process.argv.slice(4);
+				if (!envArgs.length || envArgs[0] === "help" || envArgs[0] === "--help" || envArgs[0] === "-h") {
+					e2eEnvHelp();
+				} else {
+					runWpEnvE2e(envArgs);
+				}
+			} else if (subcommand === "init") {
+				const { select, input } = await import("@inquirer/prompts");
+				const { projectType: defaultType, pluginName: defaultSlug, e2eConfig } = getE2eDefaults();
+
+				const projectType = await select({
+					message: "Is this project a plugin or a theme?",
+					choices: [
+						{ name: "Plugin", value: "plugin" },
+						{ name: "Theme", value: "theme" },
+					],
+					default: defaultType,
+				});
+
+				const slug = await input({
+					message: projectType === "plugin" ? "Plugin slug (used in wp plugin activate)" : "Theme slug (used in wp theme activate)",
+					default: defaultSlug,
+				});
+
+				let testTheme = e2eConfig.testTheme;
+				if (projectType === "plugin") {
+					testTheme = await input({
+						message: "Theme to activate during tests",
+						default: e2eConfig.testTheme,
 					});
 				}
-				makeHtaccess({ action });
-			} else if (subcommand === "put") {
-				putHtaccess();
-			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
-				htaccessHelp();
+
+				const wpVersion = await input({
+					message: "WordPress version",
+					default: e2eConfig.wpVersion,
+				});
+
+				const phpVersion = await input({
+					message: "PHP version",
+					default: e2eConfig.phpVersion,
+				});
+
+				const port = await input({
+					message: "wp-env development port for e2e environment (must differ from your dev env, default 8889)",
+					default: e2eConfig.port,
+				});
+
+				initE2e({ projectType, slug, testTheme, wpVersion, phpVersion, port });
+
+			} else if (subcommand === "generate") {
+				const type = process.argv[4]; // "editor" or "frontend"
+				generateE2eTests(type, process.argv.slice(5));
+			} else if (subcommand === "test") {
+				runE2eTests(process.argv.slice(4));
+			} else if (subcommand === "composer") {
+				const e2eComposerSub = process.argv[4];
+				if (e2eComposerSub === "install") {
+					composerE2eInstall();
+				} else if (e2eComposerSub === "update") {
+					composerE2eUpdate();
+				} else if (e2eComposerSub === "help" || e2eComposerSub === "--help" || e2eComposerSub === "-h") {
+					composerE2eHelp();
+				} else {
+					console.log(chalk.yellow("Unknown e2e composer subcommand. Try:\n  wp-env-bin e2e composer install\n  wp-env-bin e2e composer update"));
+				}
 			} else {
-				console.log(chalk.yellow('Unknown subcommand. Try:\n  wp-env-bin htaccess make\n  wp-env-bin htaccess put'));
+				console.log(chalk.yellow('Unknown e2e subcommand. Try:\n  wp-env-bin e2e init\n  wp-env-bin e2e test [--project=all-blocks-editor|all-blocks-frontend]\n  wp-env-bin e2e generate editor|frontend --file=path/to/block.json\n  wp-env-bin e2e composer install\n  wp-env-bin e2e composer update'));
 			}
 			break;
 		}
@@ -568,6 +845,38 @@ async function init() {
 			}
 			break;
 		}
+		case "htaccess": {
+			if (subcommand === "make") {
+				let action = "regenerate";
+				if (checkHtaccess()) {
+					const { select } = await import("@inquirer/prompts");
+					action = await select({
+						message: "wp-env-bin/assets/.htaccess already exists. What would you like to do?",
+						choices: [
+							{ name: "Use the existing .htaccess", value: "useIt" },
+							{ name: "Regenerate from current config", value: "regenerate" },
+						],
+					});
+				}
+				makeHtaccess({ action });
+			} else if (subcommand === "put") {
+				putHtaccess();
+			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				htaccessHelp();
+			} else {
+				console.log(chalk.yellow('Unknown subcommand. Try:\n  wp-env-bin htaccess make\n  wp-env-bin htaccess put'));
+			}
+			break;
+		}
+		case "scaffold": {
+			if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				scaffoldHelp();
+			} else {
+				const dest = path.join(process.cwd(), "wp-env-bin");
+				scaffoldCommand(dest);
+			}
+			break;
+		}
 		case "visual": {
 			if (subcommand === "compare") {
 				const argv = process.argv.slice(4);
@@ -589,315 +898,6 @@ async function init() {
 				compareHelp();
 			} else {
 				console.log(chalk.yellow('Unknown subcommand. Try: wp-env-bin visual compare'));
-			}
-			break;
-		}
-		case "e2e": {
-			if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
-				e2eHelp();
-			} else if (subcommand === "env") {
-				const envArgs = process.argv.slice(4);
-				if (!envArgs.length || envArgs[0] === "help" || envArgs[0] === "--help" || envArgs[0] === "-h") {
-					e2eEnvHelp();
-				} else {
-					runWpEnvE2e(envArgs);
-				}
-			} else if (subcommand === "init") {
-				const { select, input } = await import("@inquirer/prompts");
-				const { projectType: defaultType, pluginName: defaultSlug, e2eConfig } = getE2eDefaults();
-
-				const projectType = await select({
-					message: "Is this project a plugin or a theme?",
-					choices: [
-						{ name: "Plugin", value: "plugin" },
-						{ name: "Theme", value: "theme" },
-					],
-					default: defaultType,
-				});
-
-				const slug = await input({
-					message: projectType === "plugin" ? "Plugin slug (used in wp plugin activate)" : "Theme slug (used in wp theme activate)",
-					default: defaultSlug,
-				});
-
-				let testTheme = e2eConfig.testTheme;
-				if (projectType === "plugin") {
-					testTheme = await input({
-						message: "Theme to activate during tests",
-						default: e2eConfig.testTheme,
-					});
-				}
-
-				const wpVersion = await input({
-					message: "WordPress version",
-					default: e2eConfig.wpVersion,
-				});
-
-				const phpVersion = await input({
-					message: "PHP version",
-					default: e2eConfig.phpVersion,
-				});
-
-				const port = await input({
-					message: "wp-env development port for e2e environment (must differ from your dev env, default 8889)",
-					default: e2eConfig.port,
-				});
-
-				initE2e({ projectType, slug, testTheme, wpVersion, phpVersion, port });
-
-			} else if (subcommand === "generate") {
-				const type = process.argv[4]; // "editor" or "frontend"
-				generateE2eTests(type, process.argv.slice(5));
-			} else if (subcommand === "test") {
-				runE2eTests(process.argv.slice(4));
-			} else if (subcommand === "composer") {
-				const e2eComposerSub = process.argv[4];
-				if (e2eComposerSub === "install") {
-					composerE2eInstall();
-				} else if (e2eComposerSub === "update") {
-					composerE2eUpdate();
-				} else if (e2eComposerSub === "help" || e2eComposerSub === "--help" || e2eComposerSub === "-h") {
-					composerE2eHelp();
-				} else {
-					console.log(chalk.yellow("Unknown e2e composer subcommand. Try:\n  wp-env-bin e2e composer install\n  wp-env-bin e2e composer update"));
-				}
-			} else {
-				console.log(chalk.yellow('Unknown e2e subcommand. Try:\n  wp-env-bin e2e init\n  wp-env-bin e2e test [--project=all-blocks-editor|all-blocks-frontend]\n  wp-env-bin e2e generate editor|frontend --file=path/to/block.json\n  wp-env-bin e2e composer install\n  wp-env-bin e2e composer update'));
-			}
-			break;
-		}
-		case "composer": {
-			// ── install ──────────────────────────────────────────────────────────
-			if (subcommand === "install") {
-				setup(process.argv.slice(4));
-
-			// ── update ───────────────────────────────────────────────────────────
-			} else if (subcommand === "update") {
-				composerUpdate();
-
-			// ── get ──────────────────────────────────────────────────────────────
-			} else if (subcommand === "get") {
-				const pathIdx = process.argv.indexOf("--path");
-				const runtimePath = pathIdx !== -1 ? process.argv[pathIdx + 1] : null;
-				const urlIdx = process.argv.indexOf("--url");
-				const runtimeUrl = urlIdx !== -1 ? process.argv[urlIdx + 1] : null;
-
-				const profiles = getProfileList();
-				if (!profiles || profiles.length === 0) {
-					console.log(chalk.red("No profiles found in wp-env-bin/site-configs/."));
-					console.log("Run `wp-env-bin config create` to create one.");
-					break;
-				}
-				const { select: selComp, confirm: confComp, checkbox: checkboxComp } = await import("@inquirer/prompts");
-				const chosenComp = await selComp({
-					message: runtimeUrl
-						? "Save fetched composer.json to which profile?"
-						: "Build composer.json for which profile?",
-					choices: profiles.map(p => ({ name: p, value: p })),
-				});
-
-				if (runtimeUrl) {
-					console.log(chalk.cyan("> fetching " + runtimeUrl + "..."));
-					let fetchedComposer;
-					try {
-						const https = require("https");
-						const http = require("http");
-						const client = runtimeUrl.startsWith("https") ? https : http;
-						const raw = await new Promise((resolve, reject) => {
-							let body = "";
-							client.get(runtimeUrl, res => {
-								res.on("data", chunk => { body += chunk; });
-								res.on("end", () => resolve(body));
-							}).on("error", reject);
-						});
-						fetchedComposer = JSON.parse(raw);
-					} catch (err) {
-						console.error(chalk.red("Failed to fetch composer.json: " + (err.message || err)));
-						break;
-					}
-
-					const saveUrl = await confComp({
-						message: "Save as site-configs/" + chosenComp + ".composer.json?",
-						default: true,
-					});
-					if (saveUrl) {
-						const { mkdirSync, writeFileSync } = require("fs");
-						const dest = path.join(process.cwd(), "wp-env-bin");
-						mkdirSync(path.join(dest, "site-configs"), { recursive: true });
-						const outPath = path.join(dest, "site-configs", chosenComp + ".composer.json");
-						writeFileSync(outPath, JSON.stringify(fetchedComposer, null, 4), "utf8");
-						console.log(chalk.green("> saved site-configs/" + chosenComp + ".composer.json"));
-
-						const copyActive = await confComp({ message: "Also copy to active wp-env-bin/composer.json?", default: false });
-						if (copyActive) {
-							writeFileSync(path.join(dest, "composer.json"), JSON.stringify(fetchedComposer, null, 4), "utf8");
-							console.log(chalk.green("> copied to wp-env-bin/composer.json"));
-						}
-					}
-					break;
-				}
-
-				// Terminus path: active-plugin matching
-				const profileFilePath = path.join(process.cwd(), "wp-env-bin", "site-configs", chosenComp + ".wp-env-bin.config.json");
-				const profileConfig = JSON.parse(require("fs").readFileSync(profileFilePath, "utf8"));
-				const { env: compEnv, url: compUrl, composerPath: savedPath } = profileConfig;
-				const composerPath = runtimePath || savedPath || null;
-
-				if (!compEnv) {
-					console.log(chalk.red("This profile has no 'env' set — cannot connect to a remote site."));
-					console.log("Add it with `wp-env-bin config update`.");
-					break;
-				}
-				if (!composerPath) {
-					console.log(chalk.red("No composerPath set. Use --path /code/composer.json or add it to the profile with `wp-env-bin config update`."));
-					break;
-				}
-
-				console.log(chalk.cyan("> fetching active plugins from " + compEnv + "..."));
-				console.log(chalk.cyan("> reading " + composerPath + " from " + compEnv + "..."));
-				let remoteData;
-				try {
-					remoteData = fetchRemoteData(compEnv, compUrl, composerPath);
-				} catch (err) {
-					console.error(chalk.red("Failed to fetch remote data: " + (err.message || err)));
-					break;
-				}
-
-				const { activePaths, themeSlug, serverComposer } = remoteData;
-
-				const { matched: preMatched, unmatched: preUnmatched } = matchActivePlugins(activePaths, serverComposer);
-				const allServerPkgs = {
-					...((serverComposer && serverComposer.require) || {}),
-					...((serverComposer && serverComposer["require-dev"]) || {}),
-				};
-				const themePkg = themeSlug
-					? Object.keys(allServerPkgs).find(p => p.split("/")[1] === themeSlug) || null
-					: null;
-
-				console.log(chalk.cyan("\n> Matched packages (" + (Object.keys(preMatched).length + (themePkg ? 1 : 0)) + "):"));
-				for (const [pkg, ver] of Object.entries(preMatched)) console.log(chalk.gray("    " + pkg + ": " + ver));
-				if (themePkg) console.log(chalk.gray("    " + themePkg + ": * (active theme)"));
-				if (preUnmatched.length > 0) {
-					console.log(chalk.yellow("\n> Unmatched active plugins (not found in server composer.json — likely manually uploaded):"));
-					for (const f of preUnmatched) console.log(chalk.gray("    " + f));
-				}
-
-				// Checkbox — let user deselect unwanted packages before saving
-				// Exclude the project's own slug — it should be loaded via ".." in .wp-env.json, not composer
-				const projectSlug = path.basename(process.cwd());
-				const pluginChoices = Object.entries(preMatched)
-					.filter(([pkg]) => !pkg.endsWith("/" + projectSlug))
-					.map(([pkg, ver]) => ({
-						name: pkg + " (" + ver + ")",
-						value: pkg,
-						checked: true,
-					}));
-				if (Object.keys(preMatched).some(pkg => pkg.endsWith("/" + projectSlug))) {
-					console.log(chalk.yellow(`> Excluded ${projectSlug} from package list — load it via ".." in .wp-env.json instead.`));
-				}
-				if (themePkg && !themePkg.endsWith("/" + projectSlug)) {
-					pluginChoices.push({ name: themePkg + ": * (active theme)", value: "__theme__", checked: true });
-				}
-
-				if (pluginChoices.length > 0) process.stdout.write("\x1Bc");
-				const selected = pluginChoices.length > 0
-					? await checkboxComp({
-						message: "Select packages to include in composer.json (deselect to exclude):",
-						choices: pluginChoices,
-						pageSize: (process.stdout.rows || 24) - 4,
-						loop: false,
-					})
-					: [];
-
-				const filteredMatched = {};
-				for (const pkg of selected) {
-					if (pkg !== "__theme__" && preMatched[pkg] !== undefined) {
-						filteredMatched[pkg] = preMatched[pkg];
-					}
-				}
-				const filteredThemePkg = selected.includes("__theme__") ? themePkg : null;
-
-				const saveComp = await confComp({ message: "Save as site-configs/" + chosenComp + ".composer.json?", default: true });
-				if (saveComp) {
-					const composerJson = buildComposerJson(filteredMatched, serverComposer.repositories || [], filteredThemePkg ? { [filteredThemePkg]: "*" } : null);
-					const compDest = path.join(process.cwd(), "wp-env-bin");
-					require("fs").mkdirSync(path.join(compDest, "site-configs"), { recursive: true });
-					require("fs").writeFileSync(path.join(compDest, "site-configs", chosenComp + ".composer.json"), JSON.stringify(composerJson, null, 4), "utf8");
-					console.log(chalk.green("> saved site-configs/" + chosenComp + ".composer.json"));
-
-					const copyActive = await confComp({ message: "Also copy to active wp-env-bin/composer.json?", default: false });
-					if (copyActive) {
-						require("fs").writeFileSync(
-							path.join(process.cwd(), "wp-env-bin", "composer.json"),
-							JSON.stringify(composerJson, null, 4),
-							"utf8"
-						);
-						console.log(chalk.green("> copied to wp-env-bin/composer.json"));
-					}
-				}
-
-			// ── make ─────────────────────────────────────────────────────────────
-			} else if (subcommand === "make") {
-				const profiles = getProfileList();
-				if (!profiles || profiles.length === 0) {
-					console.log(chalk.red("No profiles found in wp-env-bin/site-configs/."));
-					console.log("Run `wp-env-bin config create` to create one.");
-					break;
-				}
-				const { select: selMake, confirm: confMake } = await import("@inquirer/prompts");
-				const chosenMake = await selMake({
-					message: "Create blank composer.json for which profile?",
-					choices: profiles.map(p => ({ name: p, value: p })),
-				});
-				composerMake(chosenMake);
-
-				const copyActiveMake = await confMake({ message: "Also copy to active wp-env-bin/composer.json?", default: false });
-				if (copyActiveMake) {
-					const { readFileSync: readMake, writeFileSync: writeMake } = require("fs");
-					const srcPath = path.join(process.cwd(), "wp-env-bin", "site-configs", chosenMake + ".composer.json");
-					writeMake(path.join(process.cwd(), "wp-env-bin", "composer.json"), readMake(srcPath, "utf8"), "utf8");
-					console.log(chalk.green("> copied to wp-env-bin/composer.json"));
-				}
-
-			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
-				composerHelp();
-			} else if (subcommand === "--") {
-				const composerArgs = process.argv.slice(4);
-				if (!composerArgs.length) {
-					console.log("Usage: wp-env-bin composer -- <composer command> [args...]");
-					console.log("Example: wp-env-bin composer -- remove wpackagist-plugin/akismet");
-				} else {
-					const composerDir = path.join(process.cwd(), "wp-env-bin");
-					requireDir(composerDir, "Run this command from your project root (the directory containing wp-env-bin/).");
-					run(`composer ${composerArgs.join(" ")}`, { cwd: composerDir, stdio: "inherit" });
-				}
-			} else {
-				console.log(chalk.yellow("Unknown composer subcommand. Try:\n  wp-env-bin composer install\n  wp-env-bin composer update\n  wp-env-bin composer get\n  wp-env-bin composer make\n  wp-env-bin composer -- <any composer command>"));
-			}
-			break;
-		}
-		case "scaffold": {
-			if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
-				scaffoldHelp();
-			} else {
-				const dest = path.join(process.cwd(), "wp-env-bin");
-				scaffoldCommand(dest);
-			}
-			break;
-		}
-		case "clean": {
-			if (subcommand === "all") {
-				cleanAll();
-			} else if (subcommand === "themes") {
-				cleanThemes();
-			} else if (subcommand === "plugins") {
-				cleanPlugins();
-			} else if (subcommand === "assets") {
-				cleanAssets();
-			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
-				cleanHelp();
-			} else {
-				console.log(chalk.yellow("Unknown clean subcommand. Try:\n  wp-env-bin clean all\n  wp-env-bin clean themes\n  wp-env-bin clean plugins\n  wp-env-bin clean assets"));
 			}
 			break;
 		}
