@@ -291,6 +291,9 @@ Subcommands:
   update      Run composer update in wp-env-bin/
   get         Build a composer.json from a remote site's active plugins
   make        Create a blank companion composer.json for a profile
+  --          Pass any composer command through to wp-env-bin/
+                e.g. wp-env-bin composer -- require wpackagist-plugin/query-monitor
+                e.g. wp-env-bin composer -- remove wpackagist-plugin/akismet
 
 get flags:
   --path <path>   Override the composerPath for this run (e.g. /code/composer.json)

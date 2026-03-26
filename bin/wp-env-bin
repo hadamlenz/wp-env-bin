@@ -20,11 +20,10 @@ const { compare } = require("../commands/compare");
 const { initE2e, getE2eDefaults, generateE2eTests, runE2eTests } = require("../commands/e2e");
 const { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp } = require("../commands/help");
 const { composerGet, composerMake, composerUpdate, composerE2eInstall, composerE2eUpdate } = require("../commands/composer");
-const { checkDatabase } = require("../lib/env/check");
-const { checkHtaccess } = require("../lib/env/check");
+const { checkDatabase, checkHtaccess, requireDir } = require("../lib/env/check");
 const { saveNamedProfile } = require("../lib/config");
 const { matchActivePlugins, buildComposerJson, fetchRemoteData } = require("../lib/remote-composer");
-const { terminus_wp } = require("../lib/utils/run");
+const { run, terminus_wp } = require("../lib/utils/run");
 
 // ─── Shared prompt helpers ────────────────────────────────────────────────────
 
@@ -782,12 +781,19 @@ async function init() {
 				}
 
 				// Checkbox — let user deselect unwanted packages before saving
-				const pluginChoices = Object.entries(preMatched).map(([pkg, ver]) => ({
-					name: pkg + " (" + ver + ")",
-					value: pkg,
-					checked: true,
-				}));
-				if (themePkg) {
+				// Exclude the project's own slug — it should be loaded via ".." in .wp-env.json, not composer
+				const projectSlug = path.basename(process.cwd());
+				const pluginChoices = Object.entries(preMatched)
+					.filter(([pkg]) => !pkg.endsWith("/" + projectSlug))
+					.map(([pkg, ver]) => ({
+						name: pkg + " (" + ver + ")",
+						value: pkg,
+						checked: true,
+					}));
+				if (Object.keys(preMatched).some(pkg => pkg.endsWith("/" + projectSlug))) {
+					console.log(chalk.yellow(`> Excluded ${projectSlug} from package list — load it via ".." in .wp-env.json instead.`));
+				}
+				if (themePkg && !themePkg.endsWith("/" + projectSlug)) {
 					pluginChoices.push({ name: themePkg + ": * (active theme)", value: "__theme__", checked: true });
 				}
 
@@ -853,8 +859,18 @@ async function init() {
 
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				composerHelp();
+			} else if (subcommand === "--") {
+				const composerArgs = process.argv.slice(4);
+				if (!composerArgs.length) {
+					console.log("Usage: wp-env-bin composer -- <composer command> [args...]");
+					console.log("Example: wp-env-bin composer -- remove wpackagist-plugin/akismet");
+				} else {
+					const composerDir = path.join(process.cwd(), "wp-env-bin");
+					requireDir(composerDir, "Run this command from your project root (the directory containing wp-env-bin/).");
+					run(`composer ${composerArgs.join(" ")}`, { cwd: composerDir, stdio: "inherit" });
+				}
 			} else {
-				console.log(chalk.yellow("Unknown composer subcommand. Try:\n  wp-env-bin composer install\n  wp-env-bin composer update\n  wp-env-bin composer get\n  wp-env-bin composer make"));
+				console.log(chalk.yellow("Unknown composer subcommand. Try:\n  wp-env-bin composer install\n  wp-env-bin composer update\n  wp-env-bin composer get\n  wp-env-bin composer make\n  wp-env-bin composer -- <any composer command>"));
 			}
 			break;
 		}

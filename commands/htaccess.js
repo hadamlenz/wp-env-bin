@@ -4,7 +4,7 @@ const htaccessTemplate = require("../templates/htaccess.tpl");
 const { logger } = require("../lib/utils/log");
 const { wpenvrun } = require("../lib/utils/run");
 const { readLocalConfig, CONTAINER_ASSETS_PATH } = require("../lib/env/config");
-const { checkHtaccess } = require("../lib/env/check");
+const { requireDir } = require("../lib/env/check");
 
 /**
  * Remove a path if it is a directory rather than a file.
@@ -59,6 +59,7 @@ function makeHtaccess({ action = "regenerate" } = {}) {
 	const content = htaccessTemplate(url, siteId, resolvedSiteType);
 	const outPath = path.join(process.cwd(), "wp-env-bin/assets/.htaccess");
 
+	requireDir(path.join(process.cwd(), "wp-env-bin/assets"), "Run `wp-env-bin env setup` first to initialize the wp-env-bin/ directory.");
 	clearIfDirectory(outPath);
 	writeFileSync(outPath, content, "utf8");
 	logger("> .htaccess written to wp-env-bin/assets/.htaccess", true, "success");

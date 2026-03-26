@@ -2,7 +2,7 @@ const { copyFileSync, readFileSync, writeFileSync } = require("fs");
 const path = require("path");
 const { terminus_wp, wpcli } = require("../lib/utils/run");
 const { logger } = require("../lib/utils/log");
-const { checkDatabase } = require("../lib/env/check");
+const { checkDatabase, requireDir } = require("../lib/env/check");
 const { readLocalConfig, readWpEnvJson, CONTAINER_ASSETS_PATH } = require("../lib/env/config");
 const { renamePrefix } = require("../lib/db");
 const { validateSqlFile } = require("../lib/db");
@@ -98,6 +98,7 @@ function useDb(filePath, { action = "replace" } = {}) {
 	validateSqlFile(resolved);
 	logger("> validation passed (mysqldump header and WordPress options table found)", true, "success");
 
+	requireDir(path.join(process.cwd(), "wp-env-bin/assets"), "Run `wp-env-bin env setup` first to initialize the wp-env-bin/ directory.");
 	const dest = path.join(process.cwd(), "wp-env-bin/assets/database.sql");
 
 	if (action === "keep") {

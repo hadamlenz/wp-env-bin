@@ -3,6 +3,7 @@ const path = require("path");
 const { spawnSync } = require("child_process");
 const { logger } = require("../lib/utils/log");
 const { readE2eConfig } = require("../lib/env/config");
+const { requireDir } = require("../lib/env/check");
 
 /**
  * Perform the file-system scaffolding for `wp-env-bin e2e init`.
@@ -156,6 +157,7 @@ function getE2eDefaults() {
  * @returns {void}
  */
 function initE2e({ projectType, slug, testTheme, wpVersion, phpVersion, port }) {
+	requireDir(path.join(process.cwd(), "wp-env-bin"), "Run this command from your project root (the directory containing wp-env-bin/).");
 	const dest = path.join(process.cwd(), "wp-env-bin", "e2e");
 	const scaffold = path.join(__dirname, "../scaffold/e2e");
 
@@ -222,12 +224,14 @@ Next steps:
  * @param {string[]} args - Passthrough args to playwright test
  */
 function runE2eTests(args = []) {
+	const e2eDir = path.join(process.cwd(), "wp-env-bin", "e2e");
+	requireDir(e2eDir, "Run `wp-env-bin e2e init` first.");
 	const result = spawnSync(
 		"npx",
 		["playwright", "test", "--config=playwright.config.ts", ...args],
 		{
 			stdio: "inherit",
-			cwd: path.join(process.cwd(), "wp-env-bin", "e2e"),
+			cwd: e2eDir,
 		}
 	);
 

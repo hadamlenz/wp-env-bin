@@ -5,6 +5,7 @@ const fs = require("fs");
 const { run } = require("../lib/utils/run");
 const { logger } = require("../lib/utils/log");
 const { matchActivePlugins, buildComposerJson } = require("../lib/remote-composer");
+const { requireDir, requireFile } = require("../lib/env/check");
 
 const BLANK_COMPOSER = {
 	name: "hadamlenz/wp-env-bin",
@@ -46,7 +47,11 @@ function ensureWpEnvBinPlugin(composerDir) {
  * @returns {{ composerJson: object, matched: object, unmatched: string[], themePkg: string|null }}
  */
 function composerGet(profileName, activePaths, themeSlug, serverComposer) {
-	const { matched, unmatched } = matchActivePlugins(activePaths, serverComposer);
+	const projectSlug = path.basename(process.cwd());
+	const { matched: rawMatched, unmatched } = matchActivePlugins(activePaths, serverComposer);
+	const matched = Object.fromEntries(
+		Object.entries(rawMatched).filter(([pkg]) => !pkg.endsWith("/" + projectSlug))
+	);
 
 	const allServerPkgs = {
 		...((serverComposer && serverComposer.require) || {}),
@@ -92,6 +97,7 @@ function composerMake(profileName) {
  */
 function composerUpdate() {
 	const composerDir = path.join(process.cwd(), "wp-env-bin");
+	requireDir(composerDir, "Run this command from your project root (the directory containing wp-env-bin/).");
 	logger("> running composer update in " + composerDir + "...");
 	run("composer update", { cwd: composerDir, stdio: "inherit" });
 	logger("> composer update complete.");
@@ -105,10 +111,7 @@ function composerUpdate() {
  */
 function composerE2eInstall() {
 	const e2eDir = path.join(process.cwd(), "wp-env-bin", "e2e");
-	if (!fs.existsSync(path.join(e2eDir, "composer.json"))) {
-		logger("No composer.json found in wp-env-bin/e2e/. Run `wp-env-bin e2e init` first, then copy composer.json.example to composer.json.");
-		process.exit(1);
-	}
+	requireFile(path.join(e2eDir, "composer.json"), "Run `wp-env-bin e2e init` first, then copy composer.json.example to composer.json.");
 	logger("> running composer install in " + e2eDir + "...");
 	run("composer install", { cwd: e2eDir, stdio: "inherit" });
 	logger("> composer install complete.");
@@ -121,10 +124,7 @@ function composerE2eInstall() {
  */
 function composerE2eUpdate() {
 	const e2eDir = path.join(process.cwd(), "wp-env-bin", "e2e");
-	if (!fs.existsSync(path.join(e2eDir, "composer.json"))) {
-		logger("No composer.json found in wp-env-bin/e2e/. Run `wp-env-bin e2e init` first, then copy composer.json.example to composer.json.");
-		process.exit(1);
-	}
+	requireFile(path.join(e2eDir, "composer.json"), "Run `wp-env-bin e2e init` first, then copy composer.json.example to composer.json.");
 	logger("> running composer update in " + e2eDir + "...");
 	run("composer update", { cwd: e2eDir, stdio: "inherit" });
 	logger("> composer update complete.");

@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const { run } = require("../lib/utils/run");
 const { logger } = require("../lib/utils/log");
+const { requireDir, cleanStaleProjectDirs } = require("../lib/env/check");
 
 const PLUGIN_FILES = [
 	"wp-env-bin-plugin.php",
@@ -16,6 +17,7 @@ const PLUGIN_FILES = [
  */
 function setup(argv = []) {
 	const composerDir = path.join(process.cwd(), "wp-env-bin");
+	requireDir(composerDir, "Run this command from your project root (the directory containing wp-env-bin/).");
 
 	if (argv.includes("--delete-lock")) {
 		const lockFile = path.join(composerDir, "composer.lock");
@@ -27,6 +29,7 @@ function setup(argv = []) {
 		}
 	}
 
+	cleanStaleProjectDirs(composerDir);
 	logger("> running composer install in " + composerDir + "...", true, "info");
 	run("composer install", { cwd: composerDir, stdio: "inherit" });
 	logger("> composer install complete.", true, "success");

@@ -3,6 +3,7 @@ const path = require("path");
 const { logger } = require("../lib/utils/log");
 const { applyProjectType, saveNamedProfile } = require("../lib/config");
 const { install } = require("./install");
+const { requireDir, requireFile } = require("../lib/env/check");
 
 /**
  * Scaffold and configure wp-env-bin for the first time, then save as a named
@@ -84,6 +85,9 @@ function getProfileList() {
 function configSwitch(chosen) {
 	const dest = path.join(process.cwd(), "wp-env-bin");
 	const siteConfigsDir = path.join(dest, "site-configs");
+
+	requireDir(dest, "Run this command from your project root (the directory containing wp-env-bin/).");
+	requireFile(path.join(siteConfigsDir, chosen + ".wp-env-bin.config.json"), `Profile "${chosen}" not found in wp-env-bin/site-configs/. Run \`wp-env-bin config install\` to create it.`);
 
 	copyFileSync(
 		path.join(siteConfigsDir, chosen + ".wp-env-bin.config.json"),
