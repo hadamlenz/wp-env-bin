@@ -128,6 +128,7 @@ Subcommands:
                   Requires 'env' field in wp-env-bin.config.json
   use <path>    Validate and copy a local SQL file as the database source
   process       Rename table prefix, import DB, and run URL search-replace
+                  Requires the wp-env environment to be running (will offer to start it if not)
 `);
 }
 

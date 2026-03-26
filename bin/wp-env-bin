@@ -22,7 +22,7 @@ const { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHel
 const { composerGet, composerMake, composerUpdate, composerE2eInstall, composerE2eUpdate } = require("../commands/composer");
 const { cleanThemes, cleanPlugins, cleanAssets, cleanAll } = require("../commands/clean");
 //all of these files are from libs
-const { checkDatabase, checkHtaccess, requireDir } = require("../lib/env/check");
+const { checkDatabase, checkHtaccess, requireDir, isWpEnvRunning } = require("../lib/env/check");
 const { saveNamedProfile } = require("../lib/config");
 const { matchActivePlugins, buildComposerJson, fetchRemoteData } = require("../lib/remote-composer");
 const { run, terminus_wp } = require("../lib/utils/run");
@@ -154,17 +154,17 @@ async function promptReinitEnvironment(siteType) {
 			runWpEnv(["start"]);
 		} else {
 			console.log("\nTo get a working environment, run these steps manually:");
-			console.log(chalk.cyan("  1. wp-env-bin env setup --delete-lock"));
-			console.log(chalk.cyan("  2. wp-env-bin db get          (re-download from Pantheon)"));
-			console.log(chalk.cyan("  3. wp-env-bin db process      (import + search-replace)"));
-			console.log(chalk.cyan("  4. wp-env-bin htaccess make   (regenerate from current config)"));
-			console.log(chalk.cyan("  5. wp-env-bin env sync        (activate composer plugins)"));
-			console.log(chalk.cyan("  6. wp-env-bin env start"));
+			console.log(chalk.cyan("  0. wp-env-bin composer get    (optionally build a composer.json"));
+			console.log(chalk.cyan("  1. wp-env-bin composer install --delete-lock"));
+			console.log(chalk.cyan("  2. wp-env-bin db get          (export db from remote host)"));
+			console.log(chalk.cyan("  3. wp-env-bin env start"));
+			console.log(chalk.cyan("  4. wp-env-bin db process      (import database + search-replace)"));
+			console.log(chalk.cyan("  5. wp-env-bin htaccess make   (regenerate from current config)"));
 		}
 	} else {
-		console.log(chalk.cyan(">  run `wp-env-bin env setup --delete-lock` to reinstall dependencies."));
-		console.log(chalk.cyan(">  run `wp-env-bin env sync` to sync the database and .htaccess file for this config."));
+		console.log(chalk.cyan(">  run `wp-env-bin composer install --delete-lock` to reinstall dependencies."));
 		console.log(chalk.cyan(">  run `wp-env-bin env start` to restart the development environment."));
+		console.log(chalk.cyan(">  run `wp-env-bin env sync` to sync the database and .htaccess file for this config."));
 	}
 }
 
@@ -654,6 +654,19 @@ async function init() {
 				await getRemoteDb({ action });
 
 			} else if (subcommand === "process") {
+				if (!isWpEnvRunning()) {
+					const { confirm } = await import("@inquirer/prompts");
+					const shouldStart = await confirm({
+						message: "The wp-env environment is not running. Start it now with wp-env-bin env start?",
+						default: true,
+					});
+					if (shouldStart) {
+						runWpEnv(["start"]);
+					} else {
+						console.log(chalk.yellow("Skipping db process — start the environment first with: wp-env-bin env start"));
+						process.exit(0);
+					}
+				}
 				const { select } = await import("@inquirer/prompts");
 				// Read config to build the prompt message
 				const { readLocalConfig } = require("../lib/env/config");

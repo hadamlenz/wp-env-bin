@@ -96,6 +96,8 @@ async function takeScreenshot(page, url) {
 		`,
 	});
 	await page.waitForTimeout(500); // let animations/lazy rendering settle
+	await page.waitForLoadState('networkidle');
+	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));//scroll the page to make lazy images load
 	return page.screenshot({ fullPage: true });
 }
 
