@@ -161,10 +161,10 @@ wp-env-bin env start
 
 ```bash
 wp-env-bin composer install --delete-lock       # reinstall dependencies
-wp-env-bin db get                        # re-download from Pantheon
-wp-env-bin db process                    # import + search-replace
-wp-env-bin htaccess make                 # regenerate from current config
-wp-env-bin env sync                      # activate composer plugins
+wp-env-bin db get                               # re-download from Pantheon
+wp-env-bin db process                           # import + search-replace
+wp-env-bin htaccess make                        # regenerate from current config
+wp-env-bin env run cli plugin activate --all    # activate all plugins
 wp-env-bin env start
 ```
 
