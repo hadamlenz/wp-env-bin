@@ -126,7 +126,7 @@ All three directories are disposable — they are recreated by `composer install
 
 ### e2e
 
-- **`e2e init`** — Scaffold `wp-env-bin/e2e/` block test environment with its own `.wp-env.json`
+- **`e2e scaffold`** — Scaffold `wp-env-bin/e2e/` block test environment with its own `.wp-env.json`
 - **`e2e env <command>`** — Pass any wp-env command to the e2e environment in `wp-env-bin/e2e/`
 - **`e2e composer install`** — Run `composer install` in `wp-env-bin/e2e/`
 - **`e2e composer update`** — Run `composer update` in `wp-env-bin/e2e/`
@@ -140,7 +140,7 @@ All three directories are disposable — they are recreated by `composer install
 
 ## Project Structure
 
-Running `wp-env-bin scaffold` and `wp-env-bin e2e init` creates a `wp-env-bin/` folder in your project root. This folder holds all configuration for the wp-env-bin package — it is **not** part of your plugin or theme source and should be treated like a local tooling config directory. The active `wp-env-bin.config.json` and `composer.json` are gitignored; named profiles in `site-configs/` are tracked so teammates can share them.
+Running `wp-env-bin scaffold` and `wp-env-bin e2e scaffold` creates a `wp-env-bin/` folder in your project root. This folder holds all configuration for the wp-env-bin package — it is **not** part of your plugin or theme source and should be treated like a local tooling config directory. The active `wp-env-bin.config.json` and `composer.json` are gitignored; named profiles in `site-configs/` are tracked so teammates can share them.
 
 ```
 wp-env-bin/

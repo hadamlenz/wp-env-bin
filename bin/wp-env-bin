@@ -718,7 +718,7 @@ async function init() {
 				} else {
 					runWpEnvE2e(envArgs);
 				}
-			} else if (subcommand === "init") {
+			} else if (subcommand === "scaffold") {
 				const { select, input } = await import("@inquirer/prompts");
 				const { projectType: defaultType, pluginName: defaultSlug, e2eConfig } = getE2eDefaults();
 
@@ -778,7 +778,7 @@ async function init() {
 					console.log(chalk.yellow("Unknown e2e composer subcommand. Try:\n  wp-env-bin e2e composer install\n  wp-env-bin e2e composer update"));
 				}
 			} else {
-				console.log(chalk.yellow('Unknown e2e subcommand. Try:\n  wp-env-bin e2e init\n  wp-env-bin e2e test [--project=all-blocks-editor|all-blocks-frontend]\n  wp-env-bin e2e generate editor|frontend --file=path/to/block.json\n  wp-env-bin e2e composer install\n  wp-env-bin e2e composer update'));
+				console.log(chalk.yellow('Unknown e2e subcommand. Try:\n  wp-env-bin e2e scaffold\n  wp-env-bin e2e test [--project=all-blocks-editor|all-blocks-frontend]\n  wp-env-bin e2e generate editor|frontend --file=path/to/block.json\n  wp-env-bin e2e composer install\n  wp-env-bin e2e composer update'));
 			}
 			break;
 		}

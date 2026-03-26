@@ -38,7 +38,7 @@ Commands:
     --threshold <n>   Pixel diff % to flag as failure (default: 1)
     --limit <n>       Max sitemap URLs to test when no --url given (default: 10)
   e2e env <command>   Pass any wp-env command to the e2e environment (wp-env-bin/e2e/)
-  e2e init            Scaffold e2e/ block test environment (separate .wp-env.json, Playwright config)
+  e2e scaffold        Scaffold e2e/ block test environment (separate .wp-env.json, Playwright config)
   e2e generate editor --file=<path>    Generate editor Playwright tests from block.json
   e2e generate frontend --file=<path>  Generate frontend Playwright tests from block.json
     --glob=<pattern>  Match multiple block.json files (requires: npm i --save-dev glob)
@@ -264,7 +264,7 @@ Test flags (forwarded directly to Playwright):
   --debug                        Open Playwright inspector
 
 Examples:
-  wp-env-bin e2e init
+  wp-env-bin e2e scaffold
   wp-env-bin e2e generate editor --file=blocks/my-block/block.json
   wp-env-bin e2e generate frontend --glob="blocks/*/block.json" --screenshots
   wp-env-bin e2e test
@@ -321,7 +321,7 @@ Subcommands:
   update     Run composer update in wp-env-bin/e2e/
 
 Requires wp-env-bin/e2e/composer.json to exist.
-Run \`wp-env-bin e2e init\` first, then copy composer.json.example to composer.json.
+Run \`wp-env-bin e2e scaffold\` first, then copy composer.json.example to composer.json.
 `);
 }
 

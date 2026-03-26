@@ -16,7 +16,7 @@ Both test types run entirely from local data — no remote hosts are contacted d
 **1. Scaffold the e2e environment:**
 
 ```bash
-wp-env-bin e2e init
+wp-env-bin e2e scaffold
 ```
 
 This creates the `wp-env-bin/e2e/` directory and prompts for:
@@ -66,7 +66,7 @@ wp-env-bin e2e env start
 
 ## Block test configuration
 
-After running `wp-env-bin e2e init`, copy the example config and add each block's directory (relative to the project root) to opt it in to testing:
+After running `wp-env-bin e2e scaffold`, copy the example config and add each block's directory (relative to the project root) to opt it in to testing:
 
 ```bash
 cp wp-env-bin/e2e/wp-env-bin.e2e.config.json.example wp-env-bin/e2e/wp-env-bin.e2e.config.json
@@ -96,7 +96,7 @@ cp wp-env-bin/e2e/wp-env-bin.e2e.config.json.example wp-env-bin/e2e/wp-env-bin.e
 | `testMysqlPort` | MySQL port for the tests e2e environment (default: `51607`) |
 | `wpConstants` | WordPress constants written to the test environment's `.wp-env.json` `config` block — overrides the entire object |
 
-These fields are all optional. When present they set the defaults shown during `wp-env-bin e2e init` prompts, and `mysqlPort`, `testMysqlPort`, and `wpConstants` are written directly to the generated `.wp-env.json`.
+These fields are all optional. When present they set the defaults shown during `wp-env-bin e2e scaffold` prompts, and `mysqlPort`, `testMysqlPort`, and `wpConstants` are written directly to the generated `.wp-env.json`.
 
 - A block in `editor` but not `frontend` skips frontend tests (e.g. static blocks or blocks in development).
 - `block.json` is always expected at `{dir}/block.json` — this is the WordPress convention.

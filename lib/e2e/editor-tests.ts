@@ -591,7 +591,7 @@ export function registerEditorTestsFromConfig(test: any, configPath: string): vo
   if (!fs.existsSync(configPath)) {
     throw new Error(
       `[wp-env-bin] Config file not found: ${configPath}\n` +
-      'Run "wp-env-bin e2e init" to create it, then add block directories to the "editor" array.'
+      'Run "wp-env-bin e2e scaffold" to create it, then add block directories to the "editor" array.'
     );
   }
 

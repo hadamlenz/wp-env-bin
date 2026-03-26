@@ -111,7 +111,7 @@ function composerUpdate() {
  */
 function composerE2eInstall() {
 	const e2eDir = path.join(process.cwd(), "wp-env-bin", "e2e");
-	requireFile(path.join(e2eDir, "composer.json"), "Run `wp-env-bin e2e init` first, then copy composer.json.example to composer.json.");
+	requireFile(path.join(e2eDir, "composer.json"), "Run `wp-env-bin e2e scaffold` first, then copy composer.json.example to composer.json.");
 	logger("> running composer install in " + e2eDir + "...");
 	run("composer install", { cwd: e2eDir, stdio: "inherit" });
 	logger("> composer install complete.");
@@ -124,7 +124,7 @@ function composerE2eInstall() {
  */
 function composerE2eUpdate() {
 	const e2eDir = path.join(process.cwd(), "wp-env-bin", "e2e");
-	requireFile(path.join(e2eDir, "composer.json"), "Run `wp-env-bin e2e init` first, then copy composer.json.example to composer.json.");
+	requireFile(path.join(e2eDir, "composer.json"), "Run `wp-env-bin e2e scaffold` first, then copy composer.json.example to composer.json.");
 	logger("> running composer update in " + e2eDir + "...");
 	run("composer update", { cwd: e2eDir, stdio: "inherit" });
 	logger("> composer update complete.");

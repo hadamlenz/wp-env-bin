@@ -6,7 +6,7 @@ const { readE2eConfig } = require("../lib/env/config");
 const { requireDir } = require("../lib/env/check");
 
 /**
- * Perform the file-system scaffolding for `wp-env-bin e2e init`.
+ * Perform the file-system scaffolding for `wp-env-bin e2e scaffold`.
  * Separated from prompt logic so it can be called and tested independently.
  *
  * @param {string} dest    - Absolute path to the e2e destination directory
@@ -225,7 +225,7 @@ Next steps:
  */
 function runE2eTests(args = []) {
 	const e2eDir = path.join(process.cwd(), "wp-env-bin", "e2e");
-	requireDir(e2eDir, "Run `wp-env-bin e2e init` first.");
+	requireDir(e2eDir, "Run `wp-env-bin e2e scaffold` first.");
 	const result = spawnSync(
 		"npx",
 		["playwright", "test", "--config=playwright.config.ts", ...args],
