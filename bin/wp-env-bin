@@ -3,6 +3,7 @@
 const { existsSync } = require("fs");
 const { execSync } = require("child_process");
 const path = require("path");
+const chalk = require("chalk");
 
 const command = process.argv[2];
 const subcommand = process.argv[3];
@@ -140,7 +141,7 @@ async function promptReinitEnvironment(siteType) {
 			default: false,
 		});
 		if (reinit) {
-			console.log("> Reinitializing environment...");
+			console.log(chalk.cyan("> Reinitializing environment..."));
 			setup(["--delete-lock"]);
 			await getRemoteDb({ action: "redownload" });
 			await processDb();
@@ -152,17 +153,17 @@ async function promptReinitEnvironment(siteType) {
 			runWpEnv(["start"]);
 		} else {
 			console.log("\nTo get a working environment, run these steps manually:");
-			console.log("  1. wp-env-bin env setup --delete-lock");
-			console.log("  2. wp-env-bin db get          (re-download from Pantheon)");
-			console.log("  3. wp-env-bin db process      (import + search-replace)");
-			console.log("  4. wp-env-bin htaccess make   (regenerate from current config)");
-			console.log("  5. wp-env-bin env sync        (activate composer plugins)");
-			console.log("  6. wp-env-bin env start");
+			console.log(chalk.cyan("  1. wp-env-bin env setup --delete-lock"));
+			console.log(chalk.cyan("  2. wp-env-bin db get          (re-download from Pantheon)"));
+			console.log(chalk.cyan("  3. wp-env-bin db process      (import + search-replace)"));
+			console.log(chalk.cyan("  4. wp-env-bin htaccess make   (regenerate from current config)"));
+			console.log(chalk.cyan("  5. wp-env-bin env sync        (activate composer plugins)"));
+			console.log(chalk.cyan("  6. wp-env-bin env start"));
 		}
 	} else {
-		console.log(">  run `wp-env-bin env setup --delete-lock` to reinstall dependencies.");
-		console.log(">  run `wp-env-bin env sync` to sync the database and .htaccess file for this config.");
-		console.log(">  run `wp-env-bin env start` to restart the development environment.");
+		console.log(chalk.cyan(">  run `wp-env-bin env setup --delete-lock` to reinstall dependencies."));
+		console.log(chalk.cyan(">  run `wp-env-bin env sync` to sync the database and .htaccess file for this config."));
+		console.log(chalk.cyan(">  run `wp-env-bin env start` to restart the development environment."));
 	}
 }
 
@@ -172,8 +173,8 @@ async function init() {
 	switch (command) {
 		case "config": {
 			if (subcommand === "install") {
-				console.log("[Deprecated] `config install` will be removed in a future version.");
-				console.log("  Use: wp-env-bin scaffold && wp-env-bin config create\n");
+				console.log(chalk.yellow("[Deprecated] `config install` will be removed in a future version."));
+				console.log(chalk.yellow("  Use: wp-env-bin scaffold && wp-env-bin config create\n"));
 				// ── Gather install options ──────────────────────────────────────
 				const { confirm, select } = await import("@inquirer/prompts");
 				const ctx = getInstallContext();
@@ -213,14 +214,14 @@ async function init() {
 				const dest = path.join(process.cwd(), "wp-env-bin");
 				const configPath = path.join(dest, "wp-env-bin.config.json");
 				if (!existsSync(configPath)) {
-					console.log("No wp-env-bin.config.json found. Run `wp-env-bin config install` first.");
+					console.log(chalk.red("No wp-env-bin.config.json found. Run `wp-env-bin config install` first."));
 					process.exit(1);
 				}
 				let existingConfig = {};
 				try {
 					existingConfig = JSON.parse(readFileSync(configPath, "utf8"));
 				} catch {
-					console.log("wp-env-bin.config.json is malformed. Run `wp-env-bin config install` to start fresh.");
+					console.log(chalk.red("wp-env-bin.config.json is malformed. Run `wp-env-bin config install` to start fresh."));
 					process.exit(1);
 				}
 				const config = await promptForConfig(existingConfig);
@@ -234,12 +235,12 @@ async function init() {
 				// ── Gather switch options ───────────────────────────────────────
 				const profiles = getProfileList();
 				if (!profiles) {
-					console.log("No site-configs/ directory found.");
+					console.log(chalk.red("No site-configs/ directory found."));
 					console.log("Run `wp-env-bin config install` and save a named profile to get started.");
 					break;
 				}
 				if (profiles.length === 0) {
-					console.log("No named profiles found in wp-env-bin/site-configs/.");
+					console.log(chalk.red("No named profiles found in wp-env-bin/site-configs/."));
 					console.log("Run `wp-env-bin config install` or `wp-env-bin config update` and save a profile to get started.");
 					break;
 				}
@@ -354,7 +355,7 @@ async function init() {
 				// ── Gather config delete options ────────────────────────────────
 				const profiles = getProfileList();
 				if (!profiles || profiles.length === 0) {
-					console.log("No profiles found in wp-env-bin/site-configs/.");
+					console.log(chalk.red("No profiles found in wp-env-bin/site-configs/."));
 					console.log("Run `wp-env-bin config create` to create one.");
 					break;
 				}
@@ -376,7 +377,7 @@ async function init() {
 					}
 				}
 				console.log("\nThe following files will be deleted:");
-				toDelete.forEach(f => console.log("  site-configs/" + f));
+				toDelete.forEach(f => console.log(chalk.red("  site-configs/" + f)));
 
 				const confirmed = await confirmDelete({
 					message: "Confirm deletion?",
@@ -398,15 +399,15 @@ async function init() {
 							void activeContent; void profilePath;
 						} catch { /* no-op */ }
 					}
-					console.log("\nNote: the active wp-env-bin.config.json was not removed.");
+					console.log(chalk.gray("\nNote: the active wp-env-bin.config.json was not removed."));
 				} else {
-					console.log("Cancelled.");
+					console.log(chalk.gray("Cancelled."));
 				}
 
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				configHelp();
 			} else {
-				console.log("Unknown config subcommand. Try:\n  wp-env-bin config scaffold\n  wp-env-bin config create\n  wp-env-bin config install\n  wp-env-bin config update\n  wp-env-bin config switch\n  wp-env-bin config delete");
+				console.log(chalk.yellow("Unknown config subcommand. Try:\n  wp-env-bin config scaffold\n  wp-env-bin config create\n  wp-env-bin config install\n  wp-env-bin config update\n  wp-env-bin config switch\n  wp-env-bin config delete"));
 			}
 			break;
 		}
@@ -463,7 +464,7 @@ async function init() {
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				dbHelp();
 			} else {
-				console.log('Unknown subcommand. Try:\n  wp-env-bin db get\n  wp-env-bin db process\n  wp-env-bin db use <path/to/file.sql>');
+				console.log(chalk.yellow('Unknown subcommand. Try:\n  wp-env-bin db get\n  wp-env-bin db process\n  wp-env-bin db use <path/to/file.sql>'));
 			}
 			break;
 		}
@@ -486,7 +487,7 @@ async function init() {
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				htaccessHelp();
 			} else {
-				console.log('Unknown subcommand. Try:\n  wp-env-bin htaccess make\n  wp-env-bin htaccess put');
+				console.log(chalk.yellow('Unknown subcommand. Try:\n  wp-env-bin htaccess make\n  wp-env-bin htaccess put'));
 			}
 			break;
 		}
@@ -586,7 +587,7 @@ async function init() {
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				compareHelp();
 			} else {
-				console.log('Unknown subcommand. Try: wp-env-bin visual compare');
+				console.log(chalk.yellow('Unknown subcommand. Try: wp-env-bin visual compare'));
 			}
 			break;
 		}
@@ -657,10 +658,10 @@ async function init() {
 				} else if (e2eComposerSub === "help" || e2eComposerSub === "--help" || e2eComposerSub === "-h") {
 					composerE2eHelp();
 				} else {
-					console.log("Unknown e2e composer subcommand. Try:\n  wp-env-bin e2e composer install\n  wp-env-bin e2e composer update");
+					console.log(chalk.yellow("Unknown e2e composer subcommand. Try:\n  wp-env-bin e2e composer install\n  wp-env-bin e2e composer update"));
 				}
 			} else {
-				console.log('Unknown e2e subcommand. Try:\n  wp-env-bin e2e init\n  wp-env-bin e2e test [--project=all-blocks-editor|all-blocks-frontend]\n  wp-env-bin e2e generate editor|frontend --file=path/to/block.json\n  wp-env-bin e2e composer install\n  wp-env-bin e2e composer update');
+				console.log(chalk.yellow('Unknown e2e subcommand. Try:\n  wp-env-bin e2e init\n  wp-env-bin e2e test [--project=all-blocks-editor|all-blocks-frontend]\n  wp-env-bin e2e generate editor|frontend --file=path/to/block.json\n  wp-env-bin e2e composer install\n  wp-env-bin e2e composer update'));
 			}
 			break;
 		}
@@ -682,7 +683,7 @@ async function init() {
 
 				const profiles = getProfileList();
 				if (!profiles || profiles.length === 0) {
-					console.log("No profiles found in wp-env-bin/site-configs/.");
+					console.log(chalk.red("No profiles found in wp-env-bin/site-configs/."));
 					console.log("Run `wp-env-bin config create` to create one.");
 					break;
 				}
@@ -695,7 +696,7 @@ async function init() {
 				});
 
 				if (runtimeUrl) {
-					console.log("> fetching " + runtimeUrl + "...");
+					console.log(chalk.cyan("> fetching " + runtimeUrl + "..."));
 					let fetchedComposer;
 					try {
 						const https = require("https");
@@ -710,7 +711,7 @@ async function init() {
 						});
 						fetchedComposer = JSON.parse(raw);
 					} catch (err) {
-						console.error("Failed to fetch composer.json: " + (err.message || err));
+						console.error(chalk.red("Failed to fetch composer.json: " + (err.message || err)));
 						break;
 					}
 
@@ -724,12 +725,12 @@ async function init() {
 						mkdirSync(path.join(dest, "site-configs"), { recursive: true });
 						const outPath = path.join(dest, "site-configs", chosenComp + ".composer.json");
 						writeFileSync(outPath, JSON.stringify(fetchedComposer, null, 4), "utf8");
-						console.log("> saved site-configs/" + chosenComp + ".composer.json");
+						console.log(chalk.green("> saved site-configs/" + chosenComp + ".composer.json"));
 
 						const copyActive = await confComp({ message: "Also copy to active wp-env-bin/composer.json?", default: false });
 						if (copyActive) {
 							writeFileSync(path.join(dest, "composer.json"), JSON.stringify(fetchedComposer, null, 4), "utf8");
-							console.log("> copied to wp-env-bin/composer.json");
+							console.log(chalk.green("> copied to wp-env-bin/composer.json"));
 						}
 					}
 					break;
@@ -742,22 +743,22 @@ async function init() {
 				const composerPath = runtimePath || savedPath || null;
 
 				if (!compEnv) {
-					console.log("This profile has no 'env' set — cannot connect to a remote site.");
+					console.log(chalk.red("This profile has no 'env' set — cannot connect to a remote site."));
 					console.log("Add it with `wp-env-bin config update`.");
 					break;
 				}
 				if (!composerPath) {
-					console.log("No composerPath set. Use --path /code/composer.json or add it to the profile with `wp-env-bin config update`.");
+					console.log(chalk.red("No composerPath set. Use --path /code/composer.json or add it to the profile with `wp-env-bin config update`."));
 					break;
 				}
 
-				console.log("> fetching active plugins from " + compEnv + "...");
-				console.log("> reading " + composerPath + " from " + compEnv + "...");
+				console.log(chalk.cyan("> fetching active plugins from " + compEnv + "..."));
+				console.log(chalk.cyan("> reading " + composerPath + " from " + compEnv + "..."));
 				let remoteData;
 				try {
 					remoteData = fetchRemoteData(compEnv, compUrl, composerPath);
 				} catch (err) {
-					console.error("Failed to fetch remote data: " + (err.message || err));
+					console.error(chalk.red("Failed to fetch remote data: " + (err.message || err)));
 					break;
 				}
 
@@ -772,12 +773,12 @@ async function init() {
 					? Object.keys(allServerPkgs).find(p => p.split("/")[1] === themeSlug) || null
 					: null;
 
-				console.log("\n> Matched packages (" + (Object.keys(preMatched).length + (themePkg ? 1 : 0)) + "):");
-				for (const [pkg, ver] of Object.entries(preMatched)) console.log("    " + pkg + ": " + ver);
-				if (themePkg) console.log("    " + themePkg + ": * (active theme)");
+				console.log(chalk.cyan("\n> Matched packages (" + (Object.keys(preMatched).length + (themePkg ? 1 : 0)) + "):"));
+				for (const [pkg, ver] of Object.entries(preMatched)) console.log(chalk.gray("    " + pkg + ": " + ver));
+				if (themePkg) console.log(chalk.gray("    " + themePkg + ": * (active theme)"));
 				if (preUnmatched.length > 0) {
-					console.log("\n> Unmatched active plugins (not found in server composer.json — likely manually uploaded):");
-					for (const f of preUnmatched) console.log("    " + f);
+					console.log(chalk.yellow("\n> Unmatched active plugins (not found in server composer.json — likely manually uploaded):"));
+					for (const f of preUnmatched) console.log(chalk.gray("    " + f));
 				}
 
 				// Checkbox — let user deselect unwanted packages before saving
@@ -790,10 +791,13 @@ async function init() {
 					pluginChoices.push({ name: themePkg + ": * (active theme)", value: "__theme__", checked: true });
 				}
 
+				if (pluginChoices.length > 0) process.stdout.write("\x1Bc");
 				const selected = pluginChoices.length > 0
 					? await checkboxComp({
 						message: "Select packages to include in composer.json (deselect to exclude):",
 						choices: pluginChoices,
+						pageSize: (process.stdout.rows || 24) - 4,
+						loop: false,
 					})
 					: [];
 
@@ -811,7 +815,7 @@ async function init() {
 					const compDest = path.join(process.cwd(), "wp-env-bin");
 					require("fs").mkdirSync(path.join(compDest, "site-configs"), { recursive: true });
 					require("fs").writeFileSync(path.join(compDest, "site-configs", chosenComp + ".composer.json"), JSON.stringify(composerJson, null, 4), "utf8");
-					logger("> saved site-configs/" + chosenComp + ".composer.json");
+					console.log(chalk.green("> saved site-configs/" + chosenComp + ".composer.json"));
 
 					const copyActive = await confComp({ message: "Also copy to active wp-env-bin/composer.json?", default: false });
 					if (copyActive) {
@@ -820,7 +824,7 @@ async function init() {
 							JSON.stringify(composerJson, null, 4),
 							"utf8"
 						);
-						console.log("> copied to wp-env-bin/composer.json");
+						console.log(chalk.green("> copied to wp-env-bin/composer.json"));
 					}
 				}
 
@@ -828,7 +832,7 @@ async function init() {
 			} else if (subcommand === "make") {
 				const profiles = getProfileList();
 				if (!profiles || profiles.length === 0) {
-					console.log("No profiles found in wp-env-bin/site-configs/.");
+					console.log(chalk.red("No profiles found in wp-env-bin/site-configs/."));
 					console.log("Run `wp-env-bin config create` to create one.");
 					break;
 				}
@@ -844,13 +848,13 @@ async function init() {
 					const { readFileSync: readMake, writeFileSync: writeMake } = require("fs");
 					const srcPath = path.join(process.cwd(), "wp-env-bin", "site-configs", chosenMake + ".composer.json");
 					writeMake(path.join(process.cwd(), "wp-env-bin", "composer.json"), readMake(srcPath, "utf8"), "utf8");
-					console.log("> copied to wp-env-bin/composer.json");
+					console.log(chalk.green("> copied to wp-env-bin/composer.json"));
 				}
 
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				composerHelp();
 			} else {
-				console.log("Unknown composer subcommand. Try:\n  wp-env-bin composer install\n  wp-env-bin composer update\n  wp-env-bin composer get\n  wp-env-bin composer make");
+				console.log(chalk.yellow("Unknown composer subcommand. Try:\n  wp-env-bin composer install\n  wp-env-bin composer update\n  wp-env-bin composer get\n  wp-env-bin composer make"));
 			}
 			break;
 		}
@@ -872,6 +876,6 @@ async function init() {
 }
 
 init().catch((err) => {
-	console.error(err.message || err);
+	console.error(chalk.red(err.message || err));
 	process.exit(1);
 });

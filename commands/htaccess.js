@@ -2,7 +2,7 @@ const { writeFileSync, statSync, rmSync } = require("fs");
 const path = require("path");
 const htaccessTemplate = require("../templates/htaccess.tpl");
 const { logger } = require("../lib/utils/log");
-const { wpcli } = require("../lib/utils/run");
+const { wpenvrun } = require("../lib/utils/run");
 const { readLocalConfig, CONTAINER_ASSETS_PATH } = require("../lib/env/config");
 const { checkHtaccess } = require("../lib/env/check");
 
@@ -17,7 +17,7 @@ function clearIfDirectory(filePath) {
 	try {
 		const stat = statSync(filePath);
 		if (stat.isDirectory()) {
-			logger("> removing directory at " + filePath + " (created by Docker when file was missing)");
+			logger("> removing directory at " + filePath + " (created by Docker when file was missing)", true, "info");
 			rmSync(filePath, { recursive: true });
 		}
 	} catch {
@@ -52,7 +52,7 @@ function makeHtaccess({ action = "regenerate" } = {}) {
 	}
 
 	if (action === "useIt") {
-		logger("> using existing wp-env-bin/assets/.htaccess");
+		logger("> using existing wp-env-bin/assets/.htaccess", true, "info");
 		return;
 	}
 
@@ -61,18 +61,18 @@ function makeHtaccess({ action = "regenerate" } = {}) {
 
 	clearIfDirectory(outPath);
 	writeFileSync(outPath, content, "utf8");
-	logger("> .htaccess written to wp-env-bin/assets/.htaccess");
+	logger("> .htaccess written to wp-env-bin/assets/.htaccess", true, "success");
 	if (resolvedSiteType === "multisite") {
-		logger("> media proxy: /wp-content/uploads/* → https://" + url + "/wp-content/uploads/sites/" + siteId + "/");
+		logger("> media proxy: /wp-content/uploads/* → https://" + url + "/wp-content/uploads/sites/" + siteId + "/", true, "info");
 	} else {
-		logger("> media proxy: /wp-content/uploads/* → https://" + url + "/wp-content/uploads/");
+		logger("> media proxy: /wp-content/uploads/* → https://" + url + "/wp-content/uploads/", true, "info");
 	}
 
 	try {
-		wpcli("bash -c 'cp " + CONTAINER_ASSETS_PATH + "/.htaccess /var/www/html/.htaccess'");
-		logger("> htaccess applied to running container.");
+		wpenvrun("bash -c 'cp " + CONTAINER_ASSETS_PATH + "/.htaccess /var/www/html/.htaccess'");
+		logger("> htaccess applied to running container.", true, "success");
 	} catch {
-		logger("> note: run `wp-env-bin env start` to apply htaccess to the container.");
+		logger("> note: run `wp-env-bin env start` to apply htaccess to the container.", true, "muted");
 	}
 }
 
@@ -87,8 +87,8 @@ function putHtaccess() {
 	if (!require("fs").existsSync(localPath)) {
 		throw new Error("wp-env-bin/assets/.htaccess does not exist. Run `wp-env-bin htaccess make` first.");
 	}
-	wpcli("bash -c 'cp " + CONTAINER_ASSETS_PATH + "/.htaccess /var/www/html/.htaccess'");
-	logger("> htaccess applied to running container.");
+	wpenvrun("bash -c 'cp " + CONTAINER_ASSETS_PATH + "/.htaccess /var/www/html/.htaccess'");
+	logger("> htaccess applied to running container.", true, "success");
 }
 
 module.exports = { makeHtaccess, putHtaccess };

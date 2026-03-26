@@ -72,39 +72,60 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 
 ## Commands
 
-| Command | Description |
-|---|---|
-| `wp-env-bin scaffold` | Copy `wp-env-bin/` template files into your project (skips existing files on re-run) |
-| `wp-env-bin config create` | Prompt for site config values and save as a named profile in `site-configs/` |
-| `wp-env-bin config switch` | Pick a named profile from `site-configs/` and activate it |
-| `wp-env-bin config delete` | Remove a named profile from `site-configs/` |
-| `wp-env-bin config update` | Re-run configuration prompts using existing values as defaults |
-| `wp-env-bin db get` | Export the database from Pantheon via Terminus *(requires `env` in config)* |
-| `wp-env-bin db use <path>` | Validate and use a local SQL file instead of downloading from Pantheon |
-| `wp-env-bin db process` | Rename table prefix, import DB into local env, run URL search-replace |
-| `wp-env-bin htaccess make` | Generate `.htaccess` to reverse-proxy media uploads from the live site |
-| `wp-env-bin htaccess put` | Copy the existing `wp-env-bin/assets/.htaccess` into the running wp-env container |
-| `wp-env-bin composer install` | Run `composer install` in `wp-env-bin/` to install plugins and themes (same as `env setup`) |
-| `wp-env-bin composer install --delete-lock` | Delete `composer.lock` before installing |
-| `wp-env-bin composer update` | Run `composer update` in `wp-env-bin/` |
-| `wp-env-bin composer get` | Read active plugins + server composer.json via WP-CLI and build a companion composer.json for a profile |
-| `wp-env-bin composer get --path <path>` | Override the composerPath at runtime (e.g. `--path /code/composer.json`) |
-| `wp-env-bin composer get --url <url>` | Fetch a composer.json from a URL and save it directly for a profile (no active-plugin matching) |
-| `wp-env-bin composer make` | Create a blank companion composer.json for a named profile |
-| `wp-env-bin env sync` | Run `db get` + `db process` + `htaccess make` in sequence |
-| `wp-env-bin env <command>` | Pass any wp-env command to the dev environment in `wp-env-bin/` |
-| `wp-env-bin visual compare --url /` | Visual A/B regression test — screenshot live vs local and diff |
-| `wp-env-bin visual compare --url /your-page/` | Compare a specific page path |
-| `wp-env-bin e2e env <command>` | Pass any wp-env command to the e2e environment in `wp-env-bin/e2e/` |
-| `wp-env-bin e2e composer install` | Run `composer install` in `wp-env-bin/e2e/` |
-| `wp-env-bin e2e composer update` | Run `composer update` in `wp-env-bin/e2e/` |
-| `wp-env-bin e2e init` | Scaffold `wp-env-bin/e2e/` block test environment with its own `.wp-env.json` |
-| `wp-env-bin e2e test` | Run all Playwright tests from `wp-env-bin/e2e/` |
-| `wp-env-bin e2e test --project=all-blocks-editor` | Run editor tests only |
-| `wp-env-bin e2e test --project=all-blocks-frontend` | Run frontend tests only |
-| `wp-env-bin e2e generate editor --file=<path>` | Generate Playwright editor tests from a `block.json` file |
-| `wp-env-bin e2e generate frontend --file=<path>` | Generate Playwright frontend tests from a `block.json` file |
-| `wp-env-bin help` | Show command reference |
+### scaffold / help
+
+- **`wp-env-bin scaffold`** — Copy `wp-env-bin/` template files into your project (skips existing files on re-run)
+- **`wp-env-bin help`** — Show command reference
+
+### config
+
+- **`config create`** — Prompt for site config values and save as a named profile in `site-configs/`
+- **`config switch`** — Pick a named profile from `site-configs/` and activate it
+- **`config delete`** — Remove a named profile from `site-configs/`
+- **`config update`** — Re-run configuration prompts using existing values as defaults
+
+### db
+
+- **`db get`** — Export the database from Pantheon via Terminus *(requires `env` in config)*
+- **`db use <path>`** — Validate and use a local SQL file instead of downloading from Pantheon
+- **`db process`** — Rename table prefix, import DB into local env, run URL search-replace
+
+### htaccess
+
+- **`htaccess make`** — Generate `.htaccess` to reverse-proxy media uploads from the live site
+- **`htaccess put`** — Copy the existing `wp-env-bin/assets/.htaccess` into the running wp-env container
+
+### composer
+
+- **`composer install`** — Run `composer install` in `wp-env-bin/` to install plugins and themes
+  - `--delete-lock` — Delete `composer.lock` before installing
+- **`composer update`** — Run `composer update` in `wp-env-bin/`
+- **`composer get`** — Read active plugins + server composer.json via WP-CLI and build a companion composer.json for a profile
+  - `--path <path>` — Override composerPath at runtime (e.g. `--path /code/composer.json`)
+  - `--url <url>` — Fetch a composer.json from a URL and save it directly for a profile (no active-plugin matching)
+- **`composer make`** — Create a blank companion composer.json for a named profile
+
+### env
+
+- **`env sync`** — Run `db get` + `db process` + `htaccess make` in sequence
+- **`env <command>`** — Pass any wp-env command to the dev environment in `wp-env-bin/`
+
+### visual
+
+- **`visual compare --url /`** — Visual A/B regression test — screenshot live vs local and diff
+- **`visual compare --url /your-page/`** — Compare a specific page path
+
+### e2e
+
+- **`e2e init`** — Scaffold `wp-env-bin/e2e/` block test environment with its own `.wp-env.json`
+- **`e2e env <command>`** — Pass any wp-env command to the e2e environment in `wp-env-bin/e2e/`
+- **`e2e composer install`** — Run `composer install` in `wp-env-bin/e2e/`
+- **`e2e composer update`** — Run `composer update` in `wp-env-bin/e2e/`
+- **`e2e test`** — Run all Playwright tests from `wp-env-bin/e2e/`
+  - `--project=all-blocks-editor` — Editor tests only
+  - `--project=all-blocks-frontend` — Frontend tests only
+- **`e2e generate editor --file=<path>`** — Generate Playwright editor tests from a `block.json` file
+- **`e2e generate frontend --file=<path>`** — Generate Playwright frontend tests from a `block.json` file
 
 ---
 

@@ -17,7 +17,7 @@ const { validateSqlFile } = require("../lib/db");
  * @returns {string} Comma-separated list of table names
  */
 async function getRemoteTables(env, url) {
-	logger("> fetching remote table list from " + env + " (" + url + ")...");
+	logger("> fetching remote table list from " + env + " (" + url + ")...", true, "info");
 	const result = terminus_wp(
 		env,
 		"db tables --format=csv --url=" + url + " --all-tables-with-prefix",
@@ -50,15 +50,15 @@ async function getRemoteDb({ action = "redownload" } = {}) {
 	}
 
 	if (action === "useIt") {
-		logger("> using existing wp-env-bin/assets/database.sql");
+		logger("> using existing wp-env-bin/assets/database.sql", true, "info");
 		return;
 	}
 
 	const tables = await getRemoteTables(env, url);
-	logger("> found tables: " + tables);
+	logger("> found tables: " + tables, true, "info");
 
 	const outPath = "./wp-env-bin/assets/database.sql";
-	logger("> exporting database to " + outPath + "...");
+	logger("> exporting database to " + outPath + "...", true, "info");
 
 	terminus_wp(
 		env,
@@ -67,7 +67,7 @@ async function getRemoteDb({ action = "redownload" } = {}) {
 	);
 
 	if (checkDatabase()) {
-		logger("> database exported successfully.");
+		logger("> database exported successfully.", true, "success");
 	} else {
 		throw new Error("Database export failed — wp-env-bin/assets/database.sql not found.");
 	}
@@ -94,19 +94,19 @@ function useDb(filePath, { action = "replace" } = {}) {
 	}
 
 	const resolved = path.resolve(filePath);
-	logger("> validating " + resolved + "...");
+	logger("> validating " + resolved + "...", true, "info");
 	validateSqlFile(resolved);
-	logger("> validation passed (mysqldump header and WordPress options table found)");
+	logger("> validation passed (mysqldump header and WordPress options table found)", true, "success");
 
 	const dest = path.join(process.cwd(), "wp-env-bin/assets/database.sql");
 
 	if (action === "keep") {
-		logger("> keeping existing wp-env-bin/assets/database.sql");
+		logger("> keeping existing wp-env-bin/assets/database.sql", true, "info");
 		return;
 	}
 
 	copyFileSync(resolved, dest);
-	logger("> copied to wp-env-bin/assets/database.sql");
+	logger("> copied to wp-env-bin/assets/database.sql", true, "success");
 	logger("> run 'wp-env-bin db process' to import it into the local environment");
 }
 
@@ -126,14 +126,14 @@ function prefixRenameFile(oldPrefix) {
 	const sqlPath = path.join(process.cwd(), "wp-env-bin/assets/database.sql");
 	const outPath = path.join(process.cwd(), "wp-env-bin/assets/database.modified.sql");
 
-	logger("> reading database.sql...");
+	logger("> reading database.sql...", true, "info");
 	const content = readFileSync(sqlPath, "utf8");
 
 	const { modified, count } = renamePrefix(content, oldPrefix);
 
 	writeFileSync(outPath, modified, "utf8");
-	logger("> prefix rename: replaced " + count + " occurrences of '" + oldPrefix + "' with 'wp_'");
-	logger("> written to wp-env-bin/assets/database.modified.sql");
+	logger("> prefix rename: replaced " + count + " occurrences of '" + oldPrefix + "' with 'wp_'", true, "success");
+	logger("> written to wp-env-bin/assets/database.modified.sql", true, "success");
 }
 
 /**
@@ -143,9 +143,9 @@ function prefixRenameFile(oldPrefix) {
  */
 function importDb(filename) {
 	const importPath = CONTAINER_ASSETS_PATH + "/" + (filename || "database.modified.sql");
-	logger("> importing database from " + importPath + "...");
+	logger("> importing database from " + importPath + "...", true, "info");
 	wpcli("wp db import " + importPath);
-	logger("> database imported.");
+	logger("> database imported.", true, "success");
 }
 
 /**
@@ -161,14 +161,14 @@ function searchReplace(url) {
 		const wpEnvJson = readWpEnvJson();
 		port = (wpEnvJson.env && wpEnvJson.env.development && wpEnvJson.env.development.port) || port;
 	} catch {
-		logger("> could not read .wp-env.json, using default port " + port);
+		logger("> could not read .wp-env.json, using default port " + port, true, "warn");
 	}
 
 	const local = "http://localhost:" + port;
-	logger("> search-replace: https://" + url + " → " + local);
+	logger("> search-replace: https://" + url + " → " + local, true, "info");
 	wpcli("wp search-replace https://" + url + " " + local + " --report-changed-only");
 
-	logger("> search-replace: http://" + url + " → " + local);
+	logger("> search-replace: http://" + url + " → " + local, true, "info");
 	wpcli("wp search-replace http://" + url + " " + local + " --report-changed-only");
 }
 
@@ -181,10 +181,10 @@ function searchReplace(url) {
 async function createAdminUser(username, email, password) {
 	try {
 		wpcli(`wp user create ${username} ${email} --role=administrator --user_pass=${password}`);
-		logger(`> created admin user (username: ${username}, password: ${password})`);
+		logger(`> created admin user (username: ${username}, password: ${password})`, true, "success");
 	} catch {
 		wpcli(`wp user update ${username} --user_pass=${password} --role=administrator`);
-		logger(`> reset admin user password to '${password}'`);
+		logger(`> reset admin user password to '${password}'`, true, "success");
 	}
 }
 

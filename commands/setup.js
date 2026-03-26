@@ -21,15 +21,15 @@ function setup(argv = []) {
 		const lockFile = path.join(composerDir, "composer.lock");
 		if (fs.existsSync(lockFile)) {
 			fs.unlinkSync(lockFile);
-			logger("> deleted composer.lock");
+			logger("> deleted composer.lock", true, "success");
 		} else {
-			logger("> composer.lock not found, skipping delete");
+			logger("> composer.lock not found, skipping delete", true, "muted");
 		}
 	}
 
-	logger("> running composer install in " + composerDir + "...");
+	logger("> running composer install in " + composerDir + "...", true, "info");
 	run("composer install", { cwd: composerDir, stdio: "inherit" });
-	logger("> composer install complete.");
+	logger("> composer install complete.", true, "success");
 
 	// Ensure wp-env-bin-plugin is present — Composer may remove it on a fresh install
 	// because the plugins/ directory is gitignored and managed by composer/installers.
@@ -39,7 +39,7 @@ function setup(argv = []) {
 	for (const file of PLUGIN_FILES) {
 		fs.copyFileSync(path.join(pluginSrc, file), path.join(pluginDest, file));
 	}
-	logger("> ensured wp-env-bin-plugin is present.");
+	logger("> ensured wp-env-bin-plugin is present.", true, "success");
 }
 
 module.exports = { setup };

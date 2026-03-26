@@ -34,19 +34,19 @@ function configUpdate(config, profileOptions) {
 	const configPath = path.join(dest, "wp-env-bin.config.json");
 
 	if (!existsSync(configPath)) {
-		logger("No wp-env-bin.config.json found. Run `wp-env-bin config install` first.");
+		logger("No wp-env-bin.config.json found. Run `wp-env-bin config install` first.", true, "error");
 		process.exit(1);
 	}
 
 	writeFileSync(configPath, JSON.stringify(config, null, "\t"), "utf8");
-	logger("> updated wp-env-bin/wp-env-bin.config.json");
+	logger("> updated wp-env-bin/wp-env-bin.config.json", true, "success");
 
 	const wpEnvPath = path.join(dest, ".wp-env.json");
 	try {
 		const wpEnv = JSON.parse(readFileSync(wpEnvPath, "utf8"));
 		const updatedWpEnv = applyProjectType(wpEnv, config.projectType);
 		writeFileSync(wpEnvPath, JSON.stringify(updatedWpEnv, null, 4), "utf8");
-		logger("> updated wp-env-bin/.wp-env.json (" + config.projectType + ")");
+		logger("> updated wp-env-bin/.wp-env.json (" + config.projectType + ")", true, "success");
 	} catch {
 		// .wp-env.json missing or malformed — leave it as-is
 	}
@@ -89,12 +89,12 @@ function configSwitch(chosen) {
 		path.join(siteConfigsDir, chosen + ".wp-env-bin.config.json"),
 		path.join(dest, "wp-env-bin.config.json")
 	);
-	logger("> copied site-configs/" + chosen + ".wp-env-bin.config.json → wp-env-bin.config.json");
+	logger("> copied site-configs/" + chosen + ".wp-env-bin.config.json → wp-env-bin.config.json", true, "success");
 
 	const composerSrc = path.join(siteConfigsDir, chosen + ".composer.json");
 	if (existsSync(composerSrc)) {
 		copyFileSync(composerSrc, path.join(dest, "composer.json"));
-		logger("> copied site-configs/" + chosen + ".composer.json → composer.json");
+		logger("> copied site-configs/" + chosen + ".composer.json → composer.json", true, "success");
 	} else {
 		const emptyComposer = {
 			name: "hadamlenz/wp-env-bin",
@@ -112,22 +112,22 @@ function configSwitch(chosen) {
 			},
 		};
 		writeFileSync(path.join(dest, "composer.json"), JSON.stringify(emptyComposer, null, 4), "utf8");
-		logger("> wrote empty composer.json (no companion found for " + chosen + ")");
+		logger("> wrote empty composer.json (no companion found for " + chosen + ")", true, "info");
 	}
 
 	const lockSrc = path.join(siteConfigsDir, chosen + ".composer.lock");
 	if (existsSync(lockSrc)) {
 		copyFileSync(lockSrc, path.join(dest, "composer.lock"));
-		logger("> copied site-configs/" + chosen + ".composer.lock → composer.lock");
+		logger("> copied site-configs/" + chosen + ".composer.lock → composer.lock", true, "success");
 	} else {
 		const lockDest = path.join(dest, "composer.lock");
 		if (existsSync(lockDest)) {
 			unlinkSync(lockDest);
-			logger("> removed stale composer.lock (no companion found for " + chosen + ")");
+			logger("> removed stale composer.lock (no companion found for " + chosen + ")", true, "info");
 		}
 	}
 
-	logger("\nSwitched to " + chosen);
+	logger("\nSwitched to " + chosen, true, "success");
 
 	try {
 		return JSON.parse(readFileSync(path.join(dest, "wp-env-bin.config.json"), "utf8"));
@@ -152,7 +152,7 @@ function configCreate(config, profileName) {
 
 	const filePath = path.join(siteConfigsDir, profileName + ".wp-env-bin.config.json");
 	writeFileSync(filePath, JSON.stringify(config, null, "\t"), "utf8");
-	logger("> saved site-configs/" + profileName + ".wp-env-bin.config.json");
+	logger("> saved site-configs/" + profileName + ".wp-env-bin.config.json", true, "success");
 
 	return profileName;
 }
@@ -178,7 +178,7 @@ function configDelete(profileName) {
 		const filePath = path.join(siteConfigsDir, file);
 		if (existsSync(filePath)) {
 			unlinkSync(filePath);
-			logger("> deleted site-configs/" + file);
+			logger("> deleted site-configs/" + file, true, "muted");
 		}
 	}
 }

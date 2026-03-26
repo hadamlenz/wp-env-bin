@@ -4,10 +4,10 @@ const multisiteProxy = (url, siteId) => `
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^wp-content\\/uploads\\/sites\\/${siteId}\\/(.*)$ https:\\/\\/${url}\\/wp-content\\/uploads\\/sites\\/${siteId}\\/$1 [R=302,L,NC]
+RewriteRule ^wp-content\\/uploads\\/sites\\/${siteId}\\/(.*)$ /wp-content/plugins/wp-env-bin-plugin/proxy.php?file=sites/${siteId}/$1&base=https://${url}/wp-content/uploads [L,NC]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^wp-content\\/uploads\\/(.*)$ https:\\/\\/${url}\\/wp-content\\/uploads\\/sites\\/${siteId}\\/$1 [R=302,L,NC]
+RewriteRule ^wp-content\\/uploads\\/(.*)$ /wp-content/plugins/wp-env-bin-plugin/proxy.php?file=sites/${siteId}/$1&base=https://${url}/wp-content/uploads [L,NC]
 </IfModule>
 # END Reverse proxy
 `;
@@ -18,7 +18,7 @@ const singlesiteProxy = (url) => `
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^wp-content\\/uploads\\/(.*)$ https:\\/\\/${url}\\/wp-content\\/uploads\\/$1 [R=302,L,NC]
+RewriteRule ^wp-content\\/uploads\\/(.*)$ /wp-content/plugins/wp-env-bin-plugin/proxy.php?file=$1&base=https://${url}/wp-content/uploads [L,NC]
 </IfModule>
 # END Reverse proxy
 `;

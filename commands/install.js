@@ -55,7 +55,7 @@ function install({ action, config } = {}) {
 	scaffoldFiles(dest);
 
 	if (action === "useIt") {
-		logger("> using existing wp-env-bin/wp-env-bin.config.json");
+		logger("> using existing wp-env-bin/wp-env-bin.config.json", true, "info");
 		logger("\nNext steps:");
 		if (!existsSync(path.join(dest, "composer.json"))) {
 			logger("  cp wp-env-bin/composer.json.example wp-env-bin/composer.json");
@@ -80,14 +80,14 @@ function install({ action, config } = {}) {
 	// action === "configure"
 	const configPath = path.join(dest, "wp-env-bin.config.json");
 	writeFileSync(configPath, JSON.stringify(config, null, "\t"), "utf8");
-	logger("> created wp-env-bin/wp-env-bin.config.json");
+	logger("> created wp-env-bin/wp-env-bin.config.json", true, "success");
 
 	const wpEnvPath = path.join(dest, ".wp-env.json");
 	try {
 		const wpEnv = JSON.parse(readFileSync(wpEnvPath, "utf8"));
 		const updatedWpEnv = applyProjectType(wpEnv, config.projectType);
 		writeFileSync(wpEnvPath, JSON.stringify(updatedWpEnv, null, 4), "utf8");
-		logger("> updated wp-env-bin/.wp-env.json (" + config.projectType + ")");
+		logger("> updated wp-env-bin/.wp-env.json (" + config.projectType + ")", true, "success");
 	} catch {
 		// .wp-env.json missing or malformed — leave it as-is
 	}

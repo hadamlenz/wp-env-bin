@@ -27,16 +27,16 @@ function activateComposerPlugins(pluginsToActivate) {
 	if (!pluginsToActivate || pluginsToActivate.length === 0) return;
 	try {
 		wpcli("wp plugin activate " + pluginsToActivate.join(" "));
-		logger("> activated: " + pluginsToActivate.join(", "));
+		logger("> activated: " + pluginsToActivate.join(", "), true, "success");
 	} catch {
 		// Bulk failed (likely a multisite-only plugin). Try one at a time.
-		logger("> bulk activation failed — trying plugins individually...");
+		logger("> bulk activation failed — trying plugins individually...", true, "warn");
 		for (const slug of pluginsToActivate) {
 			try {
 				wpcli("wp plugin activate " + slug);
-				logger("> activated: " + slug);
+				logger("> activated: " + slug, true, "success");
 			} catch {
-				logger("> warning: could not activate " + slug + " (skipped — may require multisite)");
+				logger("> warning: could not activate " + slug + " (skipped — may require multisite)", true, "warn");
 			}
 		}
 	}

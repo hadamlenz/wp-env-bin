@@ -63,6 +63,25 @@ test("always includes WordPress standard rewrite block", () => {
 	}
 });
 
+// --- proxy routing ---
+
+test("singlesite: routes uploads through proxy.php with file and base params", () => {
+	const out = htaccessTemplate("example.com", null, "singlesite");
+	assert.ok(out.includes("proxy.php"));
+	assert.ok(out.includes("file=$1"));
+	assert.ok(out.includes("base=https://example.com/wp-content/uploads"));
+	assert.ok(!out.includes("R=302"));
+	assert.ok(!out.includes("[P,"));
+});
+
+test("multisite: routes uploads through proxy.php with correct base url", () => {
+	const out = htaccessTemplate("example.com", "7", "multisite");
+	assert.ok(out.includes("proxy.php"));
+	assert.ok(out.includes("base=https://example.com/wp-content/uploads"));
+	assert.ok(!out.includes("R=302"));
+	assert.ok(!out.includes("[P,"));
+});
+
 // --- default siteType ---
 
 test("default siteType behaves as singlesite", () => {

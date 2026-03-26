@@ -33,10 +33,10 @@ function scaffoldFiles(dest) {
 		const destPath = path.join(dest, file.dest);
 		if (!existsSync(destPath)) {
 			copyFileSync(path.join(scaffold, file.src), destPath);
-			logger("> created wp-env-bin/" + file.dest);
+			logger("> created wp-env-bin/" + file.dest, true, "success");
 			results.push({ file: file.dest, created: true });
 		} else {
-			logger("> skipped wp-env-bin/" + file.dest + " (already exists)");
+			logger("> skipped wp-env-bin/" + file.dest + " (already exists)", true, "muted");
 			results.push({ file: file.dest, created: false });
 		}
 	}
@@ -56,14 +56,14 @@ function scaffoldCommand(dest) {
 	const isNewInstall = !existsSync(dest);
 
 	if (isNewInstall) {
-		logger("> New install detected — creating wp-env-bin/ folder structure...");
+		logger("> New install detected — creating wp-env-bin/ folder structure...", true, "info");
 	} else {
-		logger("> Existing project detected — copying only missing files...");
+		logger("> Existing project detected — copying only missing files...", true, "info");
 	}
 
 	scaffoldFiles(dest);
 
-	logger("\nScaffold complete.");
+	logger("\nScaffold complete.", true, "success");
 	logger("  Next: run `wp-env-bin config create` to create a site config profile.");
 }
 
