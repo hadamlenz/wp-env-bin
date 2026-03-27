@@ -151,6 +151,18 @@ wp-env-bin info e2e config wpVersion
 wp-env-bin info composer name
 ```
 
+### status
+
+Show the active site config and whether the wp-env Docker environment is currently running.
+
+```bash
+wp-env-bin status
+```
+
+Output:
+- **Config** — the loaded `wp-env-bin.config.json` (URL + site type), or "not loaded" if absent
+- **Environment** — "running" with the local URL (`http://localhost:8888`), or "not running"
+
 ### e2e
 
 - **`e2e scaffold`** — Scaffold `wp-env-bin/e2e/` block test environment with its own `.wp-env.json`

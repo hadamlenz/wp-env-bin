@@ -30,6 +30,7 @@ const { runWpEnv, runWpEnvE2e } = require("../commands/env");
 const { composerUpdate, composerE2eInstall, composerE2eUpdate } = require("../commands/composer");
 const { cleanThemes, cleanPlugins, cleanAssets, cleanAll } = require("../commands/clean");
 const { infoCommand } = require("../commands/info");
+const { statusCommand } = require("../commands/status");
 const { generateE2eTests, runE2eTests } = require("../commands/e2e");
 const { putHtaccess } = require("../commands/htaccess");
 const { run } = require("../lib/utils/run");
@@ -38,7 +39,7 @@ const { requireDir } = require("../lib/env/check");
 // ─── Help ─────────────────────────────────────────────────────────────────────
 const {
 	help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp,
-	e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp, cleanHelp,
+	e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp, cleanHelp, statusHelp,
 } = require("../commands/help");
 
 // ─── Prompt handlers (interactive layer) ─────────────────────────────────────
@@ -414,6 +415,18 @@ async function init() {
 		// Example: wp-env-bin info
 		case "info": {
 			infoCommand(process.argv.slice(3));
+			break;
+		}
+
+		// ── status ─────────────────────────────────────────────────────────────
+		// Show the active site config and whether wp-env is running.
+		// Example: wp-env-bin status
+		case "status": {
+			if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				statusHelp();
+			} else {
+				statusCommand();
+			}
 			break;
 		}
 
