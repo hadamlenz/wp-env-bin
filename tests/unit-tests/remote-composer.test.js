@@ -4,7 +4,9 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("path");
 const ROOT  = path.join(__dirname, "../..");
-const { matchActivePlugins, buildComposerJson } = require(path.join(ROOT, "lib/remote-composer"));
+const { mkdtempSync, rmSync, writeFileSync } = require("fs");
+const os = require("os");
+const { matchActivePlugins, buildComposerJson, makeComposerName } = require(path.join(ROOT, "lib/remote-composer"));
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -132,4 +134,55 @@ test("buildComposerJson: preserves config.platform.php", () => {
 test("buildComposerJson: uses empty array when repositories is null", () => {
 	const result = buildComposerJson({}, null, null);
 	assert.deepEqual(result.repositories, []);
+});
+
+test("buildComposerJson: uses provided name when passed", () => {
+	const result = buildComposerJson({}, [], null, "unc/unc-content-elements-pharmacy-unc-edu");
+	assert.equal(result.name, "unc/unc-content-elements-pharmacy-unc-edu");
+});
+
+test("buildComposerJson: falls back to hadamlenz/wp-env-bin when name is omitted", () => {
+	const result = buildComposerJson({}, [], null);
+	assert.equal(result.name, "hadamlenz/wp-env-bin");
+});
+
+// ── makeComposerName ──────────────────────────────────────────────────────────
+
+test("makeComposerName: combines plugin name and URL slug", () => {
+	const tmpDir = mkdtempSync(path.join(os.tmpdir(), "wp-env-bin-composer-name-"));
+	try {
+		writeFileSync(path.join(tmpDir, "composer.json"), JSON.stringify({ name: "unc/unc-content-elements" }), "utf8");
+		assert.equal(makeComposerName("pharmacy.unc.edu", tmpDir), "unc/unc-content-elements-pharmacy-unc-edu");
+	} finally {
+		rmSync(tmpDir, { recursive: true });
+	}
+});
+
+test("makeComposerName: replaces all dots in profile name with dashes", () => {
+	const tmpDir = mkdtempSync(path.join(os.tmpdir(), "wp-env-bin-composer-name-"));
+	try {
+		writeFileSync(path.join(tmpDir, "composer.json"), JSON.stringify({ name: "unc/my-plugin" }), "utf8");
+		assert.equal(makeComposerName("sub.domain.example.com", tmpDir), "unc/my-plugin-sub-domain-example-com");
+	} finally {
+		rmSync(tmpDir, { recursive: true });
+	}
+});
+
+test("makeComposerName: falls back when no root composer.json exists", () => {
+	const tmpDir = mkdtempSync(path.join(os.tmpdir(), "wp-env-bin-composer-name-"));
+	try {
+		assert.equal(makeComposerName("pharmacy.unc.edu", tmpDir), "hadamlenz/wp-env-bin");
+	} finally {
+		rmSync(tmpDir, { recursive: true });
+	}
+});
+
+test("makeComposerName: falls back when root composer.json has no name field", () => {
+	const tmpDir = mkdtempSync(path.join(os.tmpdir(), "wp-env-bin-composer-name-"));
+	try {
+		writeFileSync(path.join(tmpDir, "composer.json"), JSON.stringify({ description: "no name here" }), "utf8");
+		assert.equal(makeComposerName("pharmacy.unc.edu", tmpDir), "hadamlenz/wp-env-bin");
+	} finally {
+		rmSync(tmpDir, { recursive: true });
+	}
 });

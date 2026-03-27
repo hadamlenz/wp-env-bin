@@ -2,6 +2,7 @@ const { existsSync, mkdirSync, readdirSync, unlinkSync, copyFileSync, writeFileS
 const path = require("path");
 const { logger } = require("../lib/utils/log");
 const { applyProjectType, saveNamedProfile } = require("../lib/config");
+const { makeComposerName } = require("../lib/remote-composer");
 const { install } = require("./install");
 const { requireDir, requireFile } = require("../lib/env/check");
 
@@ -101,7 +102,7 @@ function configSwitch(chosen) {
 		logger("> copied site-configs/" + chosen + ".composer.json → composer.json", true, "success");
 	} else {
 		const emptyComposer = {
-			name: "hadamlenz/wp-env-bin",
+			name: makeComposerName(chosen),
 			"require-dev": {},
 			repositories: [],
 			extra: {

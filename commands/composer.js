@@ -4,7 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const { run } = require("../lib/utils/run");
 const { logger } = require("../lib/utils/log");
-const { matchActivePlugins, buildComposerJson } = require("../lib/remote-composer");
+const { matchActivePlugins, buildComposerJson, makeComposerName } = require("../lib/remote-composer");
 const { requireDir, requireFile } = require("../lib/env/check");
 
 const BLANK_COMPOSER = {
@@ -64,7 +64,8 @@ function composerGet(profileName, activePaths, themeSlug, serverComposer) {
 	const composerJson = buildComposerJson(
 		matched,
 		serverComposer.repositories || [],
-		themePkg ? { [themePkg]: "*" } : null
+		themePkg ? { [themePkg]: "*" } : null,
+		makeComposerName(profileName)
 	);
 
 	const dest = path.join(process.cwd(), "wp-env-bin");
@@ -86,7 +87,7 @@ function composerMake(profileName) {
 	const dest = path.join(process.cwd(), "wp-env-bin");
 	fs.mkdirSync(path.join(dest, "site-configs"), { recursive: true });
 	const outPath = path.join(dest, "site-configs", profileName + ".composer.json");
-	fs.writeFileSync(outPath, JSON.stringify(BLANK_COMPOSER, null, 4), "utf8");
+	fs.writeFileSync(outPath, JSON.stringify({ ...BLANK_COMPOSER, name: makeComposerName(profileName) }, null, 4), "utf8");
 	logger("> created blank site-configs/" + profileName + ".composer.json");
 }
 
