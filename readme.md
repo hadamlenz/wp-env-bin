@@ -2,7 +2,7 @@
 
 A CLI tool for managing local WordPress development environments using [`@wordpress/env`](https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/). It automates pulling a production database, processing it for local use, configuring a reverse proxy for media assets, and scaffolding Playwright e2e tests for Gutenberg blocks. You can also make one-to-one copies of live sites to test against new theme or plugin code.
 
-Supports both **single-site** and **multisite** source databases. Works with Pantheon (via Terminus) or any host where you can export a SQL file with `wp db export`. The local environment is always a standard single-site wp-env install. Block tests run in an isolated wp-env environment with auto-generated specs from `block.json` metadata.
+Supports both **single-site** and **multisite** source databases. Works with **Pantheon** (via Terminus), **generic SSH hosts** (via WP-CLI's `--ssh=` flag), and **WordPress VIP** (via VIP-CLI). The local environment is always a standard single-site wp-env install. Block tests run in an isolated wp-env environment with auto-generated specs from `block.json` metadata.
 
 this package is under active development and could maybe not work great. it is at it's core not something you'd use on a live site.
 
@@ -13,7 +13,10 @@ this package is under active development and could maybe not work great. it is a
 - [Node.js](https://nodejs.org/) >= 18
 - [Docker](https://www.docker.com/) (required by `@wordpress/env`)
 - [`@wordpress/env`](https://www.npmjs.com/package/@wordpress/env) installed in the consuming project
-- [Terminus CLI](https://docs.pantheon.io/terminus) authenticated with Pantheon *(only required for Pantheon-hosted sites)*
+- Remote CLI tool — one of the following, depending on your host:
+  - [Terminus CLI](https://docs.pantheon.io/terminus) authenticated with Pantheon *(Pantheon sites)*
+  - [WP-CLI](https://wp-cli.org/) with SSH access configured *(generic SSH sites)*
+  - [VIP-CLI](https://docs.wpvip.com/vip-cli/) authenticated with WordPress VIP *(WPVIP sites)*
 - [Composer](https://getcomposer.org/)
 
 ---
@@ -63,7 +66,7 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 
 ## Documentation
 
-- [**Setup & Configuration**](docs/setup.md) — First-time setup, config reference, day-to-day workflow, non-Pantheon workflow, how it works, project structure
+- [**Setup & Configuration**](docs/setup.md) — First-time setup, config reference, multi-host config (Pantheon, SSH, WPVIP), day-to-day workflow, how it works, project structure
 - [**Visual Regression Testing**](docs/compare.md) — `visual compare` command usage, options, report output
 - [**E2E Block Testing**](docs/e2e.md) — Playwright block tests, environment isolation, generating tests, writing custom tests
 - [**Testing wp-env-bin**](docs/testing.md) — Running the unit test suite, test file index, fixtures, and patterns for adding new tests
@@ -88,8 +91,8 @@ To inspect the currently active config, use [`info`](#info).
 
 ### db
 
-- **`db get`** — Export the database from Pantheon via Terminus *(requires `env` in config)*
-- **`db use <path>`** — Validate and use a local SQL file instead of downloading from Pantheon
+- **`db get`** — Export the database from the remote host via the configured CLI tool *(requires `env` in config)*
+- **`db use <path>`** — Validate and use a local SQL file instead of downloading from the remote host
 - **`db process`** — Rename table prefix, import DB into local env, run URL search-replace
 
 ### htaccess

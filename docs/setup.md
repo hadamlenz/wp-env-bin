@@ -96,6 +96,17 @@ wp-env-bin env sync
 }
 ```
 
+**Single-site (WordPress VIP):**
+```json
+{
+  "siteType": "singlesite",
+  "host": "wpvip",
+  "env": "myapp.production",
+  "url": "example.com",
+  "pluginName": "my-plugin"
+}
+```
+
 **Multisite** (pulling one subsite from a multisite network):
 ```json
 {
@@ -141,7 +152,7 @@ Pull the latest production database and sync your local environment:
 wp-env-bin env sync
 ```
 
-This runs the full pipeline: exports from Pantheon, renames table prefixes, imports into Docker, runs URL search-replace, and regenerates the media proxy `.htaccess`.
+This runs the full pipeline: exports from the remote host via the configured CLI tool, renames table prefixes, imports into Docker, runs URL search-replace, and regenerates the media proxy `.htaccess`.
 
 ---
 
@@ -192,7 +203,7 @@ wp-env-bin env start
 
 ```bash
 wp-env-bin composer install --delete-lock       # reinstall dependencies
-wp-env-bin db get                               # re-download from Pantheon
+wp-env-bin db get                               # re-download from remote host
 wp-env-bin db process                           # import + search-replace
 wp-env-bin htaccess make                        # regenerate from current config
 wp-env-bin env run cli plugin activate --all    # activate all plugins
@@ -213,7 +224,7 @@ Displays a list of all profiles in `site-configs/`. Select one to remove it — 
 wp-env-bin config update
 ```
 
-Re-runs the configuration prompts with all existing values pre-filled as defaults. Useful when a site's Pantheon environment, URL, or multisite prefix changes. Offers to save the result as a new or updated named profile.
+Re-runs the configuration prompts with all existing values pre-filled as defaults. Useful when a site's remote environment, URL, or multisite prefix changes. Offers to save the result as a new or updated named profile.
 
 ### Building a composer.json from the remote site
 
@@ -221,7 +232,7 @@ Re-runs the configuration prompts with all existing values pre-filled as default
 wp-env-bin composer get
 ```
 
-Connects to the remote site via Terminus, reads the active plugins (and network-activated plugins for multisite) and the server's own `composer.json`, then cross-references them to generate a companion `{profileName}.composer.json` for the profile. Requires `env` and `composerPath` to be set in the profile config.
+Connects to the remote site via the configured CLI tool, reads the active plugins (and network-activated plugins for multisite) and the server's own `composer.json`, then cross-references them to generate a companion `{profileName}.composer.json` for the profile. Requires `env` and `composerPath` to be set in the profile config.
 
 The mapping works by matching the plugin's folder name (from `active_plugins`) to the second segment of each Composer package name — for example, `gravityforms/gravityforms.php` → folder `gravityforms` → matches `gravity/gravityforms`. Repositories are carried over from the server's composer.json verbatim.
 
@@ -233,7 +244,7 @@ Plugins not managed by Composer (manually uploaded) appear in an "unmatched" lis
 wp-env-bin composer get --path /code/composer.json
 ```
 
-**From a URL** (no Terminus required — fetches the file directly and saves it as-is):
+**From a URL** (no remote CLI required — fetches the file directly and saves it as-is):
 
 ```bash
 wp-env-bin composer get --url https://example.com/composer.json
@@ -247,9 +258,9 @@ wp-env-bin composer make
 
 ---
 
-## Non-Pantheon / Local SQL File Workflow
+## Local SQL File Workflow (No Remote CLI)
 
-If your site is not hosted on Pantheon, export your database using WP-CLI on the server. Use the two-step approach below — it matches what `db get` does internally and ensures only the correct prefixed tables are exported:
+If you already have a SQL file or prefer to export it manually, you can skip `db get` entirely. Use the two-step WP-CLI approach below — it matches what `db get` does internally and ensures only the correct prefixed tables are exported:
 
 **Step 1 — Get the table list:**
 ```bash
@@ -307,7 +318,7 @@ wp-env-bin env sync           # re-downloads DB and regenerates assets/
 
 ## How It Works
 
-1. **`db get`** — Uses Terminus to export the site's database from Pantheon to `wp-env-bin/assets/database.sql`
+1. **`db get`** — Uses the configured remote CLI tool (Terminus for Pantheon, `wp --ssh=` for generic SSH, VIP-CLI for WPVIP) to export the site's database to `wp-env-bin/assets/database.sql`
 2. **`db process`** — For multisite: renames the subsite's table prefix (e.g. `wpsites_7_`) to `wp_` then imports. For single-site: imports the database directly. Then runs search-replace to swap the live URL for `localhost`
 3. **`htaccess make`** — Generates an `.htaccess` file that reverse-proxies media upload requests to the live site, so media appears locally without downloading the full uploads directory. For multisite, proxies from `/wp-content/uploads/sites/{siteId}/`; for single-site, proxies from `/wp-content/uploads/`. Run `wp-env-bin htaccess put` to re-push the file to the container after an env restart without regenerating it.
 
