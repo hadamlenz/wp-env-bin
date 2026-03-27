@@ -10,3 +10,6 @@ themes/
 vendor/
 .wp-env.override.json
 # site-configs/ is intentionally NOT gitignored so profiles can be shared with teammates
+# but cached databases are large and must stay local
+site-configs/*.database.sql
+site-configs/*.database.modified.sql

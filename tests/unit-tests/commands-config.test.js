@@ -2,7 +2,7 @@
 
 const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
-const { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync } = require("fs");
+const { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync, unlinkSync } = require("fs");
 const path = require("path");
 const ROOT  = path.join(__dirname, "../..");
 const os = require("os");
@@ -79,11 +79,10 @@ test("configDelete: removes the config file", () => {
 	assert.equal(existsSync(filePath), false);
 });
 
-test("configDelete: removes companion composer.json and composer.lock when present", () => {
-	createProfile("with-companions", [".composer.json", ".composer.lock"]);
+test("configDelete: removes companion composer.json when present", () => {
+	createProfile("with-companions", [".composer.json"]);
 	configDelete("with-companions");
 	assert.equal(existsSync(path.join(siteConfigsDir(), "with-companions.composer.json")), false);
-	assert.equal(existsSync(path.join(siteConfigsDir(), "with-companions.composer.lock")), false);
 });
 
 test("configDelete: does not throw when companion files are absent", () => {
@@ -131,17 +130,20 @@ test("configSwitch: writes empty composer.json when no companion exists", () => 
 	assert.deepEqual(composer["require-dev"], {});
 });
 
-test("configSwitch: removes stale composer.lock when no companion lock exists", () => {
+test("configSwitch: leaves existing composer.lock untouched (lock files are not managed per-profile)", () => {
 	createProfile("switch-stale-lock");
 	mkdirSync(dest(), { recursive: true });
 	writeFileSync(path.join(dest(), "composer.lock"), "{}", "utf8");
 	configSwitch("switch-stale-lock");
-	assert.equal(existsSync(path.join(dest(), "composer.lock")), false, "stale lock must be removed");
+	assert.ok(existsSync(path.join(dest(), "composer.lock")), "lock must be left in place");
 });
 
-test("configSwitch: copies companion composer.lock when present", () => {
+test("configSwitch: does NOT copy companion composer.lock even when present (lock files are not managed per-profile)", () => {
 	createProfile("switch-with-lock", [".composer.json", ".composer.lock"]);
 	mkdirSync(dest(), { recursive: true });
+	// Ensure no lock exists from a prior test before asserting this switch doesn't create one
+	const lockPath = path.join(dest(), "composer.lock");
+	if (existsSync(lockPath)) unlinkSync(lockPath);
 	configSwitch("switch-with-lock");
-	assert.ok(existsSync(path.join(dest(), "composer.lock")));
+	assert.equal(existsSync(lockPath), false, "lock must not be restored from cache");
 });
