@@ -76,12 +76,35 @@ function getProfileList() {
 }
 
 /**
+ * Detect which named profile is currently active by comparing the contents of
+ * wp-env-bin.config.json with each profile in site-configs/. Returns null if
+ * no match is found or if the directory structure is missing.
+ *
+ * @returns {string|null}
+ */
+function getActiveProfile() {
+	const dest = path.join(process.cwd(), "wp-env-bin");
+	const profiles = getProfileList();
+	if (!profiles) return null;
+	const activeConfigPath = path.join(dest, "wp-env-bin.config.json");
+	const siteConfigsDir = path.join(dest, "site-configs");
+	try {
+		const activeContent = readFileSync(activeConfigPath, "utf8");
+		for (const p of profiles) {
+			const profileContent = readFileSync(path.join(siteConfigsDir, p + ".wp-env-bin.config.json"), "utf8");
+			if (activeContent === profileContent) return p;
+		}
+	} catch { /* no match */ }
+	return null;
+}
+
+/**
  * Activate a named profile by copying its config (and optionally composer
  * files) to the active wp-env-bin/ files. The chosen profile name is passed
  * in — no interactive prompts are used here.
  *
  * @param {string} chosen - The profile name to activate
- * @returns {void}
+ * @returns {{ config: object, dbCached: boolean }}
  */
 function configSwitch(chosen) {
 	const dest = path.join(process.cwd(), "wp-env-bin");
@@ -120,24 +143,24 @@ function configSwitch(chosen) {
 		logger("> wrote empty composer.json (no companion found for " + chosen + ")", true, "info");
 	}
 
-	const lockSrc = path.join(siteConfigsDir, chosen + ".composer.lock");
-	if (existsSync(lockSrc)) {
-		copyFileSync(lockSrc, path.join(dest, "composer.lock"));
-		logger("> copied site-configs/" + chosen + ".composer.lock → composer.lock", true, "success");
-	} else {
-		const lockDest = path.join(dest, "composer.lock");
-		if (existsSync(lockDest)) {
-			unlinkSync(lockDest);
-			logger("> removed stale composer.lock (no companion found for " + chosen + ")", true, "info");
+	const dbSrc = path.join(siteConfigsDir, chosen + ".database.sql");
+	const dbCached = existsSync(dbSrc);
+	if (dbCached) {
+		copyFileSync(dbSrc, path.join(dest, "assets/database.sql"));
+		logger("> copied site-configs/" + chosen + ".database.sql → assets/database.sql", true, "success");
+		const modSrc = path.join(siteConfigsDir, chosen + ".database.modified.sql");
+		if (existsSync(modSrc)) {
+			copyFileSync(modSrc, path.join(dest, "assets/database.modified.sql"));
+			logger("> copied site-configs/" + chosen + ".database.modified.sql → assets/database.modified.sql", true, "success");
 		}
 	}
 
 	logger("\nSwitched to " + chosen, true, "success");
 
 	try {
-		return JSON.parse(readFileSync(path.join(dest, "wp-env-bin.config.json"), "utf8"));
+		return { config: JSON.parse(readFileSync(path.join(dest, "wp-env-bin.config.json"), "utf8")), dbCached };
 	} catch {
-		return {};
+		return { config: {}, dbCached };
 	}
 }
 
@@ -176,7 +199,8 @@ function configDelete(profileName) {
 	const companions = [
 		profileName + ".wp-env-bin.config.json",
 		profileName + ".composer.json",
-		profileName + ".composer.lock",
+		profileName + ".database.sql",
+		profileName + ".database.modified.sql",
 	];
 
 	for (const file of companions) {
@@ -188,4 +212,4 @@ function configDelete(profileName) {
 	}
 }
 
-module.exports = { configInstall, configUpdate, configSwitch, getProfileList, configCreate, configDelete };
+module.exports = { configInstall, configUpdate, configSwitch, getProfileList, getActiveProfile, configCreate, configDelete };

@@ -6,6 +6,7 @@ const { checkDatabase, requireDir } = require("../lib/env/check");
 const { readLocalConfig, getConfigValue, CONTAINER_ASSETS_PATH } = require("../lib/env/config");
 const { renamePrefix } = require("../lib/db");
 const { validateSqlFile } = require("../lib/db");
+const { getActiveProfile } = require("./config");
 
 // ─── db get ──────────────────────────────────────────────────────────────────
 
@@ -72,6 +73,15 @@ async function getRemoteDb({ action = "redownload" } = {}) {
 	} else {
 		throw new Error("Database export failed — wp-env-bin/assets/database.sql not found.");
 	}
+
+	const activeProfile = getActiveProfile();
+	if (activeProfile) {
+		const cachePath = path.join(process.cwd(), "wp-env-bin/site-configs", activeProfile + ".database.sql");
+		copyFileSync(path.join(process.cwd(), "wp-env-bin/assets/database.sql"), cachePath);
+		logger("> cached to site-configs/" + activeProfile + ".database.sql", true, "success");
+	} else {
+		logger("> no active profile detected — skipping DB cache", true, "info");
+	}
 }
 
 // ─── db use ──────────────────────────────────────────────────────────────────
@@ -136,6 +146,13 @@ function prefixRenameFile(oldPrefix) {
 	writeFileSync(outPath, modified, "utf8");
 	logger("> prefix rename: replaced " + count + " occurrences of '" + oldPrefix + "' with 'wp_'", true, "success");
 	logger("> written to wp-env-bin/assets/database.modified.sql", true, "success");
+
+	const activeProfile = getActiveProfile();
+	if (activeProfile) {
+		const cachePath = path.join(process.cwd(), "wp-env-bin/site-configs", activeProfile + ".database.modified.sql");
+		copyFileSync(outPath, cachePath);
+		logger("> cached to site-configs/" + activeProfile + ".database.modified.sql", true, "success");
+	}
 }
 
 /**
