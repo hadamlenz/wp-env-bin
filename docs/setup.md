@@ -18,9 +18,11 @@ wp-env-bin config create
 
 Prompts for your site's details and saves them as a named profile in `wp-env-bin/site-configs/`. You'll be asked for:
 - **Site type** — `singlesite` (default) or `multisite`
-- **Pantheon site.environment** — e.g. `mysite.live` *(leave blank to skip if not using Pantheon)*
+- **Remote host type** — `Pantheon` (default), `Generic SSH`, or `WordPress VIP`
+- **Remote environment** — format depends on the host: Pantheon uses `mysite.live`, SSH uses `user@hostname/path`, WPVIP uses `myapp.production` *(leave blank to skip)*
 - **Live site URL** — e.g. `example.com`
 - **Plugin or theme name** — pre-filled from your `package.json`
+- **Path to server composer.json** — e.g. `/code/composer.json` *(leave blank to skip)*
 - **Live DB table prefix** and **multisite site ID** — multisite only
 
 After saving, you'll be prompted to make this the active config. Answering yes runs `config switch` automatically.
@@ -72,20 +74,33 @@ wp-env-bin env sync
 
 `wp-env-bin/wp-env-bin.config.json` is gitignored — never commit it.
 
-**Single-site:**
+**Single-site (Pantheon):**
 ```json
 {
   "siteType": "singlesite",
+  "host": "pantheon",
   "env": "mysite.live",
   "url": "example.com",
   "pluginName": "my-plugin"
 }
 ```
 
-**Multisite** (pulling one subsite from a Pantheon multisite network):
+**Single-site (generic SSH):**
+```json
+{
+  "siteType": "singlesite",
+  "host": "ssh",
+  "env": "user@hostname/var/www/html",
+  "url": "example.com",
+  "pluginName": "my-plugin"
+}
+```
+
+**Multisite** (pulling one subsite from a multisite network):
 ```json
 {
   "siteType": "multisite",
+  "host": "pantheon",
   "env": "mysite.live",
   "url": "yoursubsite.example.com",
   "pluginName": "my-plugin",
@@ -97,7 +112,8 @@ wp-env-bin env sync
 | Field | Description |
 |---|---|
 | `siteType` | `"singlesite"` (default) or `"multisite"` |
-| `env` | Terminus site.environment — **required for `db get` only** (e.g. `mysite.live`) |
+| `host` | Remote host type: `"pantheon"` (default), `"ssh"`, or `"wpvip"` — determines which CLI tool is used for remote WP-CLI calls |
+| `env` | Remote environment identifier — format depends on `host`: Pantheon → `site.environment` (e.g. `mysite.live`), SSH → WP-CLI SSH string (e.g. `user@hostname/var/www/html`), WPVIP → `app.environment` (e.g. `myapp.production`). **Required for `db get` and `composer get`.** |
 | `url` | Live site domain (e.g. `example.com`) |
 | `pluginName` | Plugin or theme name, for reference |
 | `oldPrefix` | Live DB table prefix — **multisite only** (e.g. `wpsites_123_`) |
@@ -105,7 +121,7 @@ wp-env-bin env sync
 | `adminUsername` | Username for the local admin account created by `db process` (default: `"admin"`) |
 | `adminEmail` | Email for the local admin account (default: `"admin@localhost.com"`) |
 | `adminPassword` | Password for the local admin account (default: `"password"`) |
-| `composerPath` | Absolute path to `composer.json` on the remote server — used by `composer get` (e.g. `"/code/composer.json"` for Pantheon) |
+| `composerPath` | Absolute path to `composer.json` on the remote server — used by `composer get` (e.g. `"/code/composer.json"`) |
 
 To inspect the active config at any time without opening the file:
 

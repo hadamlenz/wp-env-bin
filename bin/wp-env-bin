@@ -1,188 +1,96 @@
 #!/usr/bin/env node
 
-const { existsSync } = require("fs");
-const { execSync } = require("child_process");
+/**
+ * wp-env-bin CLI entry point.
+ *
+ * Parses the first two CLI arguments and dispatches to the appropriate
+ * command module or interactive prompt handler. All commands follow the
+ * pattern:
+ *
+ *   wp-env-bin <command> [subcommand] [args...]
+ *
+ * Unknown commands and missing subcommands print a yellow usage hint and exit
+ * cleanly. Any unhandled promise rejection is caught at the bottom, printed in
+ * red, and exits with code 1.
+ */
+
 const path = require("path");
 const chalk = require("chalk");
 
+/** The primary command (process.argv[2]), e.g. "clean", "db", "env". */
 const command = process.argv[2];
+
+/** The subcommand (process.argv[3]), e.g. "install", "get", "help". */
 const subcommand = process.argv[3];
-//all of these files are from commands
-const { configInstall, configUpdate, configSwitch, getProfileList, configCreate, configDelete } = require("../commands/config");
-const { install, getInstallContext } = require("../commands/install");
-const { scaffoldCommand } = require("../commands/scaffold");
-const { getRemoteDb, processDb, useDb } = require("../commands/db");
-const { makeHtaccess, putHtaccess } = require("../commands/htaccess");
+
+// ─── Commands (business logic) ────────────────────────────────────────────────
 const { setup } = require("../commands/setup");
-const { getInactivePlugins, activateComposerPlugins } = require("../commands/plugins");
+const { scaffoldCommand } = require("../commands/scaffold");
 const { runWpEnv, runWpEnvE2e } = require("../commands/env");
-const { compare } = require("../commands/compare");
-const { initE2e, getE2eDefaults, generateE2eTests, runE2eTests } = require("../commands/e2e");
-const { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp, cleanHelp } = require("../commands/help");
-const { composerGet, composerMake, composerUpdate, composerE2eInstall, composerE2eUpdate } = require("../commands/composer");
+const { composerUpdate, composerE2eInstall, composerE2eUpdate } = require("../commands/composer");
 const { cleanThemes, cleanPlugins, cleanAssets, cleanAll } = require("../commands/clean");
 const { infoCommand } = require("../commands/info");
-//all of these files are from libs
-const { checkDatabase, checkHtaccess, requireDir, isWpEnvRunning } = require("../lib/env/check");
-const { saveNamedProfile } = require("../lib/config");
-const { matchActivePlugins, buildComposerJson, fetchRemoteData } = require("../lib/remote-composer");
-const { run, terminus_wp } = require("../lib/utils/run");
+const { generateE2eTests, runE2eTests } = require("../commands/e2e");
+const { putHtaccess } = require("../commands/htaccess");
+const { run } = require("../lib/utils/run");
+const { requireDir } = require("../lib/env/check");
 
-// ─── Shared prompt helpers ────────────────────────────────────────────────────
+// ─── Help ─────────────────────────────────────────────────────────────────────
+const {
+	help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp,
+	e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp, cleanHelp,
+} = require("../commands/help");
 
-/**
- * Prompt for all wp-env-bin.config.json fields and return a config object.
- *
- * @param {object} [defaults={}] - Existing config values to use as defaults
- * @param {string} [projectName=""] - Project name from package.json (used as pluginName default)
- * @returns {Promise<object>}
- */
-async function promptForConfig(defaults = {}, projectName = "") {
-	const { select, input } = await import("@inquirer/prompts");
-
-	const projectType = await select({
-		message: "Is this a plugin or a theme?",
-		choices: [
-			{ name: "Plugin", value: "plugin" },
-			{ name: "Theme", value: "theme" },
-		],
-		default: defaults.projectType || "plugin",
-	});
-
-	const siteType = await select({
-		message: "Site type?",
-		choices: [
-			{ name: "Single-site", value: "singlesite" },
-			{ name: "Multisite (Pantheon subsite)", value: "multisite" },
-		],
-		default: defaults.siteType || "singlesite",
-	});
-
-	const env = await input({
-		message: "Pantheon site.environment (e.g. my-site.live)",
-		default: defaults.env || "",
-	});
-
-	const url = await input({
-		message: "Live site URL (e.g. mysite.org)",
-		default: defaults.url || "",
-	});
-
-	const pluginName = await input({
-		message: "Plugin or theme name (for reference)",
-		default: defaults.pluginName || projectName,
-	});
-
-	const config = { pluginName, projectType, siteType, env, url };
-
-	if (siteType === "multisite") {
-		config.oldPrefix = await input({
-			message: "Live DB table prefix (e.g. wp_123_)",
-			default: defaults.oldPrefix || "",
-		});
-		config.siteId = await input({
-			message: "Multisite site ID",
-			default: defaults.siteId || "",
-		});
-	}
-
-	return config;
-}
-
-/**
- * Prompt to save the current config as a named profile.
- * Returns an options object suitable for saveNamedProfile().
- *
- * @param {object} config - The config that was just written
- * @param {string} dest   - Absolute path to wp-env-bin/
- * @returns {Promise<void>}
- */
-async function promptAndSaveProfile(config, dest) {
-	const { confirm, input } = await import("@inquirer/prompts");
-
-	const shouldSave = await confirm({
-		message: "Save this as a named profile in site-configs/?",
-		default: true,
-	});
-
-	if (!shouldSave) {
-		saveNamedProfile(dest, config, { shouldSave: false });
-		return;
-	}
-
-	const profileName = await input({
-		message: "Profile name (used as filename prefix)",
-		default: config.url || "",
-	});
-
-	let saveComposer = false;
-	const composerSrc = path.join(dest, "composer.json");
-	if (existsSync(composerSrc)) {
-		saveComposer = await confirm({
-			message: "Also save composer.json as site-configs/" + profileName + ".composer.json?",
-			default: true,
-		});
-	}
-
-	saveNamedProfile(dest, config, { shouldSave: true, profileName, saveComposer });
-}
-
-/**
- * Offer to reinitialize the local environment after a config change.
- * For multisite: prompts to confirm then runs the full reinit sequence.
- * For singlesite: prints manual next-step instructions only.
- *
- * @param {string} siteType - "singlesite" | "multisite"
- * @returns {Promise<void>}
- */
-async function promptReinitEnvironment(siteType) {
-	if (siteType === "multisite") {
-		const { confirm } = await import("@inquirer/prompts");
-		const reinit = await confirm({
-			message: "Would you like to reinitialize the local environment with the new config? This only works for remote multisite.",
-			default: false,
-		});
-		if (reinit) {
-			console.log(chalk.cyan("> Reinitializing environment..."));
-			setup(["--delete-lock"]);
-			await getRemoteDb({ action: "redownload" });
-			await processDb();
-			makeHtaccess();
-			const inactivePlugins = getInactivePlugins();
-			if (inactivePlugins.length > 0) {
-				activateComposerPlugins(inactivePlugins);
-			}
-			runWpEnv(["start"]);
-		} else {
-			console.log("\nTo get a working environment, run these steps manually:");
-			console.log(chalk.cyan("  0. wp-env-bin composer get    (optionally build a composer.json"));
-			console.log(chalk.cyan("  1. wp-env-bin composer install --delete-lock"));
-			console.log(chalk.cyan("  2. wp-env-bin db get          (export db from remote host)"));
-			console.log(chalk.cyan("  3. wp-env-bin env start"));
-			console.log(chalk.cyan("  4. wp-env-bin db process      (import database + search-replace)"));
-			console.log(chalk.cyan("  5. wp-env-bin htaccess make   (regenerate from current config)"));
-		}
-	} else {
-		console.log(chalk.cyan(">  run `wp-env-bin composer install --delete-lock` to reinstall dependencies."));
-		console.log(chalk.cyan(">  run `wp-env-bin env start` to restart the development environment."));
-		console.log(chalk.cyan(">  run `wp-env-bin env sync` to sync the database and .htaccess file for this config."));
-	}
-}
+// ─── Prompt handlers (interactive layer) ─────────────────────────────────────
+const {
+	handleConfigInstall, handleConfigUpdate, handleConfigSwitch,
+	handleConfigCreate, handleConfigDelete,
+} = require("../lib/prompts/config");
+const { handleDbGet, handleDbProcess, handleDbUse } = require("../lib/prompts/db");
+const { handleComposerGet, handleComposerMake } = require("../lib/prompts/composer");
+const { handleE2eScaffold } = require("../lib/prompts/e2e");
+const { handleEnvSync } = require("../lib/prompts/env");
+const { handleHtaccessMake } = require("../lib/prompts/htaccess");
+const { handleVisualCompare } = require("../lib/prompts/visual");
 
 // ─── init ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Main CLI dispatcher.
+ *
+ * Reads `command` and `subcommand` from `process.argv` and routes execution to
+ * the appropriate command module or interactive prompt handler. Each `case`
+ * block mirrors a top-level CLI command documented in the project README.
+ *
+ * @async
+ * @returns {Promise<void>}
+ */
 async function init() {
 	switch (command) {
+
+		// ── clean ──────────────────────────────────────────────────────────────
+		// Removes generated or downloaded assets from the local environment.
+		// Subcommands map directly to the type of artifact to delete.
+		// Example: wp-env-bin clean all
 		case "clean": {
 			if (subcommand === "all") {
+				// Remove all generated artifacts (themes, plugins, and assets).
+				// Example: wp-env-bin clean all
 				cleanAll();
 			} else if (subcommand === "themes") {
+				// Remove only the themes directory contents.
+				// Example: wp-env-bin clean themes
 				cleanThemes();
 			} else if (subcommand === "plugins") {
+				// Remove only the plugins directory contents.
+				// Example: wp-env-bin clean plugins
 				cleanPlugins();
 			} else if (subcommand === "assets") {
+				// Remove only the assets directory contents.
+				// Example: wp-env-bin clean assets
 				cleanAssets();
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				// Example: wp-env-bin clean --help
 				cleanHelp();
 			} else {
 				console.log(chalk.yellow(
@@ -195,207 +103,52 @@ async function init() {
 			}
 			break;
 		}
+
+		// ── composer ───────────────────────────────────────────────────────────
+		// Manages Composer dependencies for the WordPress project.
+		// The `--` escape hatch allows running arbitrary Composer commands
+		// scoped to the project's wp-env-bin/ directory.
+		// Example: wp-env-bin composer install
 		case "composer": {
-			// ── install ──────────────────────────────────────────────────────────
 			if (subcommand === "install") {
+				// Install Composer dependencies. Extra args (argv[4+]) are forwarded
+				// to the setup command (e.g. --no-dev).
+				// Example: wp-env-bin composer install
+				// Example: wp-env-bin composer install --no-dev
 				setup(process.argv.slice(4));
-
-			// ── update ───────────────────────────────────────────────────────────
 			} else if (subcommand === "update") {
+				// Update all Composer dependencies to their latest allowed versions.
+				// Example: wp-env-bin composer update
 				composerUpdate();
-
-			// ── get ──────────────────────────────────────────────────────────────
 			} else if (subcommand === "get") {
+				// Interactively download a Composer package.
+				// Supports optional --path and --url flags to pre-populate prompts.
+				// Example: wp-env-bin composer get
+				// Example: wp-env-bin composer get --path vendor/my-package --url https://example.com/package.zip
 				const pathIdx = process.argv.indexOf("--path");
 				const runtimePath = pathIdx !== -1 ? process.argv[pathIdx + 1] : null;
 				const urlIdx = process.argv.indexOf("--url");
 				const runtimeUrl = urlIdx !== -1 ? process.argv[urlIdx + 1] : null;
-
-				const profiles = getProfileList();
-				if (!profiles || profiles.length === 0) {
-					console.log(chalk.red("No profiles found in wp-env-bin/site-configs/."));
-					console.log("Run `wp-env-bin config create` to create one.");
-					break;
-				}
-				const { select: selComp, confirm: confComp, checkbox: checkboxComp } = await import("@inquirer/prompts");
-				const chosenComp = await selComp({
-					message: runtimeUrl
-						? "Save fetched composer.json to which profile?"
-						: "Build composer.json for which profile?",
-					choices: profiles.map(p => ({ name: p, value: p })),
-				});
-
-				if (runtimeUrl) {
-					console.log(chalk.cyan("> fetching " + runtimeUrl + "..."));
-					let fetchedComposer;
-					try {
-						const https = require("https");
-						const http = require("http");
-						const client = runtimeUrl.startsWith("https") ? https : http;
-						const raw = await new Promise((resolve, reject) => {
-							let body = "";
-							client.get(runtimeUrl, res => {
-								res.on("data", chunk => { body += chunk; });
-								res.on("end", () => resolve(body));
-							}).on("error", reject);
-						});
-						fetchedComposer = JSON.parse(raw);
-					} catch (err) {
-						console.error(chalk.red("Failed to fetch composer.json: " + (err.message || err)));
-						break;
-					}
-
-					const saveUrl = await confComp({
-						message: "Save as site-configs/" + chosenComp + ".composer.json?",
-						default: true,
-					});
-					if (saveUrl) {
-						const { mkdirSync, writeFileSync } = require("fs");
-						const dest = path.join(process.cwd(), "wp-env-bin");
-						mkdirSync(path.join(dest, "site-configs"), { recursive: true });
-						const outPath = path.join(dest, "site-configs", chosenComp + ".composer.json");
-						writeFileSync(outPath, JSON.stringify(fetchedComposer, null, 4), "utf8");
-						console.log(chalk.green("> saved site-configs/" + chosenComp + ".composer.json"));
-
-						const copyActive = await confComp({ message: "Also copy to active wp-env-bin/composer.json?", default: false });
-						if (copyActive) {
-							writeFileSync(path.join(dest, "composer.json"), JSON.stringify(fetchedComposer, null, 4), "utf8");
-							console.log(chalk.green("> copied to wp-env-bin/composer.json"));
-						}
-					}
-					break;
-				}
-
-				// Terminus path: active-plugin matching
-				const profileFilePath = path.join(process.cwd(), "wp-env-bin", "site-configs", chosenComp + ".wp-env-bin.config.json");
-				const profileConfig = JSON.parse(require("fs").readFileSync(profileFilePath, "utf8"));
-				const { env: compEnv, url: compUrl, composerPath: savedPath } = profileConfig;
-				const composerPath = runtimePath || savedPath || null;
-
-				if (!compEnv) {
-					console.log(chalk.red("This profile has no 'env' set — cannot connect to a remote site."));
-					console.log("Add it with `wp-env-bin config update`.");
-					break;
-				}
-				if (!composerPath) {
-					console.log(chalk.red("No composerPath set. Use --path /code/composer.json or add it to the profile with `wp-env-bin config update`."));
-					break;
-				}
-
-				console.log(chalk.cyan("> fetching active plugins from " + compEnv + "..."));
-				console.log(chalk.cyan("> reading " + composerPath + " from " + compEnv + "..."));
-				let remoteData;
-				try {
-					remoteData = fetchRemoteData(profileConfig, compUrl, composerPath);
-				} catch (err) {
-					console.error(chalk.red("Failed to fetch remote data: " + (err.message || err)));
-					break;
-				}
-
-				const { activePaths, themeSlug, serverComposer } = remoteData;
-
-				const { matched: preMatched, unmatched: preUnmatched } = matchActivePlugins(activePaths, serverComposer);
-				const allServerPkgs = {
-					...((serverComposer && serverComposer.require) || {}),
-					...((serverComposer && serverComposer["require-dev"]) || {}),
-				};
-				const themePkg = themeSlug
-					? Object.keys(allServerPkgs).find(p => p.split("/")[1] === themeSlug) || null
-					: null;
-
-				console.log(chalk.cyan("\n> Matched packages (" + (Object.keys(preMatched).length + (themePkg ? 1 : 0)) + "):"));
-				for (const [pkg, ver] of Object.entries(preMatched)) console.log(chalk.gray("    " + pkg + ": " + ver));
-				if (themePkg) console.log(chalk.gray("    " + themePkg + ": * (active theme)"));
-				if (preUnmatched.length > 0) {
-					console.log(chalk.yellow("\n> Unmatched active plugins (not found in server composer.json — likely manually uploaded):"));
-					for (const f of preUnmatched) console.log(chalk.gray("    " + f));
-				}
-
-				// Checkbox — let user deselect unwanted packages before saving
-				// Exclude the project's own slug — it should be loaded via ".." in .wp-env.json, not composer
-				const projectSlug = path.basename(process.cwd());
-				const pluginChoices = Object.entries(preMatched)
-					.filter(([pkg]) => !pkg.endsWith("/" + projectSlug))
-					.map(([pkg, ver]) => ({
-						name: pkg + " (" + ver + ")",
-						value: pkg,
-						checked: true,
-					}));
-				if (Object.keys(preMatched).some(pkg => pkg.endsWith("/" + projectSlug))) {
-					console.log(chalk.yellow(`> Excluded ${projectSlug} from package list — load it via ".." in .wp-env.json instead.`));
-				}
-				if (themePkg && !themePkg.endsWith("/" + projectSlug)) {
-					pluginChoices.push({ name: themePkg + ": * (active theme)", value: "__theme__", checked: true });
-				}
-
-				if (pluginChoices.length > 0) process.stdout.write("\x1Bc");
-				const selected = pluginChoices.length > 0
-					? await checkboxComp({
-						message: "Select packages to include in composer.json (deselect to exclude):",
-						choices: pluginChoices,
-						pageSize: (process.stdout.rows || 24) - 4,
-						loop: false,
-					})
-					: [];
-
-				const filteredMatched = {};
-				for (const pkg of selected) {
-					if (pkg !== "__theme__" && preMatched[pkg] !== undefined) {
-						filteredMatched[pkg] = preMatched[pkg];
-					}
-				}
-				const filteredThemePkg = selected.includes("__theme__") ? themePkg : null;
-
-				const saveComp = await confComp({ message: "Save as site-configs/" + chosenComp + ".composer.json?", default: true });
-				if (saveComp) {
-					const composerJson = buildComposerJson(filteredMatched, serverComposer.repositories || [], filteredThemePkg ? { [filteredThemePkg]: "*" } : null);
-					const compDest = path.join(process.cwd(), "wp-env-bin");
-					require("fs").mkdirSync(path.join(compDest, "site-configs"), { recursive: true });
-					require("fs").writeFileSync(path.join(compDest, "site-configs", chosenComp + ".composer.json"), JSON.stringify(composerJson, null, 4), "utf8");
-					console.log(chalk.green("> saved site-configs/" + chosenComp + ".composer.json"));
-
-					const copyActive = await confComp({ message: "Also copy to active wp-env-bin/composer.json?", default: false });
-					if (copyActive) {
-						require("fs").writeFileSync(
-							path.join(process.cwd(), "wp-env-bin", "composer.json"),
-							JSON.stringify(composerJson, null, 4),
-							"utf8"
-						);
-						console.log(chalk.green("> copied to wp-env-bin/composer.json"));
-					}
-				}
-
-			// ── make ─────────────────────────────────────────────────────────────
+				await handleComposerGet(runtimePath, runtimeUrl);
 			} else if (subcommand === "make") {
-				const profiles = getProfileList();
-				if (!profiles || profiles.length === 0) {
-					console.log(chalk.red("No profiles found in wp-env-bin/site-configs/."));
-					console.log("Run `wp-env-bin config create` to create one.");
-					break;
-				}
-				const { select: selMake, confirm: confMake } = await import("@inquirer/prompts");
-				const chosenMake = await selMake({
-					message: "Create blank composer.json for which profile?",
-					choices: profiles.map(p => ({ name: p, value: p })),
-				});
-				composerMake(chosenMake);
-
-				const copyActiveMake = await confMake({ message: "Also copy to active wp-env-bin/composer.json?", default: false });
-				if (copyActiveMake) {
-					const { readFileSync: readMake, writeFileSync: writeMake } = require("fs");
-					const srcPath = path.join(process.cwd(), "wp-env-bin", "site-configs", chosenMake + ".composer.json");
-					writeMake(path.join(process.cwd(), "wp-env-bin", "composer.json"), readMake(srcPath, "utf8"), "utf8");
-					console.log(chalk.green("> copied to wp-env-bin/composer.json"));
-				}
-
+				// Interactively create a composer.json configuration file.
+				// Example: wp-env-bin composer make
+				await handleComposerMake();
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				// Example: wp-env-bin composer --help
 				composerHelp();
 			} else if (subcommand === "--") {
+				// Escape hatch: run any arbitrary Composer command inside the
+				// project's wp-env-bin/ directory.
+				// Example: wp-env-bin composer -- require wpackagist-plugin/akismet
+				// Example: wp-env-bin composer -- remove wpackagist-plugin/akismet
 				const composerArgs = process.argv.slice(4);
 				if (!composerArgs.length) {
 					console.log("Usage: wp-env-bin composer -- <composer command> [args...]");
 					console.log("Example: wp-env-bin composer -- remove wpackagist-plugin/akismet");
 				} else {
+					// Resolve the wp-env-bin subdirectory and verify it exists before
+					// executing — prevents silent failures when run from the wrong directory.
 					const composerDir = path.join(process.cwd(), "wp-env-bin");
 					requireDir(composerDir, "Run this command from your project root (the directory containing wp-env-bin/).");
 					run(`composer ${composerArgs.join(" ")}`, { cwd: composerDir, stdio: "inherit" });
@@ -412,256 +165,36 @@ async function init() {
 			}
 			break;
 		}
+
+		// ── config ─────────────────────────────────────────────────────────────
+		// Manages wp-env JSON config files that define the WordPress environment
+		// (plugins, themes, mappings, etc.).
+		// Example: wp-env-bin config create
 		case "config": {
 			if (subcommand === "install") {
+				// Deprecated: scaffold + config create should be used instead.
+				// Example: wp-env-bin config install  ← deprecated, avoid this
 				console.log(chalk.yellow("[Deprecated] `config install` will be removed in a future version."));
 				console.log(chalk.yellow("  Use: wp-env-bin scaffold && wp-env-bin config create\n"));
-				// ── Gather install options ──────────────────────────────────────
-				const { confirm, select } = await import("@inquirer/prompts");
-				const ctx = getInstallContext();
-				let action;
-				if (ctx.configExists) {
-					action = await select({
-						message: "wp-env-bin.config.json already exists. What would you like to do?",
-						choices: [
-							{ name: "Use the existing config", value: "useIt" },
-							{ name: "Reconfigure using existing values as defaults", value: "editIt" },
-							{ name: "Start over with a fresh config", value: "destroyIt" },
-						],
-					});
-					if (action === "editIt") action = "configure";
-					if (action === "destroyIt") { ctx.existingConfig = null; action = "configure"; }
-				} else {
-					const shouldConfigure = await confirm({
-						message: "Configure wp-env-bin.config.json now?",
-						default: true,
-					});
-					action = shouldConfigure ? "configure" : "skip";
-				}
-
-				let config = null;
-				if (action === "configure") {
-					config = await promptForConfig(ctx.existingConfig || {}, ctx.projectName);
-				}
-
-				configInstall({ action, config }, { shouldSave: false }); // profile save below
-				if (action === "configure" && config) {
-					await promptAndSaveProfile(config, ctx.dest);
-				}
-
+				await handleConfigInstall();
 			} else if (subcommand === "update") {
-				// ── Gather update options ───────────────────────────────────────
-				const { readFileSync } = require("fs");
-				const dest = path.join(process.cwd(), "wp-env-bin");
-				const configPath = path.join(dest, "wp-env-bin.config.json");
-				if (!existsSync(configPath)) {
-					console.log(chalk.red("No wp-env-bin.config.json found. Run `wp-env-bin config install` first."));
-					process.exit(1);
-				}
-				let existingConfig = {};
-				try {
-					existingConfig = JSON.parse(readFileSync(configPath, "utf8"));
-				} catch {
-					console.log(chalk.red("wp-env-bin.config.json is malformed. Run `wp-env-bin config install` to start fresh."));
-					process.exit(1);
-				}
-				const config = await promptForConfig(existingConfig);
-				await (async () => {
-					// configUpdate handles the file write; profile save happens after
-					configUpdate(config, { shouldSave: false });
-					await promptAndSaveProfile(config, dest);
-				})();
-
+				// Interactively update values in an existing config file.
+				// Example: wp-env-bin config update
+				await handleConfigUpdate();
 			} else if (subcommand === "switch") {
-				// ── Gather switch options ───────────────────────────────────────
-				const profiles = getProfileList();
-				if (!profiles) {
-					console.log(chalk.red("No site-configs/ directory found."));
-					console.log("Run `wp-env-bin config install` and save a named profile to get started.");
-					break;
-				}
-				if (profiles.length === 0) {
-					console.log(chalk.red("No named profiles found in wp-env-bin/site-configs/."));
-					console.log("Run `wp-env-bin config install` or `wp-env-bin config update` and save a profile to get started.");
-					break;
-				}
-				// Detect currently loaded profile by comparing file contents
-				let currentProfile = null;
-				{
-					const { readFileSync } = require("fs");
-					const dest = path.join(process.cwd(), "wp-env-bin");
-					const activeConfigPath = path.join(dest, "wp-env-bin.config.json");
-					const siteConfigsDir = path.join(dest, "site-configs");
-					try {
-						const activeContent = readFileSync(activeConfigPath, "utf8");
-						for (const p of profiles) {
-							const profileContent = readFileSync(path.join(siteConfigsDir, p + ".wp-env-bin.config.json"), "utf8");
-							if (activeContent === profileContent) {
-								currentProfile = p;
-								break;
-							}
-						}
-					} catch {}
-				}
-				const { select, confirm } = await import("@inquirer/prompts");
-				const chosen = await select({
-					message: "Switch to which site config?",
-					choices: profiles.map(p => ({
-						name: p === currentProfile ? `${p} (currently loaded)` : p,
-						value: p,
-					})),
-				});
-				const newConfig = configSwitch(chosen);
-				const siteType = (newConfig && newConfig.siteType) || "singlesite";
-
-				await promptReinitEnvironment(siteType);
-
+				// Interactively switch the active config to a different preset.
+				// Example: wp-env-bin config switch
+				await handleConfigSwitch();
 			} else if (subcommand === "create") {
-				// ── Gather config create options ────────────────────────────────
-				const { select: selectCreate, input: inputCreate, confirm: confirmCreate } = await import("@inquirer/prompts");
-
-				let projectName = "";
-				try {
-					const { readFileSync: readPkg } = require("fs");
-					const pkg = JSON.parse(readPkg(path.join(process.cwd(), "package.json"), "utf8"));
-					projectName = pkg.name || "";
-				} catch { /* no package.json */ }
-
-				const siteType = await selectCreate({
-					message: "Site type?",
-					choices: [
-						{ name: "Single-site", value: "singlesite" },
-						{ name: "Multisite", value: "multisite" },
-					],
-					default: "singlesite",
-				});
-
-				const host = await selectCreate({
-					message: "Remote host type?",
-					choices: [
-						{ name: "Pantheon (Terminus)", value: "pantheon" },
-						{ name: "Generic SSH (WP-CLI SSH)", value: "ssh" },
-						{ name: "WordPress VIP (VIP-CLI)", value: "wpvip" },
-					],
-					default: "pantheon",
-				});
-
-				const envMessages = {
-					pantheon: "Pantheon site.environment — e.g. mysite.live (leave blank to skip)",
-					ssh:      "SSH connection string — e.g. user@hostname/var/www/html (leave blank to skip)",
-					wpvip:    "WPVIP app.environment — e.g. myapp.production (leave blank to skip)",
-				};
-
-				const env = await inputCreate({
-					message: envMessages[host],
-					default: "",
-				});
-
-				const url = await inputCreate({
-					message: "Live site URL — e.g. example.com",
-					default: "",
-				});
-
-				const pluginName = await inputCreate({
-					message: "Plugin or theme name (for reference)",
-					default: projectName,
-				});
-
-				const createConfig = { pluginName, siteType, host, env, url };
-
-				if (siteType === "multisite") {
-					createConfig.oldPrefix = await inputCreate({
-						message: "Live DB table prefix — e.g. wp_123_",
-						default: "",
-					});
-					createConfig.siteId = await inputCreate({
-						message: "Multisite site ID",
-						default: "",
-					});
-				}
-
-				const composerPathInput = await inputCreate({
-					message: "Path to composer.json on the server (e.g. /code/composer.json) — leave blank to skip",
-					default: "",
-				});
-				if (composerPathInput.trim()) createConfig.composerPath = composerPathInput.trim();
-
-				const profileName = await inputCreate({
-					message: "Profile name (used as filename prefix in site-configs/)",
-					default: url || projectName,
-					validate: (v) => {
-						if (/\//u.test(v)) return "Profile name must not contain /";
-						if (!v.trim()) return "Profile name is required";
-						return true;
-					},
-				});
-
-				configCreate(createConfig, profileName);
-
-				const makeActive = await confirmCreate({
-					message: "Make this the active config now?",
-					default: true,
-				});
-				if (makeActive) {
-					const newConfig = configSwitch(profileName);
-					const siteType = (newConfig && newConfig.siteType) || "singlesite";
-					await promptReinitEnvironment(siteType);
-				}
-
+				// Interactively create a new wp-env config file from scratch.
+				// Example: wp-env-bin config create
+				await handleConfigCreate();
 			} else if (subcommand === "delete") {
-				// ── Gather config delete options ────────────────────────────────
-				const profiles = getProfileList();
-				if (!profiles || profiles.length === 0) {
-					console.log(chalk.red("No profiles found in wp-env-bin/site-configs/."));
-					console.log("Run `wp-env-bin config create` to create one.");
-					break;
-				}
-
-				const { select: selectDelete, confirm: confirmDelete } = await import("@inquirer/prompts");
-				const chosen = await selectDelete({
-					message: "Delete which profile?",
-					choices: profiles.map(p => ({ name: p, value: p })),
-				});
-
-				// Show all companion files that will be removed
-				const dest = path.join(process.cwd(), "wp-env-bin");
-				const siteConfigsDir = path.join(dest, "site-configs");
-				const toDelete = [chosen + ".wp-env-bin.config.json"];
-				for (const ext of [".composer.json", ".composer.lock"]) {
-					const { existsSync: exists } = require("fs");
-					if (exists(path.join(siteConfigsDir, chosen + ext))) {
-						toDelete.push(chosen + ext);
-					}
-				}
-				console.log("\nThe following files will be deleted:");
-				toDelete.forEach(f => console.log(chalk.red("  site-configs/" + f)));
-
-				const confirmed = await confirmDelete({
-					message: "Confirm deletion?",
-					default: false,
-				});
-
-				if (confirmed) {
-					configDelete(chosen);
-
-					// Warn if this profile was the active config
-					const activeConfigPath = path.join(dest, "wp-env-bin.config.json");
-					const { existsSync: activeExists, readFileSync: readActive } = require("fs");
-					if (activeExists(activeConfigPath)) {
-						try {
-							const activeContent = readActive(activeConfigPath, "utf8");
-							const profilePath = path.join(siteConfigsDir, chosen + ".wp-env-bin.config.json");
-							// Profile was already deleted; check if active file matched it before deletion
-							// (We can't compare now, so just note that active config is untouched)
-							void activeContent; void profilePath;
-						} catch { /* no-op */ }
-					}
-					console.log(chalk.gray("\nNote: the active wp-env-bin.config.json was not removed."));
-				} else {
-					console.log(chalk.gray("Cancelled."));
-				}
-
+				// Interactively delete an existing config file.
+				// Example: wp-env-bin config delete
+				await handleConfigDelete();
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				// Example: wp-env-bin config --help
 				configHelp();
 			} else {
 				console.log(chalk.yellow(
@@ -676,70 +209,27 @@ async function init() {
 			}
 			break;
 		}
+
+		// ── db ─────────────────────────────────────────────────────────────────
+		// Database utilities: export, transform, and import SQL files.
+		// Example: wp-env-bin db get
 		case "db": {
 			if (subcommand === "get") {
-				let action = "redownload";
-				if (checkDatabase()) {
-					const { select } = await import("@inquirer/prompts");
-					action = await select({
-						message: "wp-env-bin/assets/database.sql already exists. What would you like to do?",
-						choices: [
-							{ name: "Use the existing database", value: "useIt" },
-							{ name: "Re-download from Pantheon", value: "redownload" },
-						],
-					});
-				}
-				await getRemoteDb({ action });
-
+				// Interactively export / download a database snapshot.
+				// Example: wp-env-bin db get
+				await handleDbGet();
 			} else if (subcommand === "process") {
-				if (!isWpEnvRunning()) {
-					const { confirm } = await import("@inquirer/prompts");
-					const shouldStart = await confirm({
-						message: "The wp-env environment is not running. Start it now with wp-env-bin env start?",
-						default: true,
-					});
-					if (shouldStart) {
-						runWpEnv(["start"]);
-					} else {
-						console.log(chalk.yellow("Skipping db process — start the environment first with: wp-env-bin env start"));
-						process.exit(0);
-					}
-				}
-				const { select } = await import("@inquirer/prompts");
-				// Read config to build the prompt message
-				const { readLocalConfig } = require("../lib/env/config");
-				const config = readLocalConfig();
-				const username = config.adminUsername || "admin";
-				const password = config.adminPassword || "password";
-				const siteType = config.siteType || "singlesite";
-				const multisiteNote = siteType === "multisite"
-					? "\n  Note: user tables are not downloaded in multisite mode — a new user must be created."
-					: "";
-				const answer = await select({
-					message: `Would you like to create or reset a local admin user (${username} / ${password})?` + multisiteNote,
-					choices: [
-						{ name: "Yes, create or reset admin user", value: "yes" },
-						{ name: "No, skip", value: "no" },
-					],
-				});
-				await processDb({ createAdmin: answer === "yes" });
-
+				// Interactively run search-and-replace or other transforms on a
+				// database SQL file (e.g. rewrite URLs for local development).
+				// Example: wp-env-bin db process
+				await handleDbProcess();
 			} else if (subcommand === "use") {
-				const filePath = process.argv[4];
-				let action = "replace";
-				if (checkDatabase()) {
-					const { select } = await import("@inquirer/prompts");
-					action = await select({
-						message: "wp-env-bin/assets/database.sql already exists. What would you like to do?",
-						choices: [
-							{ name: "Replace it with the new file", value: "replace" },
-							{ name: "Keep the existing file", value: "keep" },
-						],
-					});
-				}
-				useDb(filePath, { action });
-
+				// Import an SQL file into the local environment.
+				// The file path is passed as the fourth CLI argument (argv[4]).
+				// Example: wp-env-bin db use ./backups/production.sql
+				await handleDbUse(process.argv[4]);
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				// Example: wp-env-bin db --help
 				dbHelp();
 			} else {
 				console.log(chalk.yellow(
@@ -751,10 +241,20 @@ async function init() {
 			}
 			break;
 		}
+
+		// ── e2e ────────────────────────────────────────────────────────────────
+		// End-to-end (Playwright) test utilities: scaffold, generate, and run
+		// tests, plus manage the separate E2E Composer dependencies.
+		// Example: wp-env-bin e2e test
 		case "e2e": {
 			if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				// Example: wp-env-bin e2e --help
 				e2eHelp();
 			} else if (subcommand === "env") {
+				// Pass-through to wp-env scoped to the E2E environment.
+				// Shows help when no args are provided.
+				// Example: wp-env-bin e2e env start
+				// Example: wp-env-bin e2e env stop
 				const envArgs = process.argv.slice(4);
 				if (!envArgs.length || envArgs[0] === "help" || envArgs[0] === "--help" || envArgs[0] === "-h") {
 					e2eEnvHelp();
@@ -762,60 +262,37 @@ async function init() {
 					runWpEnvE2e(envArgs);
 				}
 			} else if (subcommand === "scaffold") {
-				const { select, input } = await import("@inquirer/prompts");
-				const { projectType: defaultType, pluginName: defaultSlug, e2eConfig } = getE2eDefaults();
-
-				const projectType = await select({
-					message: "Is this project a plugin or a theme?",
-					choices: [
-						{ name: "Plugin", value: "plugin" },
-						{ name: "Theme", value: "theme" },
-					],
-					default: defaultType,
-				});
-
-				const slug = await input({
-					message: projectType === "plugin" ? "Plugin slug (used in wp plugin activate)" : "Theme slug (used in wp theme activate)",
-					default: defaultSlug,
-				});
-
-				let testTheme = e2eConfig.testTheme;
-				if (projectType === "plugin") {
-					testTheme = await input({
-						message: "Theme to activate during tests",
-						default: e2eConfig.testTheme,
-					});
-				}
-
-				const wpVersion = await input({
-					message: "WordPress version",
-					default: e2eConfig.wpVersion,
-				});
-
-				const phpVersion = await input({
-					message: "PHP version",
-					default: e2eConfig.phpVersion,
-				});
-
-				const port = await input({
-					message: "wp-env development port for e2e environment (must differ from your dev env, default 8889)",
-					default: e2eConfig.port,
-				});
-
-				initE2e({ projectType, slug, testTheme, wpVersion, phpVersion, port });
-
+				// Interactively create the E2E directory structure and config files.
+				// Example: wp-env-bin e2e scaffold
+				await handleE2eScaffold();
 			} else if (subcommand === "generate") {
-				const type = process.argv[4]; // "editor" or "frontend"
+				// Generate Playwright test file stubs for a given block type.
+				// argv[4] = type ("editor" or "frontend")
+				// argv[5+] = additional generator flags (e.g. --file=path/to/block.json)
+				// Example: wp-env-bin e2e generate editor --file=src/blocks/my-block/block.json
+				// Example: wp-env-bin e2e generate frontend --file=src/blocks/my-block/block.json
+				const type = process.argv[4];
 				generateE2eTests(type, process.argv.slice(5));
 			} else if (subcommand === "test") {
+				// Execute the Playwright test suite.
+				// argv[4+] are forwarded as-is (e.g. --project=all-blocks-editor).
+				// Example: wp-env-bin e2e test
+				// Example: wp-env-bin e2e test --project=all-blocks-editor
 				runE2eTests(process.argv.slice(4));
 			} else if (subcommand === "composer") {
+				// Nested composer management scoped to the E2E test environment.
+				// Example: wp-env-bin e2e composer install
 				const e2eComposerSub = process.argv[4];
 				if (e2eComposerSub === "install") {
+					// Install E2E-specific Composer dependencies.
+					// Example: wp-env-bin e2e composer install
 					composerE2eInstall();
 				} else if (e2eComposerSub === "update") {
+					// Update E2E-specific Composer dependencies.
+					// Example: wp-env-bin e2e composer update
 					composerE2eUpdate();
 				} else if (e2eComposerSub === "help" || e2eComposerSub === "--help" || e2eComposerSub === "-h") {
+					// Example: wp-env-bin e2e composer --help
 					composerE2eHelp();
 				} else {
 					console.log(chalk.yellow(
@@ -836,73 +313,30 @@ async function init() {
 			}
 			break;
 		}
+
+		// ── env ────────────────────────────────────────────────────────────────
+		// WordPress environment lifecycle management (wraps @wordpress/env).
+		// Unknown subcommands are forwarded directly to wp-env, allowing full
+		// access to its commands (start, stop, run, etc.) via this binary.
+		// Example: wp-env-bin env start
 		case "env": {
 			if (subcommand === "setup") {
+				// Initialise the environment: install plugins, themes, and Composer
+				// dependencies. argv[4+] are forwarded as flags.
+				// Example: wp-env-bin env setup
+				// Example: wp-env-bin env setup --skip-composer
 				setup(process.argv.slice(4));
 			} else if (subcommand === "sync") {
-				// db get
-				let dbAction = "redownload";
-				if (checkDatabase()) {
-					const { select } = await import("@inquirer/prompts");
-					dbAction = await select({
-						message: "wp-env-bin/assets/database.sql already exists. What would you like to do?",
-						choices: [
-							{ name: "Use the existing database", value: "useIt" },
-							{ name: "Re-download from Pantheon", value: "redownload" },
-						],
-					});
-				}
-				await getRemoteDb({ action: dbAction });
-
-				// db process
-				const { select: selectProcess } = await import("@inquirer/prompts");
-				const { readLocalConfig } = require("../lib/env/config");
-				const config = readLocalConfig();
-				const username = config.adminUsername || "admin";
-				const password = config.adminPassword || "password";
-				const siteType = config.siteType || "singlesite";
-				const multisiteNote = siteType === "multisite"
-					? "\n  Note: user tables are not downloaded in multisite mode — a new user must be created."
-					: "";
-				const processAnswer = await selectProcess({
-					message: `Would you like to create or reset a local admin user (${username} / ${password})?` + multisiteNote,
-					choices: [
-						{ name: "Yes, create or reset admin user", value: "yes" },
-						{ name: "No, skip", value: "no" },
-					],
-				});
-				await processDb({ createAdmin: processAnswer === "yes" });
-
-				// htaccess make
-				let htaccessAction = "regenerate";
-				if (checkHtaccess()) {
-					const { select: selectHtaccess } = await import("@inquirer/prompts");
-					htaccessAction = await selectHtaccess({
-						message: "wp-env-bin/assets/.htaccess already exists. What would you like to do?",
-						choices: [
-							{ name: "Use the existing .htaccess", value: "useIt" },
-							{ name: "Regenerate from current config", value: "regenerate" },
-						],
-					});
-				}
-				makeHtaccess({ action: htaccessAction });
-
-				// plugins
-				const inactivePlugins = getInactivePlugins();
-				if (inactivePlugins.length > 0) {
-					const { select: selectPlugins } = await import("@inquirer/prompts");
-					const pluginAnswer = await selectPlugins({
-						message: `These composer plugins are inactive: ${inactivePlugins.join(", ")}. Activate them now?`,
-						choices: [
-							{ name: "Yes, activate all", value: "yes" },
-							{ name: "No, skip", value: "no" },
-						],
-					});
-					if (pluginAnswer === "yes") {
-						activateComposerPlugins(inactivePlugins);
-					}
-				}
+				// Interactively synchronise the local environment state (e.g. after
+				// pulling changes that updated the wp-env config).
+				// Example: wp-env-bin env sync
+				await handleEnvSync();
 			} else {
+				// Pass-through: forward remaining args to the underlying wp-env CLI.
+				// Falls back to envHelp() when no args are given or help is requested.
+				// Example: wp-env-bin env start
+				// Example: wp-env-bin env stop
+				// Example: wp-env-bin env run cli wp post list
 				const argv = process.argv.slice(3);
 				if (!argv.length || argv[0] === "help" || argv[0] === "--help" || argv[0] === "-h") {
 					envHelp();
@@ -912,23 +346,21 @@ async function init() {
 			}
 			break;
 		}
+
+		// ── htaccess ───────────────────────────────────────────────────────────
+		// Manage the .htaccess file used by the local WordPress environment.
+		// Example: wp-env-bin htaccess make
 		case "htaccess": {
 			if (subcommand === "make") {
-				let action = "regenerate";
-				if (checkHtaccess()) {
-					const { select } = await import("@inquirer/prompts");
-					action = await select({
-						message: "wp-env-bin/assets/.htaccess already exists. What would you like to do?",
-						choices: [
-							{ name: "Use the existing .htaccess", value: "useIt" },
-							{ name: "Regenerate from current config", value: "regenerate" },
-						],
-					});
-				}
-				makeHtaccess({ action });
+				// Interactively generate a new .htaccess file with prompted values.
+				// Example: wp-env-bin htaccess make
+				await handleHtaccessMake();
 			} else if (subcommand === "put") {
+				// Copy the existing .htaccess file into the environment's web root.
+				// Example: wp-env-bin htaccess put
 				putHtaccess();
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				// Example: wp-env-bin htaccess --help
 				htaccessHelp();
 			} else {
 				console.log(chalk.yellow(
@@ -939,43 +371,57 @@ async function init() {
 			}
 			break;
 		}
+
+		// ── scaffold ───────────────────────────────────────────────────────────
+		// Copy the wp-env-bin configuration scaffold into the current project.
+		// The destination is always <cwd>/wp-env-bin/.
+		// Example: wp-env-bin scaffold
 		case "scaffold": {
 			if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				// Example: wp-env-bin scaffold --help
 				scaffoldHelp();
 			} else {
+				// Resolve the absolute destination path and run the scaffold command.
+				// Example: wp-env-bin scaffold
 				const dest = path.join(process.cwd(), "wp-env-bin");
 				scaffoldCommand(dest);
 			}
 			break;
 		}
+
+		// ── visual ─────────────────────────────────────────────────────────────
+		// Visual regression utilities for comparing screenshots between builds.
+		// Example: wp-env-bin visual compare
 		case "visual": {
 			if (subcommand === "compare") {
-				const argv = process.argv.slice(4);
-				if (argv[0] === "help" || argv[0] === "--help" || argv[0] === "-h") {
-					compareHelp();
-				} else {
-					const { confirm } = await import("@inquirer/prompts");
-					const { reportPath, failCount, errorCount } = await compare(argv);
-					const openReport = await confirm({ message: "Open report in browser?", default: true });
-					if (openReport) {
-						const opener = process.platform === "win32" ? "start" : process.platform === "darwin" ? "open" : "xdg-open";
-						execSync(opener + " \"" + reportPath + "\"");
-					}
-					if (failCount > 0 || errorCount > 0) {
-						process.exit(1);
-					}
-				}
+				// Run a visual diff comparison. argv[4+] are forwarded as flags
+				// (e.g. --baseline, --output).
+				// Example: wp-env-bin visual compare
+				// Example: wp-env-bin visual compare --baseline ./screenshots/baseline
+				await handleVisualCompare(process.argv.slice(4));
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				// Example: wp-env-bin visual --help
 				compareHelp();
 			} else {
-				console.log(chalk.yellow('Unknown subcommand. Try: wp-env-bin visual compare'));
+				console.log(chalk.yellow("Unknown subcommand. Try: wp-env-bin visual compare"));
 			}
 			break;
 		}
+
+		// ── info ───────────────────────────────────────────────────────────────
+		// Print diagnostic information about the current project and environment.
+		// argv[3+] are forwarded to allow filtering output by topic.
+		// Example: wp-env-bin info
 		case "info": {
 			infoCommand(process.argv.slice(3));
 			break;
 		}
+
+		// ── help / fallback ────────────────────────────────────────────────────
+		// Show the top-level help menu for any unrecognised command (or when
+		// `help` is explicitly requested).
+		// Example: wp-env-bin help
+		// Example: wp-env-bin --help
 		case "help":
 		default: {
 			help();
@@ -984,6 +430,8 @@ async function init() {
 	}
 }
 
+// Invoke the dispatcher and handle any unhandled promise rejections by printing
+// the error message in red and exiting with a non-zero status code.
 init().catch((err) => {
 	console.error(chalk.red(err.message || err));
 	process.exit(1);
