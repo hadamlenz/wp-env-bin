@@ -44,15 +44,15 @@ const {
 
 // ─── Prompt handlers (interactive layer) ─────────────────────────────────────
 const {
-	handleConfigInstall, handleConfigUpdate, handleConfigSwitch,
-	handleConfigCreate, handleConfigDelete,
+	configInstallPrompt, configUpdatePrompt, configSwitchPrompt,
+	configCreatePrompt, configDeletePrompt,
 } = require("../lib/prompts/config");
-const { handleDbGet, handleDbProcess, handleDbUse } = require("../lib/prompts/db");
-const { handleComposerGet, handleComposerMake } = require("../lib/prompts/composer");
-const { handleE2eScaffold } = require("../lib/prompts/e2e");
-const { handleEnvSync } = require("../lib/prompts/env");
-const { handleHtaccessMake } = require("../lib/prompts/htaccess");
-const { handleVisualCompare } = require("../lib/prompts/visual");
+const { dbGetPrompt, dbProcessPrompt, dbUsePrompt } = require("../lib/prompts/db");
+const { composerGetPrompt, composerMakePrompt } = require("../lib/prompts/composer");
+const { e2eScaffoldPrompt } = require("../lib/prompts/e2e");
+const { envSyncPrompt } = require("../lib/prompts/env");
+const { htaccessMakePrompt } = require("../lib/prompts/htaccess");
+const { visualComparePrompt } = require("../lib/prompts/visual");
 
 // ─── init ─────────────────────────────────────────────────────────────────────
 
@@ -130,11 +130,11 @@ async function init() {
 				const runtimePath = pathIdx !== -1 ? process.argv[pathIdx + 1] : null;
 				const urlIdx = process.argv.indexOf("--url");
 				const runtimeUrl = urlIdx !== -1 ? process.argv[urlIdx + 1] : null;
-				await handleComposerGet(runtimePath, runtimeUrl);
+				await composerGetPrompt(runtimePath, runtimeUrl);
 			} else if (subcommand === "make") {
 				// Interactively create a composer.json configuration file.
 				// Example: wp-env-bin composer make
-				await handleComposerMake();
+				await composerMakePrompt();
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				// Example: wp-env-bin composer --help
 				composerHelp();
@@ -177,23 +177,23 @@ async function init() {
 				// Example: wp-env-bin config install  ← deprecated, avoid this
 				console.log(chalk.yellow("[Deprecated] `config install` will be removed in a future version."));
 				console.log(chalk.yellow("  Use: wp-env-bin scaffold && wp-env-bin config create\n"));
-				await handleConfigInstall();
+				await configInstallPrompt();
 			} else if (subcommand === "update") {
 				// Interactively update values in an existing config file.
 				// Example: wp-env-bin config update
-				await handleConfigUpdate();
+				await configUpdatePrompt();
 			} else if (subcommand === "switch") {
 				// Interactively switch the active config to a different preset.
 				// Example: wp-env-bin config switch
-				await handleConfigSwitch();
+				await configSwitchPrompt();
 			} else if (subcommand === "create") {
 				// Interactively create a new wp-env config file from scratch.
 				// Example: wp-env-bin config create
-				await handleConfigCreate();
+				await configCreatePrompt();
 			} else if (subcommand === "delete") {
 				// Interactively delete an existing config file.
 				// Example: wp-env-bin config delete
-				await handleConfigDelete();
+				await configDeletePrompt();
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				// Example: wp-env-bin config --help
 				configHelp();
@@ -218,17 +218,17 @@ async function init() {
 			if (subcommand === "get") {
 				// Interactively export / download a database snapshot.
 				// Example: wp-env-bin db get
-				await handleDbGet();
+				await dbGetPrompt();
 			} else if (subcommand === "process") {
 				// Interactively run search-and-replace or other transforms on a
 				// database SQL file (e.g. rewrite URLs for local development).
 				// Example: wp-env-bin db process
-				await handleDbProcess();
+				await dbProcessPrompt();
 			} else if (subcommand === "use") {
 				// Import an SQL file into the local environment.
 				// The file path is passed as the fourth CLI argument (argv[4]).
 				// Example: wp-env-bin db use ./backups/production.sql
-				await handleDbUse(process.argv[4]);
+				await dbUsePrompt(process.argv[4]);
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				// Example: wp-env-bin db --help
 				dbHelp();
@@ -265,7 +265,7 @@ async function init() {
 			} else if (subcommand === "scaffold") {
 				// Interactively create the E2E directory structure and config files.
 				// Example: wp-env-bin e2e scaffold
-				await handleE2eScaffold();
+				await e2eScaffoldPrompt();
 			} else if (subcommand === "generate") {
 				// Generate Playwright test file stubs for a given block type.
 				// argv[4] = type ("editor" or "frontend")
@@ -331,7 +331,7 @@ async function init() {
 				// Interactively synchronise the local environment state (e.g. after
 				// pulling changes that updated the wp-env config).
 				// Example: wp-env-bin env sync
-				await handleEnvSync();
+				await envSyncPrompt();
 			} else {
 				// Pass-through: forward remaining args to the underlying wp-env CLI.
 				// Falls back to envHelp() when no args are given or help is requested.
@@ -355,7 +355,7 @@ async function init() {
 			if (subcommand === "make") {
 				// Interactively generate a new .htaccess file with prompted values.
 				// Example: wp-env-bin htaccess make
-				await handleHtaccessMake();
+				await htaccessMakePrompt();
 			} else if (subcommand === "put") {
 				// Copy the existing .htaccess file into the environment's web root.
 				// Example: wp-env-bin htaccess put
@@ -399,7 +399,7 @@ async function init() {
 				// (e.g. --baseline, --output).
 				// Example: wp-env-bin visual compare
 				// Example: wp-env-bin visual compare --baseline ./screenshots/baseline
-				await handleVisualCompare(process.argv.slice(4));
+				await visualComparePrompt(process.argv.slice(4));
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				// Example: wp-env-bin visual --help
 				compareHelp();
