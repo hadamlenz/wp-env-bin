@@ -1,5 +1,5 @@
 import { test } from '@wordpress/e2e-test-utils-playwright';
-import { registerFrontendTestsFromConfig } from '../../frontend-tests';
+import { registerFrontendTestsFromConfig } from '../../e2e/frontend-tests';
 import * as path from 'path';
 
 // Discovery-based frontend tests — block CSS and render.php are read at test

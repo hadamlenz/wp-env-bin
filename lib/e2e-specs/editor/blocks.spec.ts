@@ -1,5 +1,5 @@
 import { test } from '@wordpress/e2e-test-utils-playwright';
-import { registerEditorTestsFromConfig } from '../../editor-tests';
+import { registerEditorTestsFromConfig } from '../../e2e/editor-tests';
 import * as path from 'path';
 
 // Discovery-based editor tests — no regeneration needed when block.json changes.
