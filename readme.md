@@ -183,44 +183,49 @@ Running `wp-env-bin scaffold` and `wp-env-bin e2e scaffold` creates a `wp-env-bi
 
 ```
 wp-env-bin/
-├── .wp-env.json              # wp-env config: maps plugins/themes, sets port 8889 / MySQL 51600
-├── .wp-env.override.json     # Per-machine overrides — never commit (gitignored)
-├── wp-env-bin.config.json    # Active config — copied from site-configs/ by `config switch` (gitignored)
-├── composer.json             # Active PHP deps — copied from site-configs/ by `config switch` (gitignored)
-├── composer.json.example     # Starter template — copy to composer.json, then delete
-├── site-configs/             # Named config + composer profiles, one per remote site (tracked in git)
+├── .wp-env.json                          # wp-env config: maps plugins/themes, sets port 8889 / MySQL 51600
+├── .wp-env.override.json                 # Per-machine overrides — never commit (gitignored)
+├── .gitignore                            # Ignores active configs, plugins/, themes/, vendor/, compare-report/
+├── wp-env-bin.config.json                # Active config — copied from site-configs/ by `config switch` (gitignored)
+├── wp-env-bin.config.json.example        # Starter template — copy to wp-env-bin.config.json, then delete
+├── composer.json                         # Active PHP deps — copied from site-configs/ by `config switch` (gitignored)
+├── composer.json.example                 # Starter template — copy to composer.json, then delete
+├── site-configs/                         # Named config + composer profiles, one per remote site (tracked in git)
 │   ├── site.subsite.com.wp-env-bin.config.json
 │   ├── site.org.composer.json
-│   └── ...                   # Add more profiles with `config create` or `config update`
+│   ├── site.org.database.sql             # Per-site DB snapshot (gitignored)
+│   ├── site.org.database.modified.sql    # Processed DB for that site (gitignored)
+│   └── ...                               # Add more profiles with `config create` or `config update`
 ├── assets/
-│   ├── database.sql          # Production DB snapshot downloaded by `db get` (gitignored)
-│   ├── database.modified.sql # Processed DB ready for import by `db process` (gitignored)
-│   └── .htaccess             # Reverse-proxy rules for media assets (gitignored)
-├── plugins/                  # Composer-installed dev plugins — not source-controlled (gitignored)
-├── themes/                   # Composer-installed dev themes — not source-controlled (gitignored)
-├── vendor/                   # Composer packages (gitignored)
-├── compare-report/           # Visual regression HTML reports (gitignored)
+│   ├── database.sql                      # Production DB snapshot downloaded by `db get` (gitignored)
+│   ├── database.modified.sql             # Processed DB ready for import by `db process` (gitignored)
+│   └── .htaccess                         # Reverse-proxy rules for media assets (gitignored)
+├── plugins/                              # Scaffolded wp-env-bin-plugin + Composer-installed dev plugins (gitignored)
+├── themes/                               # Composer-installed dev themes — not source-controlled (gitignored)
+├── vendor/                               # Composer packages (gitignored)
+├── compare-report/                       # Visual regression HTML reports (gitignored)
 └── e2e/
-    ├── .wp-env.json          # Isolated test environment: port 8886, MySQL 51606
-    ├── .gitignore            # Ignores vendor/, plugins/, themes/, .auth/, test artifacts
-    ├── .env                  # WP_BASE_URL override for Playwright (gitignored)
-    ├── wp-env-bin.e2e.config.json # Block opt-in list for e2e tests — lists block directories
-    ├── composer.json         # PHP test dependencies (copy from .example; gitignored)
-    ├── composer.json.example # Starter template for test PHP deps — copy to composer.json, then delete
-    ├── playwright.config.ts  # Playwright config: projects, testMatch globs, baseURL :8886
-    ├── tsconfig.json         # Path aliases: @e2e/utils/* → wp-env-bin lib
-    ├── tsconfig.e2e.json     # Extends tsconfig.json, scoped to specs/**/*.ts
-    ├── plugins/              # Composer-installed test plugins (gitignored)
-    ├── themes/               # Composer-installed test themes (gitignored)
-    ├── vendor/               # Composer packages (gitignored)
-    ├── snapshots/            # Visual regression baselines — commit these
-    ├── test-results/         # Playwright failure artifacts (gitignored)
-    ├── playwright-report/    # HTML test report (gitignored)
+    ├── .wp-env.json                      # Isolated test environment: port 8886, MySQL 51606
+    ├── .gitignore                        # Ignores vendor/, plugins/, themes/, .auth/, test artifacts
+    ├── .env                              # WP_BASE_URL override for Playwright (gitignored)
+    ├── wp-env-bin.e2e.config.json        # Block opt-in list for e2e tests — lists block directories (gitignored)
+    ├── wp-env-bin.e2e.config.json.example  # Starter template — copy to wp-env-bin.e2e.config.json, then delete
+    ├── composer.json                     # PHP test dependencies (copy from .example; gitignored)
+    ├── composer.json.example             # Starter template for test PHP deps — copy to composer.json, then delete
+    ├── playwright.config.ts              # Playwright config: projects, testMatch globs, baseURL :8886
+    ├── tsconfig.json                     # Path aliases: @e2e/utils/* → wp-env-bin lib
+    ├── tsconfig.e2e.json                 # Extends tsconfig.json, scoped to specs/**/*.ts
+    ├── plugins/                          # Composer-installed test plugins (gitignored)
+    ├── themes/                           # Composer-installed test themes (gitignored)
+    ├── vendor/                           # Composer packages (gitignored)
+    ├── snapshots/                        # Visual regression baselines — commit these
+    ├── test-results/                     # Playwright failure artifacts (gitignored)
+    ├── playwright-report/                # HTML test report (gitignored)
     └── specs/
-        ├── .auth/            # Saved Playwright session (gitignored)
-        ├── global.setup.ts   # Logs in as WordPress admin and saves session
-        ├── editor/               # Empty — discovery spec is provided by the wp-env-bin package lib
-        └── frontend/             # Empty — discovery spec is provided by the wp-env-bin package lib
+        ├── .auth/                        # Saved Playwright session (gitignored)
+        ├── global.setup.ts               # Logs in as WordPress admin and saves session
+        ├── editor/                       # Empty — discovery spec is provided by the wp-env-bin package lib
+        └── frontend/                     # Empty — discovery spec is provided by the wp-env-bin package lib
 ```
 
 ## License
