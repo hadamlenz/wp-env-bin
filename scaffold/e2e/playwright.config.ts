@@ -57,7 +57,7 @@ export default defineConfig({
 		// Convenience: run all editor specs at once (add after naming individual projects)
 		{
 			name: 'all-blocks-editor',
-			testDir: '../../node_modules/wp-env-bin/lib/e2e/specs',
+			testDir: '../../node_modules/wp-env-bin/lib/e2e-specs',
 			testMatch: ['**/editor/*.spec.js'],
 			use: {
 				...chromeSettings,
@@ -80,7 +80,7 @@ export default defineConfig({
 		// Convenience: run all frontend specs at once
 		{
 			name: 'all-blocks-frontend',
-			testDir: '../../node_modules/wp-env-bin/lib/e2e/specs',
+			testDir: '../../node_modules/wp-env-bin/lib/e2e-specs',
 			testMatch: ['**/frontend/*.spec.js'],
 			use: { ...chromeSettings },
 		},

@@ -81,7 +81,8 @@ Low-level utilities with no prompts and no CLI-specific logic.
 | `lib/plugins.js` | `readComposerPlugins()` |
 | `lib/remote-composer.js` | `fetchRemoteData()`, `matchActivePlugins()`, `buildComposerJson()`, `makeComposerName()` |
 | `lib/compare.js` | `diffScreenshots()`, `writeReport()`, arg parsing, URL utilities |
-| `lib/e2e/` | TypeScript sources for Playwright block test helpers (compiled to JS) |
+| `lib/e2e/` | Playwright block test utilities: `block-loader`, `editor-tests`, `frontend-tests`, `helpers`, `types` (TypeScript sources compiled to JS) |
+| `lib/e2e-specs/` | Distributed Playwright spec templates for the discovery pattern (`editor/blocks.spec.js`, `frontend/blocks.spec.js`) — referenced via `testDir` in consumer `playwright.config.ts` |
 
 ---
 

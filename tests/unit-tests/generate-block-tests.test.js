@@ -4,12 +4,13 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("path");
 const ROOT  = path.join(__dirname, "../..");
-const { parseArgs, generateTestFile } = require(path.join(ROOT, "lib/e2e/generate-block-tests"));
+const { parseGenerateArgs } = require(path.join(ROOT, "commands/e2e"));
+const { generateTestFile }  = require(path.join(ROOT, "lib/e2e/generate-block-tests"));
 
-// --- parseArgs ---
+// --- parseGenerateArgs ---
 
-test("parseArgs returns correct defaults", () => {
-	const result = parseArgs([]);
+test("parseGenerateArgs returns correct defaults for editor", () => {
+	const result = parseGenerateArgs([], "editor");
 	assert.deepEqual(result, {
 		files: [],
 		output: "./wp-env-bin/e2e/specs/editor",
@@ -18,34 +19,56 @@ test("parseArgs returns correct defaults", () => {
 	});
 });
 
-test("parseArgs --file= pushes to files array", () => {
-	const result = parseArgs(["--file=src/block.json"]);
+test("parseGenerateArgs returns correct defaults for frontend", () => {
+	const result = parseGenerateArgs([], "frontend");
+	assert.deepEqual(result, {
+		files: [],
+		output: "./wp-env-bin/e2e/specs/frontend",
+		glob: null,
+		help: false,
+		screenshots: false,
+		visualRegression: false,
+	});
+});
+
+test("parseGenerateArgs --file= pushes to files array", () => {
+	const result = parseGenerateArgs(["--file=src/block.json"], "editor");
 	assert.deepEqual(result.files, ["src/block.json"]);
 });
 
-test("parseArgs multiple --file= args accumulate", () => {
-	const result = parseArgs(["--file=a/block.json", "--file=b/block.json"]);
+test("parseGenerateArgs multiple --file= args accumulate", () => {
+	const result = parseGenerateArgs(["--file=a/block.json", "--file=b/block.json"], "editor");
 	assert.deepEqual(result.files, ["a/block.json", "b/block.json"]);
 });
 
-test("parseArgs --output= sets output", () => {
-	const result = parseArgs(["--output=custom/dir"]);
+test("parseGenerateArgs --output= sets output", () => {
+	const result = parseGenerateArgs(["--output=custom/dir"], "editor");
 	assert.equal(result.output, "custom/dir");
 });
 
-test("parseArgs --glob= sets glob", () => {
-	const result = parseArgs(["--glob=src/**/block.json"]);
+test("parseGenerateArgs --glob= sets glob", () => {
+	const result = parseGenerateArgs(["--glob=src/**/block.json"], "editor");
 	assert.equal(result.glob, "src/**/block.json");
 });
 
-test("parseArgs --help sets help to true", () => {
-	const result = parseArgs(["--help"]);
+test("parseGenerateArgs --help sets help to true", () => {
+	const result = parseGenerateArgs(["--help"], "editor");
 	assert.equal(result.help, true);
 });
 
-test("parseArgs -h sets help to true", () => {
-	const result = parseArgs(["-h"]);
+test("parseGenerateArgs -h sets help to true", () => {
+	const result = parseGenerateArgs(["-h"], "editor");
 	assert.equal(result.help, true);
+});
+
+test("parseGenerateArgs --screenshots sets screenshots for frontend", () => {
+	const result = parseGenerateArgs(["--screenshots"], "frontend");
+	assert.equal(result.screenshots, true);
+});
+
+test("parseGenerateArgs --visual-regression sets visualRegression for frontend", () => {
+	const result = parseGenerateArgs(["--visual-regression"], "frontend");
+	assert.equal(result.visualRegression, true);
 });
 
 // --- generateTestFile ---

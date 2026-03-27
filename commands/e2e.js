@@ -2,6 +2,49 @@ const { mkdirSync, existsSync, copyFileSync, writeFileSync, readFileSync } = req
 const path = require("path");
 const { spawnSync } = require("child_process");
 const { logger } = require("../lib/utils/log");
+
+/**
+ * Parse CLI args for `wp-env-bin e2e generate editor|frontend`.
+ *
+ * @param {string[]} args - Raw argv slice (e.g. ["--file=block.json", "--output=dir"])
+ * @param {"editor"|"frontend"} type
+ * @returns {{ files: string[], output: string, glob: string|null, help: boolean, screenshots?: boolean, visualRegression?: boolean }}
+ */
+function parseGenerateArgs(args, type = 'editor') {
+	const result = {
+		files:  [],
+		output: type === 'frontend'
+			? './wp-env-bin/e2e/specs/frontend'
+			: './wp-env-bin/e2e/specs/editor',
+		glob:   null,
+		help:   false,
+	};
+
+	if (type === 'frontend') {
+		result.screenshots      = false;
+		result.visualRegression = false;
+	}
+
+	for (const arg of args) {
+		if (arg === '--help' || arg === '-h') {
+			result.help = true;
+		} else if (arg.startsWith('--file=')) {
+			result.files.push(arg.slice('--file='.length));
+		} else if (arg.startsWith('--output=')) {
+			result.output = arg.slice('--output='.length);
+		} else if (arg.startsWith('--glob=')) {
+			result.glob = arg.slice('--glob='.length);
+		} else if (type === 'frontend' && arg === '--screenshots') {
+			result.screenshots = true;
+		} else if (type === 'frontend' && arg === '--visual-regression') {
+			result.visualRegression = true;
+		} else {
+			console.warn(`⚠️  Unknown argument ignored: ${arg}`);
+		}
+	}
+
+	return result;
+}
 const { readE2eConfig, getConfigValue } = require("../lib/env/config");
 const { requireDir } = require("../lib/env/check");
 
@@ -231,11 +274,8 @@ function runE2eTests(args = []) {
 /**
  * Generate Playwright block tests from a block.json file.
  *
- * Runs the generate-block-tests.js or generate-frontend-tests.js script
- * bundled with wp-env-bin. Must be run from the project root.
- *
  * @param {string}   type - "editor" or "frontend"
- * @param {string[]} args - Passthrough args: --file=, --glob=, --output=, --screenshots, etc.
+ * @param {string[]} args - CLI args: --file=, --glob=, --output=, --screenshots, etc.
  */
 function generateE2eTests(type, args = []) {
 	if (type !== "editor" && type !== "frontend") {
@@ -243,18 +283,12 @@ function generateE2eTests(type, args = []) {
 		process.exit(1);
 	}
 
-	const scriptPath = type === "editor"
-		? path.join(__dirname, "../lib/e2e/generate-block-tests.js")
-		: path.join(__dirname, "../lib/e2e/generate-frontend-tests.js");
+	const options   = parseGenerateArgs(args, type);
+	const generator = type === "editor"
+		? require("../lib/e2e/generate-block-tests")
+		: require("../lib/e2e/generate-frontend-tests");
 
-	const result = spawnSync(process.execPath, [scriptPath, ...args], {
-		stdio: "inherit",
-		cwd: process.cwd(),
-	});
-
-	if (result.status !== 0) {
-		process.exit(result.status ?? 1);
-	}
+	generator.generate(options);
 }
 
-module.exports = { initE2e, getE2eDefaults, generateE2eTests, runE2eTests, scaffoldE2eFiles };
+module.exports = { initE2e, getE2eDefaults, generateE2eTests, runE2eTests, scaffoldE2eFiles, parseGenerateArgs };
