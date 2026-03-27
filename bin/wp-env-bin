@@ -436,6 +436,18 @@ async function init() {
 			break;
 		}
 
+		// ── menu ───────────────────────────────────────────────────────────────
+		// Guided interactive menu (clack-powered). Launched when no command is
+		// given, or when `menu` is explicitly requested.
+		// Example: wp-env-bin
+		// Example: wp-env-bin menu
+		case undefined:
+		case "menu": {
+			const { menuPrompt } = require("../lib/prompts/menu");
+			await menuPrompt();
+			break;
+		}
+
 		// ── help / fallback ────────────────────────────────────────────────────
 		// Show the top-level help menu for any unrecognised command (or when
 		// `help` is explicitly requested).

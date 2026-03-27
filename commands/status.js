@@ -1,7 +1,7 @@
 "use strict";
 
 const chalk = require("chalk");
-const { readRawConfig } = require("../lib/env/config");
+const { readRawConfig, readWpEnvJson } = require("../lib/env/config");
 const { isWpEnvRunning } = require("../lib/env/check");
 
 /**
@@ -28,8 +28,15 @@ function statusCommand() {
 
 	const running = isWpEnvRunning();
 	if (running) {
+		let port = 8888;
+		try {
+			const wpEnv = readWpEnvJson();
+			port = wpEnv?.env?.development?.port ?? wpEnv?.port ?? 8888;
+		} catch {
+			// no .wp-env.json found — use default
+		}
 		console.log(chalk.bold("Environment: ") + chalk.green("running"));
-		console.log("  http://localhost:8888");
+		console.log("  http://localhost:" + port);
 	} else {
 		console.log(chalk.bold("Environment: ") + chalk.yellow("not running"));
 	}

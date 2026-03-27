@@ -21,6 +21,7 @@
 		"node": ">=18"
 	},
 	"dependencies": {
+		"@clack/prompts": "^0.10.0",
 		"@inquirer/prompts": "^8.0.0",
 		"ajv": "^8.18.0",
 		"chalk": "^4.1.2",

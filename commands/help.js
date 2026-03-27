@@ -363,7 +363,7 @@ Output:
   Config       The loaded wp-env-bin.config.json: URL and site type
                Shows "not loaded" if the file is absent
   Environment  Whether wp-env is running
-               If running, prints the local URL (http://localhost:8888)
+               If running, prints the local URL (port from .wp-env.json, default 8888)
 `);
 }
 
