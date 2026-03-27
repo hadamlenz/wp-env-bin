@@ -13,9 +13,11 @@
  */
 
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { expect } from '@playwright/test';
+// Resolve peer deps from the consuming project's cwd — works for both local and global installs.
+const { expect } = require(require.resolve('@playwright/test', { paths: [process.cwd()] }));
 import type { Page } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
+// Resolve @axe-core/playwright from the consuming project's cwd (peer dep, not installed in wp-env-bin).
+const AxeBuilder = require(require.resolve('@axe-core/playwright', { paths: [process.cwd()] })).default;
 import type { FrontendTestConfig } from './types';
 import { loadFrontendConfig } from './block-loader';
 import type { FrontendLoadOptions } from './block-loader';

@@ -14,9 +14,8 @@
 	],
 	"scripts": {
 		"build": "tsc",
-		"test": "node --test 'tests/unit-tests/*.test.js' && node tests/integration/run.js",
-		"test:unit": "node --test 'tests/unit-tests/*.test.js'",
-		"test:integration": "node tests/integration/run.js"
+		"wp-env-bin:test:unit": "node --test 'tests/unit-tests/*.test.js'",
+		"wp-env-bin:test:integration": "node tests/integration/run.js"
 	},
 	"engines": {
 		"node": ">=18"
@@ -30,6 +29,7 @@
 		"pngjs": "^7.0.0"
 	},
 	"devDependencies": {
+		"@types/node": "^25.5.0",
 		"source-map-support": "^0.5.21",
 		"typescript": "^5.0.0"
 	},

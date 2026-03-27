@@ -3,7 +3,9 @@
 
 const { spawn } = require("child_process");
 const path = require("path");
+const readline = require("readline");
 const chalk = require("chalk");
+const { stopEnv } = require("./helpers/env");
 
 const REPO_ROOT = path.resolve(__dirname, "../..");
 
@@ -23,6 +25,34 @@ function colorLine(line) {
 	if (/^✖/.test(clean)) return chalk.bold.red(clean);
 	if (/^ℹ/.test(clean)) return chalk.dim(clean);
 	return clean;
+}
+
+function showReport(stdout) {
+	const idx = stdout.indexOf("▶ db get");
+	const raw = idx >= 0 ? stdout.slice(idx) : stdout;
+
+	process.stdout.write("\x1Bc");
+
+	const w = 56;
+	console.log(chalk.cyan("─".repeat(w)));
+	console.log(chalk.bold("  Integration Test Report"));
+	console.log(chalk.cyan("─".repeat(w)));
+	console.log();
+
+	for (const line of stripAnsi(raw).split("\n")) {
+		console.log(colorLine(line));
+	}
+}
+
+function promptStopEnv(exitCode) {
+	const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+	rl.question(chalk.cyan("Stop the wp-env environment? [y/N] "), (answer) => {
+		rl.close();
+		if (/^y(es)?$/i.test(answer.trim())) {
+			stopEnv();
+		}
+		process.exit(exitCode ?? 0);
+	});
 }
 
 let stdout = "";
@@ -51,22 +81,6 @@ child.on("close", (code) => {
 		process.stdout.write(colorLine(lineBuffer) + "\n");
 	}
 
-	if (code !== 0) {
-		process.exit(code ?? 1);
-	}
-
-	const idx = stdout.indexOf("▶ db get");
-	const raw = idx >= 0 ? stdout.slice(idx) : stdout;
-
-	process.stdout.write("\x1Bc");
-
-	const w = 56;
-	console.log(chalk.cyan("─".repeat(w)));
-	console.log(chalk.bold("  Integration Test Report"));
-	console.log(chalk.cyan("─".repeat(w)));
-	console.log();
-
-	for (const line of stripAnsi(raw).split("\n")) {
-		console.log(colorLine(line));
-	}
+	showReport(stdout);
+	promptStopEnv(code);
 });

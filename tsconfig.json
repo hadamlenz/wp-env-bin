@@ -7,7 +7,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "outDir": "lib/e2e",
-    "rootDir": "lib/e2e"
+    "rootDir": "lib/e2e",
+    "types": ["node"]
   },
   "include": ["lib/e2e/**/*.ts"],
   "exclude": ["node_modules"]

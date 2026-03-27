@@ -11,6 +11,27 @@ Both test types run entirely from local data — no remote hosts are contacted d
 
 ---
 
+## Managed files
+
+Two files in `wp-env-bin/e2e/specs/` are **managed by wp-env-bin** — they are created during `e2e scaffold` and should not be edited:
+
+| File | Purpose |
+|---|---|
+| `specs/editor/blocks.spec.ts` | Discovery-based editor tests — reads `wp-env-bin.e2e.config.json` at test startup |
+| `specs/frontend/blocks.spec.ts` | Discovery-based frontend tests — same config, with screenshots and visual regression enabled |
+
+These files are thin wrappers that call into wp-env-bin's test logic. All test behaviour lives in the package, so updates to the test logic are picked up automatically when you upgrade wp-env-bin — no need to touch these files.
+
+If you upgrade wp-env-bin and the managed spec API changes (rare), refresh them:
+
+```bash
+wp-env-bin e2e update
+```
+
+This re-copies both managed spec files from the current package version and regenerates `tsconfig.e2e.json` with the correct path to the installed package. User-owned files (`playwright.config.ts`, `.wp-env.json`, `global.setup.ts`) are never touched by `update`.
+
+---
+
 ## First-time setup
 
 **1. Scaffold the e2e environment:**

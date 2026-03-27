@@ -31,7 +31,7 @@ const { composerUpdate, composerE2eInstall, composerE2eUpdate } = require("../co
 const { cleanThemes, cleanPlugins, cleanAssets, cleanAll } = require("../commands/clean");
 const { infoCommand } = require("../commands/info");
 const { statusCommand } = require("../commands/status");
-const { generateE2eTests, runE2eTests } = require("../commands/e2e");
+const { generateE2eTests, runE2eTests, updateE2eManagedFiles } = require("../commands/e2e");
 const { putHtaccess } = require("../commands/htaccess");
 const { run } = require("../lib/utils/run");
 const { requireDir } = require("../lib/env/check");
@@ -266,6 +266,11 @@ async function init() {
 				// Interactively create the E2E directory structure and config files.
 				// Example: wp-env-bin e2e scaffold
 				await e2eScaffoldPrompt();
+			} else if (subcommand === "update") {
+				// Re-copy managed spec files and regenerate tsconfig.e2e.json with the
+				// current install path. Run after upgrading wp-env-bin.
+				// Example: wp-env-bin e2e update
+				updateE2eManagedFiles();
 			} else if (subcommand === "generate") {
 				// Generate Playwright test file stubs for a given block type.
 				// argv[4] = type ("editor" or "frontend")
@@ -306,6 +311,7 @@ async function init() {
 				console.log(chalk.yellow(
 				"Unknown e2e subcommand. Try:\n" +
 				"  wp-env-bin e2e scaffold\n" +
+				"  wp-env-bin e2e update\n" +
 				"  wp-env-bin e2e test [--project=all-blocks-editor|all-blocks-frontend]\n" +
 				"  wp-env-bin e2e generate editor|frontend --file=path/to/block.json\n" +
 				"  wp-env-bin e2e composer install\n" +

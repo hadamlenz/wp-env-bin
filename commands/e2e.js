@@ -96,11 +96,12 @@ function scaffoldE2eFiles(dest, scaffold, {
 	const staticFiles = [
 		{ src: "playwright.config.ts",               dest: "playwright.config.ts" },
 		{ src: "tsconfig.json",                      dest: "tsconfig.json" },
-		{ src: "tsconfig.e2e.json",                  dest: "tsconfig.e2e.json" },
 		{ src: "gitignore",                          dest: ".gitignore" },
 		{ src: "composer.json.example",              dest: "composer.json.example" },
 		{ src: "wp-env-bin.e2e.config.json.example", dest: "wp-env-bin.e2e.config.json.example" },
 		{ src: "specs/global.setup.ts",              dest: "specs/global.setup.ts" },
+		{ src: "specs/editor/blocks.spec.ts",        dest: "specs/editor/blocks.spec.ts" },
+		{ src: "specs/frontend/blocks.spec.ts",      dest: "specs/frontend/blocks.spec.ts" },
 	];
 
 	for (const file of staticFiles) {
@@ -112,6 +113,11 @@ function scaffoldE2eFiles(dest, scaffold, {
 			logger("> skipped wp-env-bin/e2e/" + file.dest + " (already exists)");
 		}
 	}
+
+	// Generate tsconfig.e2e.json with the correct path to wp-env-bin's lib/e2e,
+	// resolved from __dirname so it works for both local and global installs.
+	generateTsconfigE2e(dest);
+	logger("> created wp-env-bin/e2e/tsconfig.e2e.json");
 
 	// Create .auth/.gitkeep placeholder
 	const authGitkeep = path.join(dest, "specs/.auth/.gitkeep");
@@ -291,4 +297,61 @@ function generateE2eTests(type, args = []) {
 	generator.generate(options);
 }
 
-module.exports = { initE2e, getE2eDefaults, generateE2eTests, runE2eTests, scaffoldE2eFiles, parseGenerateArgs };
+/**
+ * Generate tsconfig.e2e.json in the e2e destination directory, resolving the
+ * path to wp-env-bin's lib/e2e at call time via __dirname. Works correctly for
+ * both locally installed and globally installed packages.
+ *
+ * @param {string} dest - Absolute path to the e2e destination directory
+ */
+function generateTsconfigE2e(dest) {
+	const wpEnvBinLibE2e = path.join(__dirname, "../lib/e2e");
+	const e2eLibPath = path.relative(dest, wpEnvBinLibE2e).replace(/\\/g, "/");
+
+	const tsconfig = {
+		extends: "./tsconfig.json",
+		compilerOptions: {
+			baseUrl: ".",
+			paths: {
+				"@e2e/utils/helpers":        [`${e2eLibPath}/helpers`],
+				"@e2e/utils/editor-tests":   [`${e2eLibPath}/editor-tests`],
+				"@e2e/utils/frontend-tests": [`${e2eLibPath}/frontend-tests`],
+				"@e2e/*":                    ["specs/*"],
+			},
+		},
+		include: ["specs/**/*.ts"],
+	};
+
+	writeFileSync(path.join(dest, "tsconfig.e2e.json"), JSON.stringify(tsconfig, null, 2) + "\n", "utf8");
+}
+
+/**
+ * Re-copy managed spec files and regenerate tsconfig.e2e.json with the current
+ * install path. Run after upgrading wp-env-bin to keep managed files in sync.
+ * User-owned files (playwright.config.ts, .wp-env.json, global.setup.ts) are
+ * left untouched.
+ */
+function updateE2eManagedFiles() {
+	requireDir(path.join(process.cwd(), "wp-env-bin"), "Run this command from your project root (the directory containing wp-env-bin/).");
+	const dest = path.join(process.cwd(), "wp-env-bin", "e2e");
+	const scaffold = path.join(__dirname, "../scaffold/e2e");
+
+	requireDir(dest, "Run `wp-env-bin e2e scaffold` first to set up the e2e environment.");
+
+	const managed = [
+		{ src: "specs/editor/blocks.spec.ts",   dest: "specs/editor/blocks.spec.ts" },
+		{ src: "specs/frontend/blocks.spec.ts", dest: "specs/frontend/blocks.spec.ts" },
+	];
+
+	for (const file of managed) {
+		copyFileSync(path.join(scaffold, file.src), path.join(dest, file.dest));
+		logger("> updated wp-env-bin/e2e/" + file.dest);
+	}
+
+	generateTsconfigE2e(dest);
+	logger("> updated wp-env-bin/e2e/tsconfig.e2e.json");
+
+	logger("\nManaged files updated. User-owned files (playwright.config.ts, .wp-env.json, global.setup.ts) were not changed.");
+}
+
+module.exports = { initE2e, getE2eDefaults, generateE2eTests, runE2eTests, scaffoldE2eFiles, parseGenerateArgs, updateE2eManagedFiles };

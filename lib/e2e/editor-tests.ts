@@ -12,7 +12,12 @@
  */
 
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { expect } from '@playwright/test';
+// Resolve @playwright/test from the consuming project's cwd so this works
+// regardless of whether wp-env-bin is installed locally or globally.
+// Resolve @playwright/test from the consuming project's cwd so this works
+// regardless of whether wp-env-bin is installed locally or globally.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { expect } = require(require.resolve('@playwright/test', { paths: [process.cwd()] }));
 import type { Page } from '@playwright/test';
 import {
   createPostAndGetId,
