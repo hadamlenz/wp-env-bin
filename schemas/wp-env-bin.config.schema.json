@@ -25,9 +25,15 @@
 			"default": "singlesite",
 			"description": "WordPress site type. Use 'multisite' when syncing from a Multisite network. Defaults to 'singlesite'."
 		},
+		"host": {
+			"type": "string",
+			"enum": ["pantheon", "ssh", "wpvip"],
+			"default": "pantheon",
+			"description": "Remote host type. Determines which CLI tool is used for remote WP-CLI calls. Defaults to 'pantheon' (Terminus). Use 'ssh' for generic SSH access via WP-CLI, or 'wpvip' for WordPress VIP (VIP-CLI)."
+		},
 		"env": {
 			"type": "string",
-			"description": "Pantheon site.environment identifier (e.g. 'mysite.live'). Required when using the 'db get' command with Terminus."
+			"description": "Remote environment identifier. Format depends on host type: pantheon → 'site.environment' (e.g. 'mysite.live'), wpvip → 'app.environment' (e.g. 'myapp.production'), ssh → WP-CLI SSH connection string (e.g. 'user@hostname/var/www/html'). Required when using the 'db get' or 'composer get' commands."
 		},
 		"url": {
 			"type": "string",

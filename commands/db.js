@@ -1,6 +1,6 @@
 const { copyFileSync, readFileSync, writeFileSync } = require("fs");
 const path = require("path");
-const { terminus_wp, wpcli } = require("../lib/utils/run");
+const { remote_wp, wpcli } = require("../lib/utils/run");
 const { logger } = require("../lib/utils/log");
 const { checkDatabase, requireDir } = require("../lib/env/check");
 const { readLocalConfig, getConfigValue, CONTAINER_ASSETS_PATH } = require("../lib/env/config");
@@ -10,16 +10,17 @@ const { validateSqlFile } = require("../lib/db");
 // ─── db get ──────────────────────────────────────────────────────────────────
 
 /**
- * Fetch the list of database tables for a given Pantheon site environment and URL via Terminus.
+ * Fetch the list of database tables for a given remote site via WP-CLI.
+ * The host type in config determines which CLI tool is used.
  *
- * @param {string} env - Pantheon site.environment (e.g. `mysite.live`)
- * @param {string} url - Live site URL used as the --url flag for WP-CLI
+ * @param {object} config - Parsed wp-env-bin.config.json
+ * @param {string} url    - Live site URL used as the --url flag for WP-CLI
  * @returns {string} Comma-separated list of table names
  */
-async function getRemoteTables(env, url) {
-	logger("> fetching remote table list from " + env + " (" + url + ")...", true, "info");
-	const result = terminus_wp(
-		env,
+async function getRemoteTables(config, url) {
+	logger("> fetching remote table list from " + config.env + " (" + url + ")...", true, "info");
+	const result = remote_wp(
+		config,
 		"db tables --format=csv --url=" + url + " --all-tables-with-prefix",
 		{ encoding: "utf8" }
 	);
@@ -54,14 +55,14 @@ async function getRemoteDb({ action = "redownload" } = {}) {
 		return;
 	}
 
-	const tables = await getRemoteTables(env, url);
+	const tables = await getRemoteTables(config, url);
 	logger("> found tables: " + tables, true, "info");
 
 	const outPath = "./wp-env-bin/assets/database.sql";
 	logger("> exporting database to " + outPath + "...", true, "info");
 
-	terminus_wp(
-		env,
+	remote_wp(
+		config,
 		"db export - --url=" + url + " --tables=" + tables + " > " + outPath,
 		{ shell: true }
 	);

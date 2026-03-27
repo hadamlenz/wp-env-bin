@@ -286,7 +286,7 @@ async function init() {
 				console.log(chalk.cyan("> reading " + composerPath + " from " + compEnv + "..."));
 				let remoteData;
 				try {
-					remoteData = fetchRemoteData(compEnv, compUrl, composerPath);
+					remoteData = fetchRemoteData(profileConfig, compUrl, composerPath);
 				} catch (err) {
 					console.error(chalk.red("Failed to fetch remote data: " + (err.message || err)));
 					break;
@@ -531,13 +531,29 @@ async function init() {
 					message: "Site type?",
 					choices: [
 						{ name: "Single-site", value: "singlesite" },
-						{ name: "Multisite (Pantheon subsite)", value: "multisite" },
+						{ name: "Multisite", value: "multisite" },
 					],
 					default: "singlesite",
 				});
 
+				const host = await selectCreate({
+					message: "Remote host type?",
+					choices: [
+						{ name: "Pantheon (Terminus)", value: "pantheon" },
+						{ name: "Generic SSH (WP-CLI SSH)", value: "ssh" },
+						{ name: "WordPress VIP (VIP-CLI)", value: "wpvip" },
+					],
+					default: "pantheon",
+				});
+
+				const envMessages = {
+					pantheon: "Pantheon site.environment — e.g. mysite.live (leave blank to skip)",
+					ssh:      "SSH connection string — e.g. user@hostname/var/www/html (leave blank to skip)",
+					wpvip:    "WPVIP app.environment — e.g. myapp.production (leave blank to skip)",
+				};
+
 				const env = await inputCreate({
-					message: "Pantheon site.environment — e.g. mysite.live (leave blank to skip)",
+					message: envMessages[host],
 					default: "",
 				});
 
@@ -551,7 +567,7 @@ async function init() {
 					default: projectName,
 				});
 
-				const createConfig = { pluginName, siteType, env, url };
+				const createConfig = { pluginName, siteType, host, env, url };
 
 				if (siteType === "multisite") {
 					createConfig.oldPrefix = await inputCreate({
