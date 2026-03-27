@@ -443,8 +443,8 @@ async function init() {
 		// Example: wp-env-bin menu
 		case undefined:
 		case "menu": {
-			const { menuPrompt } = require("../lib/prompts/menu");
-			await menuPrompt();
+			const { inkMenuPrompt } = require("../lib/prompts/ink-menu");
+			await inkMenuPrompt();
 			break;
 		}
 

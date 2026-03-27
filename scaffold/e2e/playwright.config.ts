@@ -15,7 +15,7 @@ export default defineConfig({
 	fullyParallel: false,
 	forbidOnly: !!process.env.CI,
 	retries: 1,
-	reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
+	reporter: [['list'], ['html', { outputFolder: '../../playwright-report', open: 'never' }]],
 	testDir: './specs',
 	testIgnore: ['**/.git/**', '**/node_modules/!(wp-env-bin)/**'],
 	timeout: 30_000,
