@@ -4,9 +4,19 @@ node_modules/
 package-lock.json
 tsconfig.json
 
+# TypeScript sources — compiled .js and .d.ts are published; raw .ts sources are not needed by consumers
+lib/e2e/*.ts
+!lib/e2e/*.d.ts
+
 # Test & docs
 tests/
 docs/
+
+# AI assistant config
+CLAUDE.md
+
+# JSON schemas (internal validation only)
+schemas/
 
 # OS artifacts
 .DS_Store
