@@ -3,7 +3,7 @@ const path = require("path");
 const { terminus_wp, wpcli } = require("../lib/utils/run");
 const { logger } = require("../lib/utils/log");
 const { checkDatabase, requireDir } = require("../lib/env/check");
-const { readLocalConfig, readWpEnvJson, CONTAINER_ASSETS_PATH } = require("../lib/env/config");
+const { readLocalConfig, getConfigValue, CONTAINER_ASSETS_PATH } = require("../lib/env/config");
 const { renamePrefix } = require("../lib/db");
 const { validateSqlFile } = require("../lib/db");
 
@@ -157,13 +157,7 @@ function importDb(filename) {
  * @param {string} url - Live site domain (e.g. `example.com`)
  */
 function searchReplace(url) {
-	let port = 8889;
-	try {
-		const wpEnvJson = readWpEnvJson();
-		port = (wpEnvJson.env && wpEnvJson.env.development && wpEnvJson.env.development.port) || port;
-	} catch {
-		logger("> could not read .wp-env.json, using default port " + port, true, "warn");
-	}
+	const port = getConfigValue("wp-env.env.development.port") || 8889;
 
 	const local = "http://localhost:" + port;
 	logger("> search-replace: https://" + url + " → " + local, true, "info");

@@ -2,7 +2,7 @@ const { mkdirSync, existsSync, copyFileSync, writeFileSync, readFileSync } = req
 const path = require("path");
 const { spawnSync } = require("child_process");
 const { logger } = require("../lib/utils/log");
-const { readE2eConfig } = require("../lib/env/config");
+const { readE2eConfig, getConfigValue } = require("../lib/env/config");
 const { requireDir } = require("../lib/env/check");
 
 /**
@@ -121,23 +121,11 @@ function scaffoldE2eFiles(dest, scaffold, {
 function getE2eDefaults() {
 	const e2eConfig = readE2eConfig();
 
-	let existingPluginName = "";
-	let existingProjectType = "plugin";
-	try {
-		const config = JSON.parse(
-			readFileSync(path.join(process.cwd(), "wp-env-bin/wp-env-bin.config.json"), "utf8")
-		);
-		existingPluginName = config.pluginName || "";
-		existingProjectType = config.projectType || "plugin";
-	} catch {
-		// no config yet — try package.json
-		try {
-			const pkg = JSON.parse(readFileSync(path.join(process.cwd(), "package.json"), "utf8"));
-			existingPluginName = pkg.name || "";
-		} catch {
-			// leave blank
-		}
-	}
+	const existingPluginName = getConfigValue("config.pluginName") ?? (() => {
+		try { return JSON.parse(readFileSync(path.join(process.cwd(), "package.json"), "utf8")).name || ""; }
+		catch { return ""; }
+	})();
+	const existingProjectType = getConfigValue("config.projectType") || "plugin";
 
 	return { projectType: existingProjectType, pluginName: existingPluginName, e2eConfig };
 }

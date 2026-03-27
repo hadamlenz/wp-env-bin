@@ -185,7 +185,13 @@ async function init() {
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				cleanHelp();
 			} else {
-				console.log(chalk.yellow("Unknown clean subcommand. Try:\n  wp-env-bin clean all\n  wp-env-bin clean themes\n  wp-env-bin clean plugins\n  wp-env-bin clean assets"));
+				console.log(chalk.yellow(
+				"Unknown clean subcommand. Try:\n" +
+				"  wp-env-bin clean all\n" +
+				"  wp-env-bin clean themes\n" +
+				"  wp-env-bin clean plugins\n" +
+				"  wp-env-bin clean assets"
+			));
 			}
 			break;
 		}
@@ -395,7 +401,14 @@ async function init() {
 					run(`composer ${composerArgs.join(" ")}`, { cwd: composerDir, stdio: "inherit" });
 				}
 			} else {
-				console.log(chalk.yellow("Unknown composer subcommand. Try:\n  wp-env-bin composer install\n  wp-env-bin composer update\n  wp-env-bin composer get\n  wp-env-bin composer make\n  wp-env-bin composer -- <any composer command>"));
+				console.log(chalk.yellow(
+				"Unknown composer subcommand. Try:\n" +
+				"  wp-env-bin composer install\n" +
+				"  wp-env-bin composer update\n" +
+				"  wp-env-bin composer get\n" +
+				"  wp-env-bin composer make\n" +
+				"  wp-env-bin composer -- <any composer command>"
+			));
 			}
 			break;
 		}
@@ -635,7 +648,15 @@ async function init() {
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				configHelp();
 			} else {
-				console.log(chalk.yellow("Unknown config subcommand. Try:\n  wp-env-bin config scaffold\n  wp-env-bin config create\n  wp-env-bin config install\n  wp-env-bin config update\n  wp-env-bin config switch\n  wp-env-bin config delete"));
+				console.log(chalk.yellow(
+				"Unknown config subcommand. Try:\n" +
+				"  wp-env-bin config scaffold\n" +
+				"  wp-env-bin config create\n" +
+				"  wp-env-bin config install\n" +
+				"  wp-env-bin config update\n" +
+				"  wp-env-bin config switch\n" +
+				"  wp-env-bin config delete"
+			));
 			}
 			break;
 		}
@@ -705,7 +726,12 @@ async function init() {
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				dbHelp();
 			} else {
-				console.log(chalk.yellow('Unknown subcommand. Try:\n  wp-env-bin db get\n  wp-env-bin db process\n  wp-env-bin db use <path/to/file.sql>'));
+				console.log(chalk.yellow(
+				"Unknown subcommand. Try:\n" +
+				"  wp-env-bin db get\n" +
+				"  wp-env-bin db process\n" +
+				"  wp-env-bin db use <path/to/file.sql>"
+			));
 			}
 			break;
 		}
@@ -776,10 +802,21 @@ async function init() {
 				} else if (e2eComposerSub === "help" || e2eComposerSub === "--help" || e2eComposerSub === "-h") {
 					composerE2eHelp();
 				} else {
-					console.log(chalk.yellow("Unknown e2e composer subcommand. Try:\n  wp-env-bin e2e composer install\n  wp-env-bin e2e composer update"));
+					console.log(chalk.yellow(
+					"Unknown e2e composer subcommand. Try:\n" +
+					"  wp-env-bin e2e composer install\n" +
+					"  wp-env-bin e2e composer update"
+				));
 				}
 			} else {
-				console.log(chalk.yellow('Unknown e2e subcommand. Try:\n  wp-env-bin e2e scaffold\n  wp-env-bin e2e test [--project=all-blocks-editor|all-blocks-frontend]\n  wp-env-bin e2e generate editor|frontend --file=path/to/block.json\n  wp-env-bin e2e composer install\n  wp-env-bin e2e composer update'));
+				console.log(chalk.yellow(
+				"Unknown e2e subcommand. Try:\n" +
+				"  wp-env-bin e2e scaffold\n" +
+				"  wp-env-bin e2e test [--project=all-blocks-editor|all-blocks-frontend]\n" +
+				"  wp-env-bin e2e generate editor|frontend --file=path/to/block.json\n" +
+				"  wp-env-bin e2e composer install\n" +
+				"  wp-env-bin e2e composer update"
+			));
 			}
 			break;
 		}
@@ -878,7 +915,11 @@ async function init() {
 			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
 				htaccessHelp();
 			} else {
-				console.log(chalk.yellow('Unknown subcommand. Try:\n  wp-env-bin htaccess make\n  wp-env-bin htaccess put'));
+				console.log(chalk.yellow(
+				"Unknown subcommand. Try:\n" +
+				"  wp-env-bin htaccess make\n" +
+				"  wp-env-bin htaccess put"
+			));
 			}
 			break;
 		}

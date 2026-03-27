@@ -2,7 +2,7 @@ const { writeFileSync, mkdirSync } = require("fs");
 const { execSync } = require("child_process");
 const path = require("path");
 const { logger } = require("../lib/utils/log");
-const { readLocalConfig, readWpEnvJson } = require("../lib/env/config");
+const { readLocalConfig, getConfigValue } = require("../lib/env/config");
 const { parseArgs, buildLocalUrl, slugify, diffScreenshots, classify, writeReport } = require("../lib/compare");
 
 // ─── Local helpers ────────────────────────────────────────────────────────────
@@ -14,12 +14,7 @@ const { parseArgs, buildLocalUrl, slugify, diffScreenshots, classify, writeRepor
  * @returns {number}
  */
 function readPort() {
-	try {
-		const wpEnv = readWpEnvJson();
-		return (wpEnv.env && wpEnv.env.development && wpEnv.env.development.port) || 8889;
-	} catch {
-		return 8889;
-	}
+	return getConfigValue("wp-env.env.development.port") || 8889;
 }
 
 // ─── Sitemap fetch ────────────────────────────────────────────────────────────
