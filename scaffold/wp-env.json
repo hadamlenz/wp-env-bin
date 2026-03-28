@@ -6,6 +6,7 @@
         ".."
     ],
     "mappings": {
+        "wp-content/logs": "./logs",
         "wp-content/themes": "./themes",
         "wp-content/plugins": "./plugins",
         "wp-content/wp-env-bin": "./assets"
@@ -15,8 +16,8 @@
 
     },
     "config": {
-        "WP_DEBUG": false,
-        "WP_DEBUG_LOG": false,
+        "WP_DEBUG": true,
+        "WP_DEBUG_LOG": "/var/www/html/wp-content/logs/debug.log",
         "WP_DEBUG_DISPLAY": false,
         "SCRIPT_DEBUG": false,
         "DISABLE_WP_CRON": true,

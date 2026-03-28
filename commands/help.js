@@ -52,6 +52,9 @@ Commands:
   info e2e config         Show all key-value pairs from e2e/wp-env-bin.e2e.config.json (validated)
   info e2e composer       Show all key-value pairs from e2e/composer.json
   info <source> <key>     Print just the value of a single key
+  logs                Tail the WordPress PHP debug log (wp-env-bin/logs/debug.log)
+  logs clear          Truncate the log file
+  logs path           Print the path to the log file
   status              Show the active site config and whether wp-env is running
   help                Show this help message
 
@@ -367,4 +370,24 @@ Output:
 `);
 }
 
-module.exports = { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp, cleanHelp, statusHelp };
+function logsHelp() {
+	console.log(`
+wp-env-bin logs — Tail the WordPress PHP debug log
+
+Usage:
+  wp-env-bin logs          Tail wp-env-bin/logs/debug.log (live, Ctrl-C to stop)
+  wp-env-bin logs clear    Truncate the log file
+  wp-env-bin logs path     Print the absolute path to the log file
+
+Log file: wp-env-bin/logs/debug.log (gitignored)
+
+Requires your .wp-env.json to include:
+  mappings: { "wp-content/logs": "./logs" }
+  config:   { "WP_DEBUG": true, "WP_DEBUG_LOG": "/var/www/html/wp-content/logs/debug.log" }
+
+Both are included in the scaffold (wp-env-bin scaffold).
+After updating .wp-env.json, run: wp-env start --update
+`);
+}
+
+module.exports = { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp, cleanHelp, statusHelp, logsHelp };

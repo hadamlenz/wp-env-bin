@@ -4,7 +4,8 @@ composer.lock
 assets/database.sql
 assets/database.modified.sql
 assets/.htaccess
-compare-report/
+logs/
+compare-reports/
 plugins/
 themes/
 vendor/

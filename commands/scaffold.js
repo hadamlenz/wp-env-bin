@@ -15,6 +15,7 @@ function scaffoldFiles(dest) {
 	const results = [];
 
 	mkdirSync(path.join(dest, "assets"), { recursive: true });
+	mkdirSync(path.join(dest, "logs"), { recursive: true });
 	mkdirSync(path.join(dest, "plugins/wp-env-bin-plugin/classes"), { recursive: true });
 
 	// Scaffold dotfiles are stored without a leading dot so npm includes them

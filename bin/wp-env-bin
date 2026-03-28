@@ -33,13 +33,14 @@ const { infoCommand } = require("../commands/info");
 const { statusCommand } = require("../commands/status");
 const { generateE2eTests, runE2eTests, updateE2eManagedFiles } = require("../commands/e2e");
 const { putHtaccess } = require("../commands/htaccess");
+const { logsCommand, logsClearCommand, LOG_PATH } = require("../commands/logs");
 const { run } = require("../lib/utils/run");
 const { requireDir } = require("../lib/env/check");
 
 // ─── Help ─────────────────────────────────────────────────────────────────────
 const {
 	help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp,
-	e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp, cleanHelp, statusHelp,
+	e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp, cleanHelp, statusHelp, logsHelp,
 } = require("../commands/help");
 
 // ─── Prompt handlers (interactive layer) ─────────────────────────────────────
@@ -375,6 +376,37 @@ async function init() {
 				"  wp-env-bin htaccess make\n" +
 				"  wp-env-bin htaccess put"
 			));
+			}
+			break;
+		}
+
+		// ── logs ───────────────────────────────────────────────────────────────
+		// Tail or manage the WordPress PHP debug log on the host filesystem.
+		// The log is mounted via the wp-content/logs mapping in .wp-env.json.
+		// Example: wp-env-bin logs
+		case "logs": {
+			if (subcommand === "clear") {
+				// Truncate the debug log file.
+				// Example: wp-env-bin logs clear
+				logsClearCommand();
+			} else if (subcommand === "path") {
+				// Print the absolute path to the log file (useful for log viewer config).
+				// Example: wp-env-bin logs path
+				console.log(LOG_PATH);
+			} else if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
+				// Example: wp-env-bin logs --help
+				logsHelp();
+			} else if (!subcommand) {
+				// Default: tail the log file.
+				// Example: wp-env-bin logs
+				logsCommand();
+			} else {
+				console.log(chalk.yellow(
+					"Unknown subcommand. Try:\n" +
+					"  wp-env-bin logs\n" +
+					"  wp-env-bin logs clear\n" +
+					"  wp-env-bin logs path"
+				));
 			}
 			break;
 		}
