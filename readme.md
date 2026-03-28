@@ -75,6 +75,23 @@ npm run wp-env-bin -- e2e test --project=all-blocks-editor
 
 ## Commands
 
+### Interactive menu
+
+Running `wp-env-bin` with no arguments (or `wp-env-bin menu`) opens a full-screen interactive terminal UI. This is the recommended way to use wp-env-bin day-to-day — it surfaces all major command areas (config, db, env, e2e, advanced) without needing to remember individual subcommands.
+
+A live status bar at the top shows the active site config (URL and site type), whether wp-env is running and on which port, and whether the e2e environment is running.
+
+**Navigation:**
+
+| Key | Action |
+|-----|--------|
+| ↑ / ↓ | Move through menu items |
+| Enter | Select item / run action |
+| Esc or ← | Go back to parent menu |
+| q | Quit |
+
+---
+
 ### scaffold / help
 
 - **`wp-env-bin scaffold`** — Copy `wp-env-bin/` template files into your project (skips existing files on re-run)
