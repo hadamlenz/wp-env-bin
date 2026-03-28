@@ -39,15 +39,18 @@ One file per command area. Each file exports async handler functions that:
 2. Collect the user's choices
 3. Call the appropriate `commands/` function(s) with those choices as plain arguments
 
-| File | Handlers |
+`ink-menu.js` is a special case — it exports `inkMenuPrompt`, the full-screen Ink-based interactive menu launched by the bare `wp-env-bin` command.
+
+| File | Exports |
 |---|---|
-| `config.js` | `handleConfigInstall`, `handleConfigUpdate`, `handleConfigSwitch`, `handleConfigCreate`, `handleConfigDelete` + shared helpers |
-| `db.js` | `handleDbGet`, `handleDbProcess`, `handleDbUse` |
-| `composer.js` | `handleComposerGet`, `handleComposerMake` |
-| `env.js` | `handleEnvSync` |
-| `e2e.js` | `handleE2eScaffold` |
-| `htaccess.js` | `handleHtaccessMake` |
-| `visual.js` | `handleVisualCompare` |
+| `config.js` | `configInstallPrompt`, `configUpdatePrompt`, `configSwitchPrompt`, `configCreatePrompt`, `configDeletePrompt` + shared helpers (`promptForConfig`, `promptAndSaveProfile`, `promptReinitEnvironment`) |
+| `db.js` | `dbGetPrompt`, `dbProcessPrompt`, `dbUsePrompt` |
+| `composer.js` | `composerGetPrompt`, `composerMakePrompt` |
+| `env.js` | `envSyncPrompt` |
+| `e2e.js` | `e2eScaffoldPrompt` |
+| `htaccess.js` | `htaccessMakePrompt` |
+| `visual.js` | `visualComparePrompt` |
+| `ink-menu.js` | `inkMenuPrompt` — full-screen Ink terminal UI (bare `wp-env-bin` / `wp-env-bin menu`) |
 
 ### `commands/`
 
@@ -55,16 +58,22 @@ Pure business logic. Functions accept explicit parameters and return values or t
 
 | File | Exports |
 |---|---|
-| `config.js` | `configCreate`, `configUpdate`, `configSwitch`, `configDelete`, `getProfileList` |
+| `config.js` | `configCreate`, `configUpdate`, `configSwitch`, `configInstall`, `configDelete`, `getProfileList`, `getActiveProfile` |
 | `db.js` | `getRemoteDb`, `processDb`, `useDb` |
-| `composer.js` | `composerGet`, `composerMake`, `composerUpdate`, etc. |
+| `composer.js` | `composerGet`, `composerMake`, `composerUpdate`, `composerE2eInstall`, `composerE2eUpdate` |
 | `scaffold.js` | `scaffoldCommand`, `scaffoldFiles` |
-| `install.js` | `install`, `getInstallContext`, `applyProjectType` |
+| `install.js` | `install`, `getInstallContext` |
 | `htaccess.js` | `makeHtaccess`, `putHtaccess` |
-| `e2e.js` | `initE2e`, `getE2eDefaults`, `generateE2eTests`, `runE2eTests` |
+| `e2e.js` | `initE2e`, `getE2eDefaults`, `generateE2eTests`, `runE2eTests`, `scaffoldE2eFiles`, `parseGenerateArgs`, `updateE2eManagedFiles` |
 | `compare.js` | `compare` |
 | `env.js` | `runWpEnv`, `runWpEnvE2e` |
-| `plugins.js` | `getInactivePlugins`, `activateComposerPlugins` |
+| `plugins.js` | `readComposerPlugins`, `getInactiveComposerPlugins` |
+| `clean.js` | `cleanThemes`, `cleanPlugins`, `cleanAssets`, `cleanAll` |
+| `help.js` | help text exports |
+| `info.js` | `infoCommand` |
+| `logs.js` | `logsCommand`, `logsClearCommand`, `LOG_PATH` |
+| `setup.js` | `setup` |
+| `status.js` | `statusCommand` |
 
 ### `lib/`
 
@@ -72,15 +81,15 @@ Low-level utilities with no prompts and no CLI-specific logic.
 
 | File/Dir | Purpose |
 |---|---|
-| `lib/utils/run.js` | Shell execution: `run()`, `remote_wp()`, `buildRemoteCmd()`, `wpcli()` |
+| `lib/utils/run.js` | Shell execution: `run()`, `remote_wp()`, `terminus_wp()`, `buildRemoteCmd()`, `wpcli()`, `wpenvrun()` |
 | `lib/utils/log.js` | `logger()` — coloured output with optional suppression |
-| `lib/env/config.js` | `readLocalConfig()`, `readWpEnvJson()`, `readE2eConfig()` |
-| `lib/env/check.js` | File presence checks: `checkDatabase()`, `checkHtaccess()`, `isWpEnvRunning()` |
+| `lib/env/config.js` | `readLocalConfig()`, `readWpEnvJson()`, `readE2eConfig()`, `readRawConfig()`, `getConfigValue()`, `RAW_SOURCES`, `CONTAINER_ASSETS_PATH` |
+| `lib/env/check.js` | File presence checks: `checkDatabase()`, `checkModifiedDatabase()`, `checkHtaccess()`, `isWpEnvRunning()`, `requireDir()`, `requireFile()`, `cleanStaleProjectDirs()` |
 | `lib/db.js` | `validateSqlFile()`, `renamePrefix()` |
 | `lib/config.js` | `applyProjectType()`, `saveNamedProfile()` |
-| `lib/plugins.js` | `readComposerPlugins()` |
+| `lib/plugins.js` | `readComposerPlugins()`, `getInactiveComposerPlugins()` |
 | `lib/remote-composer.js` | `fetchRemoteData()`, `matchActivePlugins()`, `buildComposerJson()`, `makeComposerName()` |
-| `lib/compare.js` | `diffScreenshots()`, `writeReport()`, arg parsing, URL utilities |
+| `lib/compare.js` | `diffScreenshots()`, `writeReport()`, `parseArgs()`, `buildLocalUrl()`, `slugify()`, `classify()` |
 | `lib/e2e/` | Playwright block test utilities. TypeScript sources in `lib/e2e/src/` compile to CommonJS `.js` in `lib/e2e/`. `lib/e2e/package.json` overrides to `"type": "commonjs"` — required because Playwright bundles these files in CJS mode for consuming projects that lack `"type": "module"`. Generator scripts (`generate-block-tests.mjs`, `generate-frontend-tests.mjs`) use `.mjs` to stay ESM. |
 | `lib/e2e-specs/` | Distributed Playwright spec templates for the discovery pattern (`editor/blocks.spec.js`, `frontend/blocks.spec.js`) — referenced via `testDir` in consumer `playwright.config.ts` |
 
