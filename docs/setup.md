@@ -154,6 +154,14 @@ wp-env-bin env sync
 
 This runs the full pipeline: exports from the remote host via the configured CLI tool, renames table prefixes, imports into Docker, runs URL search-replace, and regenerates the media proxy `.htaccess`.
 
+To monitor PHP errors and `error_log()` output from the running environment:
+
+```bash
+wp-env-bin logs
+```
+
+Tails `wp-env-bin/logs/debug.log` in real time. Use `wp-env-bin logs clear` to truncate it.
+
 ---
 
 ## Managing Multiple Site Configs

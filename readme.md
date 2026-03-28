@@ -154,6 +154,14 @@ wp-env-bin info e2e config wpVersion
 wp-env-bin info composer name
 ```
 
+### logs
+
+- **`wp-env-bin logs`** — Tail `wp-env-bin/logs/debug.log` in real time (Ctrl-C to stop)
+- **`wp-env-bin logs clear`** — Truncate the log file
+- **`wp-env-bin logs path`** — Print the absolute path to the log file
+
+Requires `WP_DEBUG`, `WP_DEBUG_LOG`, and the `wp-content/logs` mapping in `.wp-env.json` — all included in the scaffold. After updating `.wp-env.json`, run `wp-env start --update`.
+
 ### status
 
 Show the active site config and whether the wp-env Docker environment is currently running.
@@ -207,6 +215,7 @@ wp-env-bin/
 ├── plugins/                              # Scaffolded wp-env-bin-plugin + Composer-installed dev plugins (gitignored)
 ├── themes/                               # Composer-installed dev themes — not source-controlled (gitignored)
 ├── vendor/                               # Composer packages (gitignored)
+├── logs/                                 # WordPress PHP debug log — written by wp-env (gitignored)
 ├── compare-report/                       # Visual regression HTML reports (gitignored)
 └── e2e/
     ├── .wp-env.json                      # Isolated test environment: port 8886, MySQL 51606
