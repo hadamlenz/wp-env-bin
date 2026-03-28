@@ -14,8 +14,6 @@
 
 import fs from 'fs';
 import path from 'path';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
 // Resolve peer deps from the consuming project's cwd — works for both local and global installs.
 const { expect } = require(require.resolve('@playwright/test', { paths: [process.cwd()] }));
 import type { Page } from '@playwright/test';

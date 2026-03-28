@@ -1,3 +1,4 @@
+tsconfig.e2e.json
 node_modules/
 vendor/
 composer.lock

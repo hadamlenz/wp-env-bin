@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseGenerateArgs } from "../../commands/e2e.js";
-import { generateTestFile } from "../../lib/e2e/generate-block-tests.js";
+import { generateTestFile } from "../../lib/e2e/generate-block-tests.mjs";
 
 // --- parseGenerateArgs ---
 

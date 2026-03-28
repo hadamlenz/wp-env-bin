@@ -294,8 +294,8 @@ async function generateE2eTests(type, args = []) {
 
 	const options   = parseGenerateArgs(args, type);
 	const generator = type === "editor"
-		? await import("../lib/e2e/generate-block-tests.js")
-		: await import("../lib/e2e/generate-frontend-tests.js");
+		? await import("../lib/e2e/generate-block-tests.mjs")
+		: await import("../lib/e2e/generate-frontend-tests.mjs");
 
 	await generator.generate(options);
 }
@@ -309,17 +309,26 @@ async function generateE2eTests(type, args = []) {
  */
 function generateTsconfigE2e(dest) {
 	const wpEnvBinLibE2e = path.join(__dirname, "../lib/e2e");
-	const e2eLibPath = path.relative(dest, wpEnvBinLibE2e).replace(/\\/g, "/");
+
+	// Use root-relative paths (baseUrl: "/") so tsconfig.e2e.json is independent of
+	// how deeply the consuming project is nested in the filesystem. This file is
+	// machine-specific and gitignored, so absolute-equivalent paths are fine.
+	const rootRel = (p) => p.replace(/\\/g, "/").replace(/^\//, "");
 
 	const tsconfig = {
-		extends: "./tsconfig.json",
 		compilerOptions: {
-			baseUrl: ".",
+			resolveJsonModule: true,
+			esModuleInterop: true,
+			sourceMap: true,
+			inlineSources: true,
+			module: "ESNext",
+			moduleResolution: "bundler",
+			baseUrl: "/",
 			paths: {
-				"@e2e/utils/helpers":        [`${e2eLibPath}/helpers`],
-				"@e2e/utils/editor-tests":   [`${e2eLibPath}/editor-tests`],
-				"@e2e/utils/frontend-tests": [`${e2eLibPath}/frontend-tests`],
-				"@e2e/*":                    ["specs/*"],
+				"@e2e/utils/helpers":        [`${rootRel(wpEnvBinLibE2e)}/helpers.js`],
+				"@e2e/utils/editor-tests":   [`${rootRel(wpEnvBinLibE2e)}/editor-tests.js`],
+				"@e2e/utils/frontend-tests": [`${rootRel(wpEnvBinLibE2e)}/frontend-tests.js`],
+				"@e2e/*":                    [`${rootRel(dest)}/specs/*`],
 			},
 		},
 		include: ["specs/**/*.ts"],
@@ -333,6 +342,11 @@ function generateTsconfigE2e(dest) {
  * install path. Run after upgrading wp-env-bin to keep managed files in sync.
  * User-owned files (playwright.config.ts, .wp-env.json, global.setup.ts) are
  * left untouched.
+ *
+ * When wp-env-bin is installed as a local devDependency (node_modules/wp-env-bin
+ * exists), tsconfig.e2e.json is skipped — tsconfig.json already resolves the
+ * path aliases via node_modules. Managed spec files are only overwritten when
+ * their content has actually changed.
  */
 function updateE2eManagedFiles() {
 	requireDir(path.join(process.cwd(), "wp-env-bin"), "Run this command from your project root (the directory containing wp-env-bin/).");
@@ -347,12 +361,27 @@ function updateE2eManagedFiles() {
 	];
 
 	for (const file of managed) {
-		copyFileSync(path.join(scaffold, file.src), path.join(dest, file.dest));
-		logger("> updated wp-env-bin/e2e/" + file.dest);
+		const srcPath  = path.join(scaffold, file.src);
+		const destPath = path.join(dest, file.dest);
+		const srcContent  = readFileSync(srcPath, "utf8");
+		const destContent = existsSync(destPath) ? readFileSync(destPath, "utf8") : null;
+		if (srcContent === destContent) {
+			logger("> up-to-date wp-env-bin/e2e/" + file.dest);
+		} else {
+			copyFileSync(srcPath, destPath);
+			logger("> updated wp-env-bin/e2e/" + file.dest);
+		}
 	}
 
-	generateTsconfigE2e(dest);
-	logger("> updated wp-env-bin/e2e/tsconfig.e2e.json");
+	// Skip tsconfig.e2e.json when wp-env-bin is a local devDependency — the
+	// node_modules paths in tsconfig.json already cover path alias resolution.
+	const hasLocalInstall = existsSync(path.join(process.cwd(), "node_modules", "wp-env-bin"));
+	if (hasLocalInstall) {
+		logger("> skipped wp-env-bin/e2e/tsconfig.e2e.json (wp-env-bin found in node_modules)");
+	} else {
+		generateTsconfigE2e(dest);
+		logger("> updated wp-env-bin/e2e/tsconfig.e2e.json");
+	}
 
 	logger("\nManaged files updated. User-owned files (playwright.config.ts, .wp-env.json, global.setup.ts) were not changed.");
 }

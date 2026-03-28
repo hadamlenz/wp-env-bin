@@ -1,17 +1,17 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "CommonJS",
+    "moduleResolution": "node",
     "declaration": true,
     "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmitOnError": false,
     "outDir": "lib/e2e",
-    "rootDir": "lib/e2e",
+    "rootDir": "lib/e2e/src",
     "types": ["node"]
   },
-  "include": ["lib/e2e/**/*.ts"],
+  "include": ["lib/e2e/src/**/*.ts"],
   "exclude": ["node_modules"]
 }

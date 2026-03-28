@@ -13,8 +13,6 @@
 
 import fs from 'fs';
 import path from 'path';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
 // Resolve @playwright/test from the consuming project's cwd so this works
 // regardless of whether wp-env-bin is installed locally or globally.
 const { expect } = require(require.resolve('@playwright/test', { paths: [process.cwd()] }));

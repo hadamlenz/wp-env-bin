@@ -5,8 +5,7 @@ package-lock.json
 tsconfig.json
 
 # TypeScript sources — compiled .js and .d.ts are published; raw .ts sources are not needed by consumers
-lib/e2e/*.ts
-!lib/e2e/*.d.ts
+lib/e2e/src/
 
 # Test & docs
 tests/
