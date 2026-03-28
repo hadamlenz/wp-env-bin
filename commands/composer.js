@@ -1,11 +1,12 @@
-"use strict";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from 'url';
+import { run } from "../lib/utils/run.js";
+import { logger } from "../lib/utils/log.js";
+import { matchActivePlugins, buildComposerJson, makeComposerName } from "../lib/remote-composer.js";
+import { requireDir, requireFile } from "../lib/env/check.js";
 
-const path = require("path");
-const fs = require("fs");
-const { run } = require("../lib/utils/run");
-const { logger } = require("../lib/utils/log");
-const { matchActivePlugins, buildComposerJson, makeComposerName } = require("../lib/remote-composer");
-const { requireDir, requireFile } = require("../lib/env/check");
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 const BLANK_COMPOSER = {
 	name: "hadamlenz/wp-env-bin",
@@ -131,4 +132,4 @@ function composerE2eUpdate() {
 	logger("> composer update complete.");
 }
 
-module.exports = { composerGet, composerMake, composerUpdate, composerE2eInstall, composerE2eUpdate };
+export { composerGet, composerMake, composerUpdate, composerE2eInstall, composerE2eUpdate };

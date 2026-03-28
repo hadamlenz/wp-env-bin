@@ -1,7 +1,12 @@
-const { existsSync, readFileSync } = require("fs");
-const path = require("path");
-const chalk = require("chalk");
-const { readRawConfig } = require("../lib/env/config");
+import { existsSync, readFileSync } from "fs";
+import path from "path";
+import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+import chalk from "chalk";
+import { readRawConfig } from "../lib/env/config.js";
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const require = createRequire(import.meta.url);
 
 // Maps each user-facing source name to its relative file path (from project root)
 // and an optional schema path (relative to this package's root, resolved via __dirname).
@@ -131,4 +136,4 @@ function infoCommand(argv) {
 	}
 }
 
-module.exports = { infoCommand };
+export { infoCommand };

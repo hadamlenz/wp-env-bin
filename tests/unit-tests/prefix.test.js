@@ -1,10 +1,6 @@
-"use strict";
-
-const { test } = require("node:test");
-const assert = require("node:assert/strict");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const { renamePrefix } = require(path.join(ROOT, "lib/db"));
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { renamePrefix } from "../../lib/db.js";
 
 // --- replacement ---
 

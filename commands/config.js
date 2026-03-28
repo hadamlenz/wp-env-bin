@@ -1,10 +1,10 @@
-const { existsSync, mkdirSync, readdirSync, unlinkSync, copyFileSync, writeFileSync, readFileSync } = require("fs");
-const path = require("path");
-const { logger } = require("../lib/utils/log");
-const { applyProjectType, saveNamedProfile } = require("../lib/config");
-const { makeComposerName } = require("../lib/remote-composer");
-const { install } = require("./install");
-const { requireDir, requireFile } = require("../lib/env/check");
+import { existsSync, mkdirSync, readdirSync, unlinkSync, copyFileSync, writeFileSync, readFileSync } from "fs";
+import path from "path";
+import { logger } from "../lib/utils/log.js";
+import { applyProjectType, saveNamedProfile } from "../lib/config.js";
+import { makeComposerName } from "../lib/remote-composer.js";
+import { install } from "./install.js";
+import { requireDir, requireFile } from "../lib/env/check.js";
 
 /**
  * Scaffold and configure wp-env-bin for the first time, then save as a named
@@ -212,4 +212,4 @@ function configDelete(profileName) {
 	}
 }
 
-module.exports = { configInstall, configUpdate, configSwitch, getProfileList, getActiveProfile, configCreate, configDelete };
+export { configInstall, configUpdate, configSwitch, getProfileList, getActiveProfile, configCreate, configDelete };

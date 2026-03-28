@@ -1,8 +1,6 @@
-"use strict";
-
-const chalk = require("chalk");
-const { readRawConfig, readWpEnvJson } = require("../lib/env/config");
-const { isWpEnvRunning } = require("../lib/env/check");
+import chalk from "chalk";
+import { readRawConfig, readWpEnvJson } from "../lib/env/config.js";
+import { isWpEnvRunning } from "../lib/env/check.js";
 
 /**
  * Print the active site config and wp-env running state.
@@ -42,4 +40,4 @@ function statusCommand() {
 	}
 }
 
-module.exports = { statusCommand };
+export { statusCommand };

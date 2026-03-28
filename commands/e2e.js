@@ -1,7 +1,12 @@
-const { mkdirSync, existsSync, copyFileSync, writeFileSync, readFileSync } = require("fs");
-const path = require("path");
-const { spawnSync } = require("child_process");
-const { logger } = require("../lib/utils/log");
+import { mkdirSync, existsSync, copyFileSync, writeFileSync, readFileSync } from "fs";
+import path from "path";
+import { spawnSync } from "child_process";
+import { fileURLToPath } from 'url';
+import { logger } from "../lib/utils/log.js";
+import { readE2eConfig, getConfigValue } from "../lib/env/config.js";
+import { requireDir } from "../lib/env/check.js";
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 /**
  * Parse CLI args for `wp-env-bin e2e generate editor|frontend`.
@@ -45,8 +50,6 @@ function parseGenerateArgs(args, type = 'editor') {
 
 	return result;
 }
-const { readE2eConfig, getConfigValue } = require("../lib/env/config");
-const { requireDir } = require("../lib/env/check");
 
 /**
  * Perform the file-system scaffolding for `wp-env-bin e2e scaffold`.
@@ -283,7 +286,7 @@ function runE2eTests(args = []) {
  * @param {string}   type - "editor" or "frontend"
  * @param {string[]} args - CLI args: --file=, --glob=, --output=, --screenshots, etc.
  */
-function generateE2eTests(type, args = []) {
+async function generateE2eTests(type, args = []) {
 	if (type !== "editor" && type !== "frontend") {
 		console.log(`Unknown type "${type}". Use: wp-env-bin e2e generate editor|frontend --file=path/to/block.json`);
 		process.exit(1);
@@ -291,10 +294,10 @@ function generateE2eTests(type, args = []) {
 
 	const options   = parseGenerateArgs(args, type);
 	const generator = type === "editor"
-		? require("../lib/e2e/generate-block-tests")
-		: require("../lib/e2e/generate-frontend-tests");
+		? await import("../lib/e2e/generate-block-tests.js")
+		: await import("../lib/e2e/generate-frontend-tests.js");
 
-	generator.generate(options);
+	await generator.generate(options);
 }
 
 /**
@@ -354,4 +357,4 @@ function updateE2eManagedFiles() {
 	logger("\nManaged files updated. User-owned files (playwright.config.ts, .wp-env.json, global.setup.ts) were not changed.");
 }
 
-module.exports = { initE2e, getE2eDefaults, generateE2eTests, runE2eTests, scaffoldE2eFiles, parseGenerateArgs, updateE2eManagedFiles };
+export { initE2e, getE2eDefaults, generateE2eTests, runE2eTests, scaffoldE2eFiles, parseGenerateArgs, updateE2eManagedFiles };

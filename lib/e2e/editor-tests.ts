@@ -11,12 +11,12 @@
  * registerEditorTests(test, { blockName: 'my/block', title: 'My Block', ... });
  */
 
-/* eslint-disable @typescript-eslint/no-require-imports */
+import fs from 'fs';
+import path from 'path';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 // Resolve @playwright/test from the consuming project's cwd so this works
 // regardless of whether wp-env-bin is installed locally or globally.
-// Resolve @playwright/test from the consuming project's cwd so this works
-// regardless of whether wp-env-bin is installed locally or globally.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { expect } = require(require.resolve('@playwright/test', { paths: [process.cwd()] }));
 import type { Page } from '@playwright/test';
 import {
@@ -25,9 +25,9 @@ import {
   deletePost,
   openInspectorSidebar,
   openStylesTab,
-} from './helpers';
-import type { EditorTestConfig, AttributeSchema } from './types';
-import { loadEditorConfig } from './block-loader';
+} from './helpers.js';
+import type { EditorTestConfig, AttributeSchema } from './types.js';
+import { loadEditorConfig } from './block-loader.js';
 
 // ---------------------------------------------------------------------------
 // Timeouts
@@ -590,8 +590,6 @@ export function registerEditorTests(test: any, config: EditorTestConfig): void {
  * registerEditorTestsFromConfig(test, path.join(__dirname, '../../wp-env-bin.e2e.config.json'));
  */
 export function registerEditorTestsFromConfig(test: any, configPath: string): void {
-  const fs   = require('fs');
-  const path = require('path');
 
   if (!fs.existsSync(configPath)) {
     throw new Error(

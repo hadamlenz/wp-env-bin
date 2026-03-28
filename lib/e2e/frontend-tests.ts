@@ -12,15 +12,18 @@
  * registerFrontendTests(test, { blockName: 'my/block', title: 'My Block', apiAttributes: {}, ... });
  */
 
-/* eslint-disable @typescript-eslint/no-require-imports */
+import fs from 'fs';
+import path from 'path';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 // Resolve peer deps from the consuming project's cwd — works for both local and global installs.
 const { expect } = require(require.resolve('@playwright/test', { paths: [process.cwd()] }));
 import type { Page } from '@playwright/test';
 // Resolve @axe-core/playwright from the consuming project's cwd (peer dep, not installed in wp-env-bin).
 const AxeBuilder = require(require.resolve('@axe-core/playwright', { paths: [process.cwd()] })).default;
-import type { FrontendTestConfig } from './types';
-import { loadFrontendConfig } from './block-loader';
-import type { FrontendLoadOptions } from './block-loader';
+import type { FrontendTestConfig } from './types.js';
+import { loadFrontendConfig } from './block-loader.js';
+import type { FrontendLoadOptions } from './block-loader.js';
 
 // ---------------------------------------------------------------------------
 // Private helpers
@@ -485,8 +488,6 @@ export function registerFrontendTestsFromConfig(
   configPath: string,
   options:    FrontendLoadOptions = {},
 ): void {
-  const fs   = require('fs');
-  const path = require('path');
 
   if (!fs.existsSync(configPath)) {
     throw new Error(

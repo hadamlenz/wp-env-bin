@@ -1,11 +1,7 @@
-"use strict";
-
-const { test } = require("node:test");
-const assert = require("node:assert/strict");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const { parseGenerateArgs } = require(path.join(ROOT, "commands/e2e"));
-const { generateTestFile }  = require(path.join(ROOT, "lib/e2e/generate-block-tests"));
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { parseGenerateArgs } from "../../commands/e2e.js";
+import { generateTestFile } from "../../lib/e2e/generate-block-tests.js";
 
 // --- parseGenerateArgs ---
 

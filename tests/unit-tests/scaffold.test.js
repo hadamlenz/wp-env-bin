@@ -1,12 +1,9 @@
-"use strict";
-
-const { test, before, after } = require("node:test");
-const assert = require("node:assert/strict");
-const { mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync } = require("fs");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const os = require("os");
-const { scaffoldFiles, scaffoldCommand } = require(path.join(ROOT, "commands/scaffold"));
+import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync, readFileSync } from "fs";
+import path from "path";
+import os from "os";
+import { scaffoldFiles, scaffoldCommand } from "../../commands/scaffold.js";
 
 let tmpDir;
 let savedCwd;
@@ -54,7 +51,6 @@ test("scaffoldFiles: skips existing files, creates missing ones", () => {
 	assert.equal(gitignoreResult.created, true, ".gitignore should be created");
 
 	// Existing file content must be preserved
-	const { readFileSync } = require("fs");
 	const content = readFileSync(path.join(dest, ".wp-env.json"), "utf8");
 	assert.equal(content, '{"custom":true}');
 });

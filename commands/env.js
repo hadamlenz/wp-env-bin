@@ -1,5 +1,5 @@
-const path = require("path");
-const { spawnSync } = require("child_process");
+import path from "path";
+import { spawnSync } from "child_process";
 
 /**
  * Pass any wp-env command to the dev environment (wp-env-bin/).
@@ -35,4 +35,4 @@ function runWpEnvE2e(args) {
 	}
 }
 
-module.exports = { runWpEnv, runWpEnvE2e };
+export { runWpEnv, runWpEnvE2e };

@@ -44,4 +44,4 @@ RewriteRule . /index.php [L]
 `;
 };
 
-module.exports = htaccessTemplate;
+export default htaccessTemplate;

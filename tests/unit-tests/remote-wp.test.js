@@ -1,10 +1,6 @@
-"use strict";
-
-const { test } = require("node:test");
-const assert = require("node:assert/strict");
-const path = require("path");
-const ROOT = path.join(__dirname, "../..");
-const { buildRemoteCmd } = require(path.join(ROOT, "lib/utils/run"));
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { buildRemoteCmd } from "../../lib/utils/run.js";
 
 // ── buildRemoteCmd ─────────────────────────────────────────────────────────────
 

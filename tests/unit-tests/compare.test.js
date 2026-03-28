@@ -1,9 +1,8 @@
-const { test } = require("node:test");
-const assert = require("assert/strict");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const { readFileSync } = require("fs");
-const { parseArgs, buildLocalUrl, slugify, classify } = require(path.join(ROOT, "lib/compare"));
+import { test } from "node:test";
+import assert from "assert/strict";
+import path from "path";
+import { readFileSync } from "fs";
+import { parseArgs, buildLocalUrl, slugify, classify } from "../../lib/compare.js";
 
 // Read live domain from config if available, fall back to generic placeholder
 function getLiveDomain() {

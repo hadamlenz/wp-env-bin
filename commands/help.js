@@ -383,11 +383,11 @@ Log file: wp-env-bin/logs/debug.log (gitignored)
 
 Requires your .wp-env.json to include:
   mappings: { "wp-content/logs": "./logs" }
-  config:   { "WP_DEBUG": true, "WP_DEBUG_LOG": "/var/www/html/wp-content/logs/debug.log" }
+  config:   { "WP_DEBUG_LOG": "/var/www/html/wp-content/logs/debug.log" }
 
 Both are included in the scaffold (wp-env-bin scaffold).
 After updating .wp-env.json, run: wp-env start --update
 `);
 }
 
-module.exports = { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp, cleanHelp, statusHelp, logsHelp };
+export { help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp, e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp, cleanHelp, statusHelp, logsHelp };

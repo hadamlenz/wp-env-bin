@@ -1,12 +1,9 @@
-"use strict";
-
-const { test, before, after } = require("node:test");
-const assert = require("node:assert/strict");
-const { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync, unlinkSync } = require("fs");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const os = require("os");
-const { configCreate, configDelete, configSwitch } = require(path.join(ROOT, "commands/config"));
+import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync, unlinkSync } from "fs";
+import path from "path";
+import os from "os";
+import { configCreate, configDelete, configSwitch } from "../../commands/config.js";
 
 let tmpDir;
 let savedCwd;

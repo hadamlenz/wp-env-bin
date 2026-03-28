@@ -7,11 +7,9 @@
  * static spec file generation.
  */
 
-/* eslint-disable @typescript-eslint/no-require-imports */
-const fs   = require('fs');
-const path = require('path');
-
-import type { EditorTestConfig, FrontendTestConfig } from './types';
+import fs from 'fs';
+import path from 'path';
+import type { EditorTestConfig, FrontendTestConfig } from './types.js';
 
 // ---------------------------------------------------------------------------
 // API attribute sanitization

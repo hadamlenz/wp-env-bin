@@ -1,6 +1,6 @@
-const { wpcli } = require("../lib/utils/run");
-const { logger } = require("../lib/utils/log");
-const { readComposerPlugins, getInactiveComposerPlugins } = require("../lib/plugins");
+import { wpcli } from "../lib/utils/run.js";
+import { logger } from "../lib/utils/log.js";
+import { readComposerPlugins, getInactiveComposerPlugins } from "../lib/plugins.js";
 
 /**
  * Return the list of composer-managed plugins that are currently inactive in
@@ -42,4 +42,4 @@ function activateComposerPlugins(pluginsToActivate) {
 	}
 }
 
-module.exports = { getInactivePlugins, activateComposerPlugins };
+export { getInactivePlugins, activateComposerPlugins };

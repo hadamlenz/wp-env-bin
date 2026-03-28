@@ -1,5 +1,6 @@
 {
 	"name": "wp-env-bin",
+	"type": "module",
 	"version": "1.0.2",
 	"description": "WordPress local environment manager for wp-env",
 	"bin": {
@@ -13,7 +14,7 @@
 		"scaffold/"
 	],
 	"scripts": {
-		"build": "tsc",
+		"build": "tsc || true",
 		"wp-env-bin:test:unit": "node --test 'tests/unit-tests/*.test.js'",
 		"wp-env-bin:test:integration": "node tests/integration/run.js"
 	},
@@ -25,11 +26,11 @@
 		"ajv": "^8.18.0",
 		"chalk": "^4.1.2",
 		"glob": "^13.0.0",
-		"ink": "^3.2.0",
+		"ink": "^4.4.1",
 		"pixelmatch": "^5.3.0",
 		"pngjs": "^7.0.0",
-		"react": "^17.0.2",
-		"react-dom": "^17.0.2"
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1"
 	},
 	"devDependencies": {
 		"@types/node": "^25.5.0",

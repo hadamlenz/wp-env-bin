@@ -1,8 +1,9 @@
-"use strict";
+import { fileURLToPath } from "url";
+import path from "path";
+import { execSync } from "child_process";
+import { mkdirSync, writeFileSync, rmSync, readdirSync } from "fs";
 
-const path = require("path");
-const { execSync } = require("child_process");
-const { mkdirSync, writeFileSync, rmSync, readdirSync } = require("fs");
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const ENV_DIR = path.resolve(__dirname, "../env");
@@ -130,7 +131,7 @@ function getShimmedEnv() {
 	return shimmedEnv();
 }
 
-module.exports = {
+export {
 	ENV_DIR,
 	WP_ENV_BIN_DIR,
 	ASSETS_DIR,

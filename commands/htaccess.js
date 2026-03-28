@@ -1,10 +1,10 @@
-const { writeFileSync, statSync, rmSync } = require("fs");
-const path = require("path");
-const htaccessTemplate = require("../templates/htaccess.tpl");
-const { logger } = require("../lib/utils/log");
-const { wpenvrun } = require("../lib/utils/run");
-const { readLocalConfig, CONTAINER_ASSETS_PATH } = require("../lib/env/config");
-const { requireDir } = require("../lib/env/check");
+import { writeFileSync, statSync, rmSync, existsSync } from "fs";
+import path from "path";
+import htaccessTemplate from "../templates/htaccess.tpl.js";
+import { logger } from "../lib/utils/log.js";
+import { wpenvrun } from "../lib/utils/run.js";
+import { readLocalConfig, CONTAINER_ASSETS_PATH } from "../lib/env/config.js";
+import { requireDir } from "../lib/env/check.js";
 
 /**
  * Remove a path if it is a directory rather than a file.
@@ -85,11 +85,11 @@ function makeHtaccess({ action = "regenerate" } = {}) {
  */
 function putHtaccess() {
 	const localPath = path.join(process.cwd(), "wp-env-bin/assets/.htaccess");
-	if (!require("fs").existsSync(localPath)) {
+	if (!existsSync(localPath)) {
 		throw new Error("wp-env-bin/assets/.htaccess does not exist. Run `wp-env-bin htaccess make` first.");
 	}
 	wpenvrun("bash -c 'cp " + CONTAINER_ASSETS_PATH + "/.htaccess /var/www/html/.htaccess'");
 	logger("> htaccess applied to running container.", true, "success");
 }
 
-module.exports = { makeHtaccess, putHtaccess };
+export { makeHtaccess, putHtaccess };

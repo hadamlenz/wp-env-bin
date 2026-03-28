@@ -1,17 +1,20 @@
-"use strict";
-
-const { test } = require("node:test");
-const assert = require("node:assert/strict");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const {
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import path from "path";
+import { createRequire } from "module";
+import { writeFileSync, rmSync } from "fs";
+import { fileURLToPath } from "url";
+import {
 	sanitizeAttributesForApi,
 	buildContentAssertions,
 	analyseRenderPhp,
 	resolveBlockCss,
-} = require(path.join(ROOT, "lib/e2e/block-loader"));
+} from "../../lib/e2e/block-loader.js";
 
-const FIXTURES = path.join(ROOT, "tests/fixtures");
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const require = createRequire(import.meta.url);
+
+const FIXTURES = path.join(__dirname, "../../tests/fixtures");
 const FULL_BLOCK_JSON = path.join(FIXTURES, "full.block.json");
 const DYNAMIC_BLOCK_JSON = path.join(FIXTURES, "dynamic/block.json");
 
@@ -158,7 +161,6 @@ test("resolveBlockCss returns null when referenced CSS file does not exist", () 
 
 test("resolveBlockCss returns CSS string when referenced file exists", () => {
 	// Create a temporary CSS file next to the fixture block.json
-	const { writeFileSync, rmSync } = require("fs");
 	const cssPath = path.join(FIXTURES, "style.css");
 	writeFileSync(cssPath, ".my-block { color: red; }", "utf8");
 	try {

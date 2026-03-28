@@ -10,7 +10,7 @@
  * import { registerEditorTests } from '@e2e/utils/editor-tests';
  * registerEditorTests(test, { blockName: 'my/block', title: 'My Block', ... });
  */
-import type { EditorTestConfig } from './types';
+import type { EditorTestConfig } from './types.js';
 /**
  * Registers the full suite of structural Playwright editor tests for a block.
  *

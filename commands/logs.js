@@ -1,6 +1,6 @@
-const { spawnSync } = require("child_process");
-const path = require("path");
-const fs = require("fs");
+import { spawnSync } from "child_process";
+import path from "path";
+import fs from "fs";
 
 /** Absolute path to the WordPress debug log on the host filesystem. */
 const LOG_PATH = path.join(process.cwd(), "wp-env-bin/logs/debug.log");
@@ -35,4 +35,4 @@ function logsClearCommand() {
 	console.log("Log cleared.");
 }
 
-module.exports = { logsCommand, logsClearCommand, LOG_PATH };
+export { logsCommand, logsClearCommand, LOG_PATH };

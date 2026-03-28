@@ -1,8 +1,11 @@
-const path = require("path");
-const fs = require("fs");
-const { run } = require("../lib/utils/run");
-const { logger } = require("../lib/utils/log");
-const { requireDir, cleanStaleProjectDirs } = require("../lib/env/check");
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from 'url';
+import { run } from "../lib/utils/run.js";
+import { logger } from "../lib/utils/log.js";
+import { requireDir, cleanStaleProjectDirs } from "../lib/env/check.js";
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 const PLUGIN_FILES = [
 	"wp-env-bin-plugin.php",
@@ -45,4 +48,4 @@ function setup(argv = []) {
 	logger("> ensured wp-env-bin-plugin is present.", true, "success");
 }
 
-module.exports = { setup };
+export { setup };

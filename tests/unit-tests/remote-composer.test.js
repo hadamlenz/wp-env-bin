@@ -1,12 +1,9 @@
-"use strict";
-
-const { test } = require("node:test");
-const assert = require("node:assert/strict");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const { mkdtempSync, rmSync, writeFileSync } = require("fs");
-const os = require("os");
-const { matchActivePlugins, buildComposerJson, makeComposerName } = require(path.join(ROOT, "lib/remote-composer"));
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import path from "path";
+import { mkdtempSync, rmSync, writeFileSync } from "fs";
+import os from "os";
+import { matchActivePlugins, buildComposerJson, makeComposerName } from "../../lib/remote-composer.js";
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 

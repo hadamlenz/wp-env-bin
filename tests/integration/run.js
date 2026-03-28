@@ -1,11 +1,13 @@
 #!/usr/bin/env node
-"use strict";
 
-const { spawn } = require("child_process");
-const path = require("path");
-const readline = require("readline");
-const chalk = require("chalk");
-const { stopEnv } = require("./helpers/env");
+import { fileURLToPath } from "url";
+import path from "path";
+import { spawn } from "child_process";
+import readline from "readline";
+import chalk from "chalk";
+import { stopEnv } from "./helpers/env.js";
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 const REPO_ROOT = path.resolve(__dirname, "../..");
 

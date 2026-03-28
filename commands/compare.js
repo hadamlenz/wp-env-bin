@@ -1,9 +1,12 @@
-const { writeFileSync, mkdirSync } = require("fs");
-const { execSync } = require("child_process");
-const path = require("path");
-const { logger } = require("../lib/utils/log");
-const { readLocalConfig, getConfigValue } = require("../lib/env/config");
-const { parseArgs, buildLocalUrl, slugify, diffScreenshots, classify, writeReport } = require("../lib/compare");
+import { writeFileSync, mkdirSync } from "fs";
+import { execSync } from "child_process";
+import path from "path";
+import { createRequire } from 'module';
+import { logger } from "../lib/utils/log.js";
+import { readLocalConfig, getConfigValue } from "../lib/env/config.js";
+import { parseArgs, buildLocalUrl, slugify, diffScreenshots, classify, writeReport } from "../lib/compare.js";
+
+const require = createRequire(import.meta.url);
 
 // ─── Local helpers ────────────────────────────────────────────────────────────
 
@@ -256,4 +259,4 @@ async function compare(argv) {
 	return { reportPath, failCount, errorCount };
 }
 
-module.exports = { compare };
+export { compare };

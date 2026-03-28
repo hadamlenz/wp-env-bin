@@ -1,14 +1,14 @@
-"use strict";
+import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, existsSync, readFileSync } from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import os from "os";
+import { scaffoldE2eFiles } from "../../commands/e2e.js";
 
-const { test, before, after } = require("node:test");
-const assert = require("node:assert/strict");
-const { mkdtempSync, rmSync, existsSync, readFileSync } = require("fs");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const os = require("os");
-const { scaffoldE2eFiles } = require(path.join(ROOT, "commands/e2e"));
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
-const SCAFFOLD_DIR = path.join(ROOT, "scaffold/e2e");
+const SCAFFOLD_DIR = path.join(__dirname, "../../scaffold/e2e");
 
 let tmpDir;
 

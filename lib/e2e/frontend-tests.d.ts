@@ -11,8 +11,8 @@
  * import { registerFrontendTests } from '@e2e/utils/frontend-tests';
  * registerFrontendTests(test, { blockName: 'my/block', title: 'My Block', apiAttributes: {}, ... });
  */
-import type { FrontendTestConfig } from './types';
-import type { FrontendLoadOptions } from './block-loader';
+import type { FrontendTestConfig } from './types.js';
+import type { FrontendLoadOptions } from './block-loader.js';
 /**
  * Registers the full suite of front-end Playwright tests for a block using
  * the WordPress Block Renderer REST API.

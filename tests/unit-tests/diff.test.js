@@ -1,10 +1,9 @@
-"use strict";
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { createRequire } from "module";
+import { diffScreenshots } from "../../lib/compare.js";
 
-const { test } = require("node:test");
-const assert = require("node:assert/strict");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const { diffScreenshots } = require(path.join(ROOT, "lib/compare"));
+const require = createRequire(import.meta.url);
 
 /**
  * Build a solid-colour PNG buffer using pngjs.

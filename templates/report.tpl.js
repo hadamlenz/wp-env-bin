@@ -104,4 +104,4 @@ ${page.status === "error"
 </body>
 </html>`;
 
-module.exports = { summaryTemplate, pageTemplate };
+export { summaryTemplate, pageTemplate };

@@ -1,12 +1,9 @@
-"use strict";
-
-const { test, before, after } = require("node:test");
-const assert = require("node:assert/strict");
-const { mkdtempSync, mkdirSync, rmSync, readFileSync, existsSync } = require("fs");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const os = require("os");
-const { writeReport } = require(path.join(ROOT, "lib/compare"));
+import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import { mkdtempSync, mkdirSync, rmSync, readFileSync, existsSync } from "fs";
+import path from "path";
+import os from "os";
+import { writeReport } from "../../lib/compare.js";
 
 let tmpDir;
 

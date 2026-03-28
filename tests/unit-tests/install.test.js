@@ -1,8 +1,6 @@
-const { test } = require("node:test");
-const assert = require("assert/strict");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const { applyProjectType } = require(path.join(ROOT, "lib/config"));
+import { test } from "node:test";
+import assert from "assert/strict";
+import { applyProjectType } from "../../lib/config.js";
 
 // --- applyProjectType ---
 

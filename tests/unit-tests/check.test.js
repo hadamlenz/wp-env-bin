@@ -1,12 +1,9 @@
-"use strict";
-
-const { test, before, after } = require("node:test");
-const assert = require("node:assert/strict");
-const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = require("fs");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const os = require("os");
-const { checkDatabase, checkModifiedDatabase, checkHtaccess } = require(path.join(ROOT, "lib/env/check"));
+import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "fs";
+import path from "path";
+import os from "os";
+import { checkDatabase, checkModifiedDatabase, checkHtaccess } from "../../lib/env/check.js";
 
 let tmpDir;
 let savedCwd;

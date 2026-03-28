@@ -1,7 +1,7 @@
-const { existsSync, rmSync } = require("fs");
-const path = require("path");
-const chalk = require("chalk");
-const { logger } = require("../lib/utils/log");
+import { existsSync, rmSync } from "fs";
+import path from "path";
+import chalk from "chalk";
+import { logger } from "../lib/utils/log.js";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -69,4 +69,4 @@ function cleanAll() {
 	cleanDir(dir, "assets");
 }
 
-module.exports = { cleanThemes, cleanPlugins, cleanAssets, cleanAll };
+export { cleanThemes, cleanPlugins, cleanAssets, cleanAll };

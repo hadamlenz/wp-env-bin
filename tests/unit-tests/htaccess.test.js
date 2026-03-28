@@ -1,10 +1,6 @@
-"use strict";
-
-const { test } = require("node:test");
-const assert = require("node:assert/strict");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const htaccessTemplate = require(path.join(ROOT, "templates/htaccess.tpl"));
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import htaccessTemplate from "../../templates/htaccess.tpl.js";
 
 // --- singlesite ---
 

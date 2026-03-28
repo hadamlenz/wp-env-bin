@@ -6,7 +6,7 @@
  * for discovery-based test registration, and by the generate scripts for
  * static spec file generation.
  */
-import type { EditorTestConfig, FrontendTestConfig } from './types';
+import type { EditorTestConfig, FrontendTestConfig } from './types.js';
 /**
  * Removes attributes whose schema declares "type": "null".
  * The Block Renderer REST API rejects null-typed attributes with 400 rest_invalid_param.

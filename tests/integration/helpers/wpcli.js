@@ -1,7 +1,5 @@
-"use strict";
-
-const { execSync } = require("child_process");
-const { WP_ENV_BIN_DIR } = require("./env");
+import { execSync } from "child_process";
+import { WP_ENV_BIN_DIR } from "./env.js";
 
 /**
  * Run a WP-CLI command in the development (local) environment.
@@ -29,4 +27,4 @@ function wpCliTests(cmd) {
 	});
 }
 
-module.exports = { wpCliDev, wpCliTests };
+export { wpCliDev, wpCliTests };

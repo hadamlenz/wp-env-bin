@@ -1,11 +1,8 @@
-"use strict";
-
-const { test, before, after, describe } = require("node:test");
-const assert = require("node:assert/strict");
-const { existsSync, readFileSync, writeFileSync } = require("fs");
-const path = require("path");
-
-const {
+import { test, before, after, describe } from "node:test";
+import assert from "node:assert/strict";
+import { existsSync, readFileSync, writeFileSync, rmSync } from "fs";
+import path from "path";
+import {
 	WP_ENV_BIN_DIR,
 	ASSETS_DIR,
 	writeTestConfig,
@@ -14,8 +11,8 @@ const {
 	seedTestsEnv,
 	resetDevDb,
 	withEnvDir,
-} = require("./helpers/env");
-const { wpCliDev } = require("./helpers/wpcli");
+} from "./helpers/env.js";
+import { wpCliDev } from "./helpers/wpcli.js";
 
 // ─── Global setup ─────────────────────────────────────────────────────────────
 
@@ -41,7 +38,7 @@ describe("db get", () => {
 
 	test("exports database.sql to wp-env-bin/assets/", async () => {
 		await withEnvDir(async () => {
-			const { getRemoteDb } = require("../../commands/db");
+			const { getRemoteDb } = await import("../../commands/db.js");
 			await getRemoteDb({ action: "redownload" });
 		});
 		assert.ok(
@@ -80,7 +77,7 @@ describe("db process", () => {
 	before(async () => {
 		cleanAssets();
 		await withEnvDir(async () => {
-			const { getRemoteDb } = require("../../commands/db");
+			const { getRemoteDb } = await import("../../commands/db.js");
 			await getRemoteDb({ action: "redownload" });
 		});
 		resetDevDb();
@@ -88,7 +85,7 @@ describe("db process", () => {
 
 	test("imports the database into the development environment", async () => {
 		await withEnvDir(async () => {
-			const { processDb } = require("../../commands/db");
+			const { processDb } = await import("../../commands/db.js");
 			await processDb({ createAdmin: false });
 		});
 		const marker = wpCliDev("option get wp_env_bin_test_marker").trim();
@@ -124,8 +121,8 @@ describe("htaccess make", () => {
 	});
 
 	test("generates .htaccess in wp-env-bin/assets/", async () => {
-		await withEnvDir(() => {
-			const { makeHtaccess } = require("../../commands/htaccess");
+		await withEnvDir(async () => {
+			const { makeHtaccess } = await import("../../commands/htaccess.js");
 			makeHtaccess({ action: "regenerate" });
 		});
 		assert.ok(
@@ -170,8 +167,8 @@ describe("env sync (full pipeline)", () => {
 
 	test("db get → db process → htaccess make: marker option survives round-trip", async () => {
 		await withEnvDir(async () => {
-			const { getRemoteDb, processDb } = require("../../commands/db");
-			const { makeHtaccess } = require("../../commands/htaccess");
+			const { getRemoteDb, processDb } = await import("../../commands/db.js");
+			const { makeHtaccess } = await import("../../commands/htaccess.js");
 			await getRemoteDb({ action: "redownload" });
 			await processDb({ createAdmin: false });
 			makeHtaccess({ action: "regenerate" });
@@ -195,8 +192,8 @@ describe("env sync (full pipeline)", () => {
 		);
 	});
 
-	test("full pipeline: development site responds HTTP 200", () => {
-		const { execSync } = require("child_process");
+	test("full pipeline: development site responds HTTP 200", async () => {
+		const { execSync } = await import("child_process");
 		const status = execSync(
 			'curl -s -o /dev/null -w "%{http_code}" http://localhost:8897',
 			{ encoding: "utf8" }
@@ -223,7 +220,7 @@ describe("plugin activation", () => {
 		// Import a known state so the test plugin is present and active in dev env
 		cleanAssets();
 		await withEnvDir(async () => {
-			const { getRemoteDb, processDb } = require("../../commands/db");
+			const { getRemoteDb, processDb } = await import("../../commands/db.js");
 			await getRemoteDb({ action: "redownload" });
 			await processDb({ createAdmin: false });
 		});
@@ -232,13 +229,13 @@ describe("plugin activation", () => {
 	after(() => {
 		// Remove the test composer.json so it doesn't affect other test runs
 		const composerPath = path.join(WP_ENV_BIN_DIR, "composer.json");
-		try { require("fs").rmSync(composerPath); } catch { /* already gone */ }
+		try { rmSync(composerPath); } catch { /* already gone */ }
 	});
 
 	test("getInactivePlugins returns empty array when all plugins are active", async () => {
 		let inactive;
-		await withEnvDir(() => {
-			const { getInactivePlugins } = require("../../commands/plugins");
+		await withEnvDir(async () => {
+			const { getInactivePlugins } = await import("../../commands/plugins.js");
 			inactive = getInactivePlugins();
 		});
 		assert.ok(Array.isArray(inactive), "getInactivePlugins should return an array");
@@ -248,8 +245,8 @@ describe("plugin activation", () => {
 	test("activateComposerPlugins re-activates a deactivated plugin", async () => {
 		wpCliDev("plugin deactivate wp-env-bin-test-plugin");
 
-		await withEnvDir(() => {
-			const { getInactivePlugins, activateComposerPlugins } = require("../../commands/plugins");
+		await withEnvDir(async () => {
+			const { getInactivePlugins, activateComposerPlugins } = await import("../../commands/plugins.js");
 			const inactive = getInactivePlugins();
 			if (inactive.length > 0) {
 				activateComposerPlugins(inactive);

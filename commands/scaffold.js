@@ -1,6 +1,9 @@
-const { mkdirSync, existsSync, copyFileSync } = require("fs");
-const path = require("path");
-const { logger } = require("../lib/utils/log");
+import { mkdirSync, existsSync, copyFileSync } from "fs";
+import path from "path";
+import { fileURLToPath } from 'url';
+import { logger } from "../lib/utils/log.js";
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 /**
  * Copy template files from the package's scaffold/ directory into the
@@ -68,4 +71,4 @@ function scaffoldCommand(dest) {
 	logger("  Next: run `wp-env-bin config create` to create a site config profile.");
 }
 
-module.exports = { scaffoldFiles, scaffoldCommand };
+export { scaffoldFiles, scaffoldCommand };

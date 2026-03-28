@@ -1,10 +1,6 @@
-"use strict";
-
-const { test } = require("node:test");
-const assert = require("node:assert/strict");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const { logger } = require(path.join(ROOT, "lib/utils/log"));
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { logger } from "../../lib/utils/log.js";
 
 test("logger returns the string when log is false", () => {
 	const result = logger("hello world", false);

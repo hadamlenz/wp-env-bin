@@ -1,8 +1,8 @@
-const { existsSync, writeFileSync, readFileSync } = require("fs");
-const path = require("path");
-const { logger } = require("../lib/utils/log");
-const { applyProjectType } = require("../lib/config");
-const { scaffoldFiles } = require("./scaffold");
+import { existsSync, writeFileSync, readFileSync } from "fs";
+import path from "path";
+import { logger } from "../lib/utils/log.js";
+import { applyProjectType } from "../lib/config.js";
+import { scaffoldFiles } from "./scaffold.js";
 
 /**
  * Return the current install-time filesystem context so the caller (bin) can
@@ -100,4 +100,4 @@ function install({ action, config } = {}) {
 	logger("  wp-env-bin env setup");
 }
 
-module.exports = { install, getInstallContext };
+export { install, getInstallContext };

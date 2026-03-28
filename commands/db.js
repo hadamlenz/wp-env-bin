@@ -1,12 +1,12 @@
-const { copyFileSync, readFileSync, writeFileSync } = require("fs");
-const path = require("path");
-const { remote_wp, wpcli } = require("../lib/utils/run");
-const { logger } = require("../lib/utils/log");
-const { checkDatabase, requireDir } = require("../lib/env/check");
-const { readLocalConfig, getConfigValue, CONTAINER_ASSETS_PATH } = require("../lib/env/config");
-const { renamePrefix } = require("../lib/db");
-const { validateSqlFile } = require("../lib/db");
-const { getActiveProfile } = require("./config");
+import { copyFileSync, readFileSync, writeFileSync } from "fs";
+import path from "path";
+import { remote_wp, wpcli } from "../lib/utils/run.js";
+import { logger } from "../lib/utils/log.js";
+import { checkDatabase, requireDir } from "../lib/env/check.js";
+import { readLocalConfig, getConfigValue, CONTAINER_ASSETS_PATH } from "../lib/env/config.js";
+import { renamePrefix } from "../lib/db.js";
+import { validateSqlFile } from "../lib/db.js";
+import { getActiveProfile } from "./config.js";
 
 // ─── db get ──────────────────────────────────────────────────────────────────
 
@@ -231,4 +231,4 @@ async function processDb({ createAdmin = false } = {}) {
 	}
 }
 
-module.exports = { getRemoteDb, useDb, processDb };
+export { getRemoteDb, useDb, processDb };

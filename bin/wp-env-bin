@@ -14,8 +14,8 @@
  * red, and exits with code 1.
  */
 
-const path = require("path");
-const chalk = require("chalk");
+import path from "path";
+import chalk from "chalk";
 
 /** The primary command (process.argv[2]), e.g. "clean", "db", "env". */
 const command = process.argv[2];
@@ -24,36 +24,36 @@ const command = process.argv[2];
 const subcommand = process.argv[3];
 
 // ─── Commands (business logic) ────────────────────────────────────────────────
-const { setup } = require("../commands/setup");
-const { scaffoldCommand } = require("../commands/scaffold");
-const { runWpEnv, runWpEnvE2e } = require("../commands/env");
-const { composerUpdate, composerE2eInstall, composerE2eUpdate } = require("../commands/composer");
-const { cleanThemes, cleanPlugins, cleanAssets, cleanAll } = require("../commands/clean");
-const { infoCommand } = require("../commands/info");
-const { statusCommand } = require("../commands/status");
-const { generateE2eTests, runE2eTests, updateE2eManagedFiles } = require("../commands/e2e");
-const { putHtaccess } = require("../commands/htaccess");
-const { logsCommand, logsClearCommand, LOG_PATH } = require("../commands/logs");
-const { run } = require("../lib/utils/run");
-const { requireDir } = require("../lib/env/check");
+import { setup } from "../commands/setup.js";
+import { scaffoldCommand } from "../commands/scaffold.js";
+import { runWpEnv, runWpEnvE2e } from "../commands/env.js";
+import { composerUpdate, composerE2eInstall, composerE2eUpdate } from "../commands/composer.js";
+import { cleanThemes, cleanPlugins, cleanAssets, cleanAll } from "../commands/clean.js";
+import { infoCommand } from "../commands/info.js";
+import { statusCommand } from "../commands/status.js";
+import { generateE2eTests, runE2eTests, updateE2eManagedFiles } from "../commands/e2e.js";
+import { putHtaccess } from "../commands/htaccess.js";
+import { logsCommand, logsClearCommand, LOG_PATH } from "../commands/logs.js";
+import { run } from "../lib/utils/run.js";
+import { requireDir } from "../lib/env/check.js";
 
 // ─── Help ─────────────────────────────────────────────────────────────────────
-const {
+import {
 	help, configHelp, scaffoldHelp, dbHelp, htaccessHelp, envHelp,
 	e2eEnvHelp, compareHelp, e2eHelp, composerHelp, composerE2eHelp, cleanHelp, statusHelp, logsHelp,
-} = require("../commands/help");
+} from "../commands/help.js";
 
 // ─── Prompt handlers (interactive layer) ─────────────────────────────────────
-const {
+import {
 	configInstallPrompt, configUpdatePrompt, configSwitchPrompt,
 	configCreatePrompt, configDeletePrompt,
-} = require("../lib/prompts/config");
-const { dbGetPrompt, dbProcessPrompt, dbUsePrompt } = require("../lib/prompts/db");
-const { composerGetPrompt, composerMakePrompt } = require("../lib/prompts/composer");
-const { e2eScaffoldPrompt } = require("../lib/prompts/e2e");
-const { envSyncPrompt } = require("../lib/prompts/env");
-const { htaccessMakePrompt } = require("../lib/prompts/htaccess");
-const { visualComparePrompt } = require("../lib/prompts/visual");
+} from "../lib/prompts/config.js";
+import { dbGetPrompt, dbProcessPrompt, dbUsePrompt } from "../lib/prompts/db.js";
+import { composerGetPrompt, composerMakePrompt } from "../lib/prompts/composer.js";
+import { e2eScaffoldPrompt } from "../lib/prompts/e2e.js";
+import { envSyncPrompt } from "../lib/prompts/env.js";
+import { htaccessMakePrompt } from "../lib/prompts/htaccess.js";
+import { visualComparePrompt } from "../lib/prompts/visual.js";
 
 // ─── init ─────────────────────────────────────────────────────────────────────
 
@@ -469,13 +469,13 @@ async function init() {
 		}
 
 		// ── menu ───────────────────────────────────────────────────────────────
-		// Guided interactive menu (clack-powered). Launched when no command is
-		// given, or when `menu` is explicitly requested.
+		// Guided interactive menu. Launched when no command is given,
+		// or when `menu` is explicitly requested.
 		// Example: wp-env-bin
 		// Example: wp-env-bin menu
 		case undefined:
 		case "menu": {
-			const { inkMenuPrompt } = require("../lib/prompts/ink-menu");
+			const { inkMenuPrompt } = await import("../lib/prompts/ink-menu.js");
 			await inkMenuPrompt();
 			break;
 		}

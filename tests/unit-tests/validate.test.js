@@ -1,12 +1,9 @@
-"use strict";
-
-const { test, before, after } = require("node:test");
-const assert = require("node:assert/strict");
-const { writeFileSync, mkdtempSync, rmSync } = require("fs");
-const path = require("path");
-const ROOT  = path.join(__dirname, "../..");
-const os = require("os");
-const { validateSqlFile } = require(path.join(ROOT, "lib/db"));
+import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import { writeFileSync, mkdtempSync, rmSync } from "fs";
+import path from "path";
+import os from "os";
+import { validateSqlFile } from "../../lib/db.js";
 
 // Minimal valid WordPress mysqldump — has header, CREATE TABLE, and _options
 const VALID_DUMP = [
