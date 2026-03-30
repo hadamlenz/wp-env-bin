@@ -3,3 +3,4 @@ package-lock.json
 config.local.json
 *.tgz
 claude.md
+.claude

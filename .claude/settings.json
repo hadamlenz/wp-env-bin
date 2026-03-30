@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "mcp__redis-memory__search_long_term_memory"
-    ]
-  }
-}
