@@ -4,7 +4,10 @@ A CLI tool for managing local WordPress development environments using [`@wordpr
 
 Supports both **single-site** and **multisite** source databases. Works with Pantheon (via Terminus) or any host where you can export a SQL file with `wp db export`. The local environment is always a standard single-site wp-env install. Block tests run in an isolated wp-env environment with auto-generated specs from `block.json` metadata.
 
+## updates
 this package is under active development and could maybe not work great. it is at it's core not something you'd use on a live site.
+
+We are not currently looking for contributers, but in the future we will be looking for testers, especially users who uses WPVIP or can connect to their server with SSH. 
 
 ---
 
