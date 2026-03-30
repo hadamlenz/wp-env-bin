@@ -1,3 +1,11 @@
+<pre>
+                    e   e  e eeeee      eeee eeeee ee   e      eeeee  e  eeeee   
+                    8   8  8 8   8      8    8   8 88   8      8   8  8  8   8   
+                    8e  8  8 8eee8 eeee 8eee 8e  8 88  e8 eeee 8eee8e 8e 8e  8   
+                    88  8  8 88         88   88  8  8  8       88   8 88 88  8   
+                    88ee8ee8 88         88ee 88  8  8ee8       88eee8 88 88  8   
+                    ----------------------------------------------------------  
+</pre>
 # wp-env-bin
 
 A CLI tool for managing local WordPress development environments using [`@wordpress/env`](https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/). It automates pulling a production database, processing it for local use, configuring a reverse proxy for media assets, and scaffolding Playwright e2e tests for Gutenberg blocks. You can also make one-to-one copies of live sites to test against new theme or plugin code.
