@@ -4,3 +4,4 @@ config.local.json
 *.tgz
 claude.md
 .claude
+wp-env-bin.code-workspace
